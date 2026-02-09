@@ -1,0 +1,6 @@
+@DMRS.Api_HostAddress = http://localhost:5210
+
+GET {{DMRS.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
