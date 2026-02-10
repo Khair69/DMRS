@@ -1,6 +1,12 @@
 using DMRS.Api.Data;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+
+//to prevent mapping of standard claims to Microsoft-specific claim types
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +29,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.Authority = "http://localhost:8080/realms/DMRS";
         options.Audience = "dmrs-api";
         options.RequireHttpsMetadata = false; // DEV ONLY
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            RoleClaimType = "roles",
+            NameClaimType = "preferred_username"
+        };
     });
 
 builder.Services.AddAuthorization();

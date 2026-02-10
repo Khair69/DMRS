@@ -1,6 +1,7 @@
 ﻿using DMRS.Api.Application.Patients;
 using DMRS.Api.Data;
 using DMRS.Api.Models.Patient;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DMRS.Api.Controllers
@@ -15,6 +16,7 @@ namespace DMRS.Api.Controllers
             _context = context;
         }
 
+        [Authorize(Roles = "doctor")]
         [HttpPost]
         public async Task<IActionResult> Create(CreatePatientRequest request)
         {
