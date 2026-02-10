@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+    keycloak:
+        image: quay.io/keycloak/keycloak:26.5.3
+        container_name: keycloak
+        command: start-dev
+        environment:
+            KEYCLOAK_ADMIN: admin
+            KEYCLOAK_ADMIN_PASSWORD: admin
+        ports:
+            - "8080:8080"
