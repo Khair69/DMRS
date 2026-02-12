@@ -63,5 +63,13 @@ namespace DMRS.Api.Controllers
             if (patient == null) return NotFound();
             return Ok(patient);
         }
+
+        [HttpGet("search/{searchParam}/{value}")]
+        public async Task<IActionResult> Search(string searchParam, string value)
+        {
+            var patients = await _repository.SearchAsync<Patient>(searchParam, value);
+            if (patients.Count == 0) return NotFound();
+            return Ok(patients);
+        }
     }
 }

@@ -7,5 +7,6 @@ namespace DMRS.Api.Domain.Interfaces
         Task<string> CreateAsync<T>(T resource) where T : Resource;
         System.Threading.Tasks.Task UpdateAsync<T>(string id, T resource) where T : Resource;
         System.Threading.Tasks.Task DeleteAsync(string resourceType, string id);
+        Task<List<T>> SearchAsync<T>(string searchParams,string value) where T : Resource;
     }
 }

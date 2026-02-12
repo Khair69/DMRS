@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Hl7.Fhir.Serialization;
+using DMRS.Api.Application.Interfaces;
+using DMRS.Api.Infrastructure.Search;
 
 //to prevent mapping of standard claims to Microsoft-specific claim types
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -42,8 +44,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IFhirRepository, FhirRepository>();
-builder.Services.AddSingleton<FhirJsonSerializer>(new FhirJsonSerializer());
+builder.Services.AddScoped<ISearchIndexer, PatientIndexer>();
 
+builder.Services.AddSingleton<FhirJsonSerializer>(new FhirJsonSerializer());
 builder.Services.AddSingleton<FhirJsonDeserializer>(new FhirJsonDeserializer(new DeserializerSettings
 {
     Validator = null // We will handle validation separately
