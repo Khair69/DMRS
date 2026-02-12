@@ -1,8 +1,11 @@
-using DMRS.Api.Data;
+using DMRS.Api.Domain.Interfaces;
+using DMRS.Api.Infrastructure;
+using DMRS.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using Hl7.Fhir.Serialization;
 
 //to prevent mapping of standard claims to Microsoft-specific claim types
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -20,7 +23,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddOpenApi();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -37,6 +40,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddScoped<IFhirRepository, FhirRepository>();
+builder.Services.AddSingleton<FhirJsonSerializer>(new FhirJsonSerializer());
+
+builder.Services.AddSingleton<FhirJsonDeserializer>(new FhirJsonDeserializer(new DeserializerSettings
+{
+    Validator = null // We will handle validation separately
+}));
 
 var app = builder.Build();
 

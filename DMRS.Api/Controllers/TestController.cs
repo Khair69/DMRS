@@ -8,10 +8,17 @@ namespace DMRS.Api.Controllers
     public class TestController : ControllerBase
     {
         [HttpGet]
-        [Authorize(Roles = "doctor")]
+        [Authorize]
         public IActionResult Secure()
         {
             return Ok("You are authenticated 🎉");
+        }
+
+        [HttpGet("test-doctor")]
+        [Authorize(Roles = "doctor")]
+        public IActionResult TestDoctor()
+        {
+            return Ok("You are a doctor 🎉");
         }
 
         [HttpGet("debug-claims")]
