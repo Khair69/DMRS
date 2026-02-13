@@ -1,4 +1,6 @@
-﻿using DMRS.Api.Domain.Interfaces;
+﻿using DMRS.Api.Application.Interfaces;
+using DMRS.Api.Domain.Interfaces;
+using DMRS.Api.Migrations;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,12 +14,14 @@ namespace DMRS.Api.Controllers
         private readonly IFhirRepository _repository;
         private readonly ILogger<PatientController> _logger;
         private readonly FhirJsonDeserializer _deserializer;
+        private readonly IFhirValidatorService _validator;
 
-        public PatientController(IFhirRepository repository, ILogger<PatientController> logger, FhirJsonDeserializer deserializer)
+        public PatientController(IFhirRepository repository, ILogger<PatientController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator)
         {
             _repository = repository;
             _logger = logger;
             _deserializer = deserializer;
+            _validator = validator;
         }
 
         [HttpPost]
@@ -36,11 +40,15 @@ namespace DMRS.Api.Controllers
                 return BadRequest("Invalid FHIR content: " + ex.Message);
             }
 
-            // 1. Basic Validation
-            if (patient == null) return BadRequest("Invalid FHIR content");
+            //Validation
+            if (patient == null) return BadRequest("No resource provided.");
 
-            // 2. Structural Validation (using Firely Validator)
-            // (Add logic here to check if required fields like Name/Identifier exist)
+            var outcome = await _validator.ValidateAsync(patient);
+
+            if (!outcome.Success)
+            {
+                return BadRequest(outcome);
+            }
 
             try
             {
