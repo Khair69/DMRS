@@ -79,5 +79,73 @@ namespace DMRS.Api.Controllers
             if (patients.Count == 0) return NotFound();
             return Ok(patients);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(string id, [FromBody] System.Text.Json.JsonElement body)
+        {
+            string jsonString = body.GetRawText();
+
+            Patient patient;
+            try
+            {
+                patient = _deserializer.Deserialize<Patient>(jsonString);
+            }
+            catch (DeserializationFailedException ex)
+            {
+                _logger.LogError(ex, "Failed to deserialize FHIR content");
+                return BadRequest("Invalid FHIR content: " + ex.Message);
+            }
+
+            if (patient == null) return BadRequest("No resource provided.");
+
+            var outcome = await _validator.ValidateAsync(patient);
+            if (!outcome.Success)
+            {
+                return BadRequest(outcome);
+            }
+
+            try
+            {
+                await _repository.UpdateAsync(id, patient);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating patient {Id}", id);
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            try
+            {
+                await _repository.DeleteAsync(nameof(Patient), id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting patient {Id}", id);
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
+
     }
 }

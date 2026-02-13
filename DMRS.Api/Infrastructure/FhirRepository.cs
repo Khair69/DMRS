@@ -52,9 +52,34 @@ namespace DMRS.Api.Infrastructure
             return resource.Id;
         }
 
-        public System.Threading.Tasks.Task DeleteAsync(string resourceType, string id)
+        public async System.Threading.Tasks.Task DeleteAsync(string resourceType, string id)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(resourceType))
+                throw new ArgumentException("Resource type is required.", nameof(resourceType));
+
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Resource id is required.", nameof(id));
+
+            var utcNow = DateTimeOffset.UtcNow;
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            var updated = await _context.FhirResources
+                .Where(r => r.ResourceType == resourceType && r.Id == id && !r.IsDeleted)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(r => r.IsDeleted, true)
+                    .SetProperty(r => r.LastUpdated, utcNow)
+                    .SetProperty(r => r.VersionId, r => r.VersionId + 1));
+
+            if (updated == 0)
+                throw new KeyNotFoundException($"Resource '{resourceType}/{id}' not found.");
+
+            await _context.ResourceIndices
+                .Where(i => i.ResourceType == resourceType && i.ResourceId == id)
+                .ExecuteDeleteAsync();
+
+            await transaction.CommitAsync();
+
         }
 
         public async Task<T> GetAsync<T>(string id) where T : Resource
@@ -70,13 +95,13 @@ namespace DMRS.Api.Infrastructure
 
         public async Task<List<T>> SearchAsync<T>(string searchParam, string value) where T : Resource
         {
-            var typeName = typeof(T).Name; // "Patient"
+            var typeName = typeof(T).Name;
 
             // 1. Find IDs in the Index Table
             var matches = await _context.ResourceIndices
                 .Where(x => x.ResourceType == typeName
                          && x.SearchParamCode == searchParam
-                         && x.Value == value.ToLower()) // FHIR search is case-insensitive
+                         && x.Value == value.ToLower())
                 .Select(x => x.ResourceId)
                 .ToListAsync();
 
@@ -89,9 +114,48 @@ namespace DMRS.Api.Infrastructure
             return resources.Select(r => _deserializer.Deserialize<T>(r.RawContent)).ToList();
         }
 
-        public System.Threading.Tasks.Task UpdateAsync<T>(string id, T resource) where T : Resource
+        public async System.Threading.Tasks.Task UpdateAsync<T>(string id, T resource) where T : Resource
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Resource id is required.", nameof(id));
+
+            ArgumentNullException.ThrowIfNull(resource);
+
+            var resourceType = typeof(T).Name;
+            var utcNow = DateTimeOffset.UtcNow;
+
+            if (!string.IsNullOrWhiteSpace(resource.Id) && !string.Equals(resource.Id, id, StringComparison.Ordinal))
+                throw new ArgumentException("Body resource id must match route id.", nameof(resource));
+
+            resource.Id = id;
+
+            var updatedJson = _serializer.SerializeToString(resource);
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            var updated = await _context.FhirResources
+                .Where(r => r.ResourceType == resourceType && r.Id == id && !r.IsDeleted)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(r => r.RawContent, updatedJson)
+                    .SetProperty(r => r.LastUpdated, utcNow)
+                    .SetProperty(r => r.VersionId, r => r.VersionId + 1));
+
+            if (updated == 0)
+                throw new KeyNotFoundException($"Resource '{resourceType}/{id}' not found.");
+
+            await _context.ResourceIndices
+                .Where(i => i.ResourceType == resourceType && i.ResourceId == id)
+                .ExecuteDeleteAsync();
+
+            var indices = _searchIndexer.Extract(resource);
+            if (indices.Count > 0)
+            {
+                _context.ResourceIndices.AddRange(indices);
+                await _context.SaveChangesAsync();
+            }
+
+            await transaction.CommitAsync();
+
         }
     }
 }
