@@ -3,13 +3,12 @@ using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Migrations;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DMRS.Api.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class PatientController : ControllerBase
+    public class PatientController : FhirBaseController
     {
         private readonly IFhirRepository _repository;
         private readonly ILogger<PatientController> _logger;

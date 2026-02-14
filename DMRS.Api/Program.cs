@@ -4,6 +4,7 @@ using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Infrastructure;
 using DMRS.Api.Infrastructure.Persistence;
 using DMRS.Api.Infrastructure.Search;
+using DMRS.Api.Infrastructure.Security;
 using Hl7.Fhir.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -42,7 +43,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddFhirAuthorization();
 
 builder.Services.AddScoped<IFhirRepository, FhirRepository>();
 builder.Services.AddScoped<ISearchIndexer, PatientIndexer>();
