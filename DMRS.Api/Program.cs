@@ -46,7 +46,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddFhirAuthorization();
 
 builder.Services.AddScoped<IFhirRepository, FhirRepository>();
-builder.Services.AddScoped<ISearchIndexer, PatientIndexer>();
+builder.Services.AddScoped<PatientIndexer>();
+builder.Services.AddScoped<PractitionerIndexer>();
 builder.Services.AddSingleton<IFhirValidatorService, FhirValidatorService>();
 
 builder.Services.AddSingleton<FhirJsonSerializer>(new FhirJsonSerializer());

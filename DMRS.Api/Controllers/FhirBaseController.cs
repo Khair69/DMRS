@@ -16,13 +16,15 @@ namespace DMRS.Api.Controllers
         protected readonly ILogger _logger;
         protected readonly FhirJsonDeserializer _deserializer;
         protected readonly IFhirValidatorService _validator;
+        protected readonly ISearchIndexer _searchIndexer;
 
-        public FhirBaseController(IFhirRepository repository, ILogger logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator)
+        public FhirBaseController(IFhirRepository repository, ILogger logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, ISearchIndexer searchIndexer)
         {
             _repository = repository;
             _logger = logger;
             _deserializer = deserializer;
             _validator = validator;
+            _searchIndexer = searchIndexer;
         }
 
         [HttpGet("{id}")]
@@ -74,7 +76,7 @@ namespace DMRS.Api.Controllers
 
             try
             {
-                var id = await _repository.CreateAsync(resource);
+                var id = await _repository.CreateAsync(resource, _searchIndexer);
                 return CreatedAtAction(nameof(Read), new { id = id }, resource);
             }
             catch (Exception ex)
@@ -111,7 +113,7 @@ namespace DMRS.Api.Controllers
 
             try
             {
-                await _repository.UpdateAsync(id, resource);
+                await _repository.UpdateAsync(id, resource, _searchIndexer);
                 return Ok(resource);
             }
             catch (KeyNotFoundException)

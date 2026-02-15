@@ -14,17 +14,18 @@ namespace DMRS.Api.Infrastructure
         private readonly AppDbContext _context;
         private readonly FhirJsonSerializer _serializer;
         private readonly FhirJsonDeserializer _deserializer;
-        private readonly ISearchIndexer _searchIndexer;
-        public FhirRepository(AppDbContext context, FhirJsonSerializer serializer, FhirJsonDeserializer deserializer, ISearchIndexer searchIndexer)
+        public FhirRepository(AppDbContext context, FhirJsonSerializer serializer, FhirJsonDeserializer deserializer)
         {
             _context = context;
             _serializer = serializer;
             _deserializer = deserializer;
-            _searchIndexer = searchIndexer;
         }
 
-        public async Task<string> CreateAsync<T>(T resource) where T : Resource
+        public async Task<string> CreateAsync<T>(T resource, ISearchIndexer searchIndexer) where T : Resource
         {
+            ArgumentNullException.ThrowIfNull(resource);
+            ArgumentNullException.ThrowIfNull(searchIndexer);
+
             // 1. Generate ID if missing
             if (string.IsNullOrEmpty(resource.Id))
                 resource.Id = Guid.NewGuid().ToString();
@@ -45,7 +46,7 @@ namespace DMRS.Api.Infrastructure
 
             _context.FhirResources.Add(dbEntity);
 
-            var indices = _searchIndexer.Extract(resource);
+            var indices = searchIndexer.Extract(resource);
             _context.ResourceIndices.AddRange(indices);
 
             await _context.SaveChangesAsync();
@@ -114,12 +115,13 @@ namespace DMRS.Api.Infrastructure
             return resources.Select(r => _deserializer.Deserialize<T>(r.RawContent)).ToList();
         }
 
-        public async System.Threading.Tasks.Task UpdateAsync<T>(string id, T resource) where T : Resource
+        public async System.Threading.Tasks.Task UpdateAsync<T>(string id, T resource, ISearchIndexer searchIndexer) where T : Resource
         {
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentException("Resource id is required.", nameof(id));
 
             ArgumentNullException.ThrowIfNull(resource);
+            ArgumentNullException.ThrowIfNull(searchIndexer);
 
             var resourceType = typeof(T).Name;
             var utcNow = DateTimeOffset.UtcNow;
@@ -147,7 +149,7 @@ namespace DMRS.Api.Infrastructure
                 .Where(i => i.ResourceType == resourceType && i.ResourceId == id)
                 .ExecuteDeleteAsync();
 
-            var indices = _searchIndexer.Extract(resource);
+            var indices = searchIndexer.Extract(resource);
             if (indices.Count > 0)
             {
                 _context.ResourceIndices.AddRange(indices);

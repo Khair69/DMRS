@@ -2,12 +2,13 @@
 using DMRS.Api.Domain.Interfaces;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
+using DMRS.Api.Infrastructure.Search;
 
 namespace DMRS.Api.Controllers
 {
     public class PatientController : FhirBaseController<Patient>
     {
-        public PatientController(IFhirRepository repository, ILogger<PatientController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator) : base(repository, logger, deserializer, validator)
+        public PatientController(IFhirRepository repository, ILogger<PatientController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, PatientIndexer searchIndexer) : base(repository, logger, deserializer, validator, searchIndexer)
         {
         }
     }
