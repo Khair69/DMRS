@@ -4,7 +4,7 @@ using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 using DMRS.Api.Infrastructure.Search;
 
-namespace DMRS.Api.Controllers
+namespace DMRS.Api.Controllers.Administrativ
 {
     public class PractitionerController : FhirBaseController<Practitioner>
     {
