@@ -64,6 +64,11 @@ namespace DMRS.Api.Controllers
                 _logger.LogError(ex, "Failed to deserialize FHIR content for {ResourceType}", typeof(T).Name);
                 return BadRequest("Invalid FHIR content: " + ex.Message);
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to deserialize FHIR content for {ResourceType}", typeof(T).Name);
+                return BadRequest("Invalid FHIR content: " + ex.Message);
+            }
 
             if (resource == null) return BadRequest("No resource provided.");
 
