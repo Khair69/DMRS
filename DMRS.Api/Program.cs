@@ -49,6 +49,8 @@ builder.Services.AddScoped<IFhirRepository, FhirRepository>();
 builder.Services.AddScoped<PatientIndexer>();
 builder.Services.AddScoped<PractitionerIndexer>();
 builder.Services.AddScoped<OrganizationIndexer>();
+builder.Services.AddScoped<EncounterIndexer>();
+builder.Services.AddScoped<LocationIndexer>();
 builder.Services.AddSingleton<IFhirValidatorService, FhirValidatorService>();
 
 builder.Services.AddSingleton<FhirJsonSerializer>(new FhirJsonSerializer());

@@ -12,7 +12,6 @@ namespace DMRS.Api.Infrastructure.Search
 
             if (resource is Practitioner practitioner)
             {
-                // Index the ID
                 indices.Add(new ResourceIndex
                 {
                     ResourceType = "Practitioner",
@@ -21,7 +20,14 @@ namespace DMRS.Api.Infrastructure.Search
                     Value = practitioner.Id
                 });
 
-                // Index Gender
+                indices.Add(new ResourceIndex
+                {
+                    ResourceType = "Practitioner",
+                    ResourceId = practitioner.Id,
+                    SearchParamCode = "_lastUpdated",
+                    Value = practitioner.Meta.LastUpdated?.ToString("o") ?? string.Empty
+                });
+
                 if (practitioner.Gender.HasValue)
                 {
                     indices.Add(new ResourceIndex
@@ -33,7 +39,14 @@ namespace DMRS.Api.Infrastructure.Search
                     });
                 }
 
-                // Index Family Name (Last Name)
+                //indices.Add(new ResourceIndex
+                //{
+                //    ResourceType = "Patient",
+                //    ResourceId = patient.Id,
+                //    SearchParamCode = "nationalId",
+                //    Value = patient.Identifier
+                //});
+
                 foreach (var name in practitioner.Name)
                 {
                     if (!string.IsNullOrEmpty(name.Family))

@@ -22,11 +22,27 @@ namespace DMRS.Api.Infrastructure.Search
 
                 indices.Add(new ResourceIndex
                 {
+                    ResourceType = "Oranization",
+                    ResourceId = organization.Id,
+                    SearchParamCode = "_lastUpdated",
+                    Value = organization.Meta.LastUpdated?.ToString("o") ?? string.Empty
+                });
+
+                indices.Add(new ResourceIndex
+                {
                     ResourceType = "Organization",
                     ResourceId = organization.Id,
                     SearchParamCode = "name",
                     Value = organization.Name.ToLower()
                 });
+
+                //indices.Add(new ResourceIndex
+                //{
+                //    ResourceType = "Organization",
+                //    ResourceId = organization.Id,
+                //    SearchParamCode = "address",
+                //    Value = organization.Contact.
+                //});
             }
             return indices;
 

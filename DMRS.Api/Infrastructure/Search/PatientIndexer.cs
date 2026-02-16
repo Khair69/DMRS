@@ -12,7 +12,6 @@ namespace DMRS.Api.Infrastructure.Search
 
             if (resource is Patient patient)
             {
-                // Index the ID
                 indices.Add(new ResourceIndex
                 {
                     ResourceType = "Patient",
@@ -21,7 +20,41 @@ namespace DMRS.Api.Infrastructure.Search
                     Value = patient.Id
                 });
 
-                // Index Gender
+                indices.Add(new ResourceIndex
+                {
+                    ResourceType = "Patient",
+                    ResourceId = patient.Id,
+                    SearchParamCode = "_lastUpdated",
+                    Value = patient.Meta.LastUpdated?.ToString("o") ?? string.Empty
+                });
+
+                indices.Add(new ResourceIndex
+                {
+                    ResourceType = "Patient",
+                    ResourceId = patient.Id,
+                    SearchParamCode = "birthdate",
+                    Value = patient.BirthDate
+                });
+
+                if (patient.Telecom.Count() > 0)
+                {
+                    indices.Add(new ResourceIndex
+                    {
+                        ResourceType = "Patient",
+                        ResourceId = patient.Id,
+                        SearchParamCode = "telecom",
+                        Value = patient.Telecom.FirstOrDefault().Value
+                    });
+                }
+
+                //indices.Add(new ResourceIndex
+                //{
+                //    ResourceType = "Patient",
+                //    ResourceId = patient.Id,
+                //    SearchParamCode = "nationalId",
+                //    Value = patient.Identifier
+                //});
+
                 if (patient.Gender.HasValue)
                 {
                     indices.Add(new ResourceIndex
@@ -33,7 +66,6 @@ namespace DMRS.Api.Infrastructure.Search
                     });
                 }
 
-                // Index Family Name (Last Name)
                 foreach (var name in patient.Name)
                 {
                     if (!string.IsNullOrEmpty(name.Family))

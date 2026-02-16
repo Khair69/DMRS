@@ -4,7 +4,7 @@ using DMRS.Api.Infrastructure.Search;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 
-namespace DMRS.Api.Controllers.Administrativ
+namespace DMRS.Api.Controllers.Administrative
 {
     public class OrganizationController : FhirBaseController<Organization>
     {
