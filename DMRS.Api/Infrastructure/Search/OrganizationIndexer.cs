@@ -6,43 +6,71 @@ namespace DMRS.Api.Infrastructure.Search
 {
     public class OrganizationIndexer : ISearchIndexer
     {
+        private static void AddIndex(List<ResourceIndex> indices, string resourceId, string code, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+
+            indices.Add(new ResourceIndex
+            {
+                ResourceType = "Organization",
+                ResourceId = resourceId,
+                SearchParamCode = code,
+                Value = value.ToLowerInvariant()
+            });
+        }
+
         public List<ResourceIndex> Extract(Resource resource)
         {
             var indices = new List<ResourceIndex>();
 
             if (resource is Organization organization)
             {
-                indices.Add(new ResourceIndex
-                {
-                    ResourceType = "Organization",
-                    ResourceId = organization.Id,
-                    SearchParamCode = "_id",
-                    Value = organization.Id
-                });
+                AddIndex(indices, organization.Id, "_id", organization.Id);
+                AddIndex(indices, organization.Id, "_lastUpdated", organization.Meta?.LastUpdated?.ToString("o"));
+                AddIndex(indices, organization.Id, "active", organization.Active?.ToString());
+                AddIndex(indices, organization.Id, "name", organization.Name);
 
-                indices.Add(new ResourceIndex
-                {
-                    ResourceType = "Oranization",
-                    ResourceId = organization.Id,
-                    SearchParamCode = "_lastUpdated",
-                    Value = organization.Meta.LastUpdated?.ToString("o") ?? string.Empty
-                });
+                foreach (var alias in organization.Alias)
+                    AddIndex(indices, organization.Id, "name", alias);
 
-                indices.Add(new ResourceIndex
+                foreach (var identifier in organization.Identifier)
                 {
-                    ResourceType = "Organization",
-                    ResourceId = organization.Id,
-                    SearchParamCode = "name",
-                    Value = organization.Name.ToLower()
-                });
+                    AddIndex(indices, organization.Id, "identifier", identifier.Value);
+                    AddIndex(indices, organization.Id, "identifier", string.IsNullOrWhiteSpace(identifier.System) ? null : $"{identifier.System}|{identifier.Value}");
+                }
 
-                //indices.Add(new ResourceIndex
-                //{
-                //    ResourceType = "Organization",
-                //    ResourceId = organization.Id,
-                //    SearchParamCode = "address",
-                //    Value = organization.Contact.
-                //});
+                foreach (var type in organization.Type)
+                {
+                    AddIndex(indices, organization.Id, "type", type.Text);
+                    foreach (var coding in type.Coding)
+                        AddIndex(indices, organization.Id, "type", coding.Code);
+                }
+
+                AddIndex(indices, organization.Id, "partof", organization.PartOf?.Reference);
+
+                foreach (var endpoint in organization.Endpoint)
+                    AddIndex(indices, organization.Id, "endpoint", endpoint.Reference);
+
+                foreach (var contact in organization.Contact)
+                {
+                    foreach (var telecom in contact.Telecom)
+                    {
+                        AddIndex(indices, organization.Id, "telecom", telecom.Value);
+                        if (telecom.System == ContactPoint.ContactPointSystem.Phone)
+                            AddIndex(indices, organization.Id, "phone", telecom.Value);
+                        if (telecom.System == ContactPoint.ContactPointSystem.Email)
+                            AddIndex(indices, organization.Id, "email", telecom.Value);
+                    }
+                }
+
+                foreach (var contact in organization.Contact)
+                {
+                    AddIndex(indices, organization.Id, "address", contact.Address.Text);
+                    AddIndex(indices, organization.Id, "address-city", contact.Address.City);
+                    AddIndex(indices, organization.Id, "address-state", contact.Address.State);
+                    AddIndex(indices, organization.Id, "address-postalcode", contact.Address.PostalCode);
+                    AddIndex(indices, organization.Id, "address-country", contact.Address.Country);
+                }
             }
             return indices;
 

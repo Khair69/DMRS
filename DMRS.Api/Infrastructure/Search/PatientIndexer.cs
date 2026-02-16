@@ -6,89 +6,90 @@ namespace DMRS.Api.Infrastructure.Search
 {
     public class PatientIndexer : ISearchIndexer
     {
+        private static void AddIndex(List<ResourceIndex> indices, string resourceId, string code, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+
+            indices.Add(new ResourceIndex
+            {
+                ResourceType = "Patient",
+                ResourceId = resourceId,
+                SearchParamCode = code,
+                Value = value.ToLowerInvariant()
+            });
+        }
+
         public List<ResourceIndex> Extract(Resource resource)
         {
             var indices = new List<ResourceIndex>();
 
             if (resource is Patient patient)
             {
-                indices.Add(new ResourceIndex
-                {
-                    ResourceType = "Patient",
-                    ResourceId = patient.Id,
-                    SearchParamCode = "_id",
-                    Value = patient.Id
-                });
-
-                indices.Add(new ResourceIndex
-                {
-                    ResourceType = "Patient",
-                    ResourceId = patient.Id,
-                    SearchParamCode = "_lastUpdated",
-                    Value = patient.Meta.LastUpdated?.ToString("o") ?? string.Empty
-                });
-
-                indices.Add(new ResourceIndex
-                {
-                    ResourceType = "Patient",
-                    ResourceId = patient.Id,
-                    SearchParamCode = "birthdate",
-                    Value = patient.BirthDate
-                });
-
-                if (patient.Telecom.Count() > 0)
-                {
-                    indices.Add(new ResourceIndex
-                    {
-                        ResourceType = "Patient",
-                        ResourceId = patient.Id,
-                        SearchParamCode = "telecom",
-                        Value = patient.Telecom.FirstOrDefault().Value
-                    });
-                }
-
-                //indices.Add(new ResourceIndex
-                //{
-                //    ResourceType = "Patient",
-                //    ResourceId = patient.Id,
-                //    SearchParamCode = "nationalId",
-                //    Value = patient.Identifier
-                //});
+                AddIndex(indices, patient.Id, "_id", patient.Id);
+                AddIndex(indices, patient.Id, "_lastUpdated", patient.Meta?.LastUpdated?.ToString("o"));
+                AddIndex(indices, patient.Id, "active", patient.Active?.ToString());
+                AddIndex(indices, patient.Id, "birthdate", patient.BirthDate);
+                AddIndex(indices, patient.Id, "deceased", patient.Deceased is FhirBoolean deceasedBoolean ? deceasedBoolean.Value?.ToString() : null);
+                AddIndex(indices, patient.Id, "death-date", patient.Deceased is FhirDateTime deathDate ? deathDate.Value : null);
 
                 if (patient.Gender.HasValue)
+                    AddIndex(indices, patient.Id, "gender", patient.Gender.Value.ToString());
+
+                foreach (var identifier in patient.Identifier)
                 {
-                    indices.Add(new ResourceIndex
-                    {
-                        ResourceType = "Patient",
-                        ResourceId = patient.Id,
-                        SearchParamCode = "gender",
-                        Value = patient.Gender.ToString().ToLower()
-                    });
+                    AddIndex(indices, patient.Id, "identifier", identifier.Value);
+                    AddIndex(indices, patient.Id, "identifier", string.IsNullOrWhiteSpace(identifier.System) ? null : $"{identifier.System}|{identifier.Value}");
+                }
+
+                foreach (var telecom in patient.Telecom)
+                {
+                    AddIndex(indices, patient.Id, "telecom", telecom.Value);
+
+                    if (telecom.System == ContactPoint.ContactPointSystem.Phone)
+                        AddIndex(indices, patient.Id, "phone", telecom.Value);
+
+                    if (telecom.System == ContactPoint.ContactPointSystem.Email)
+                        AddIndex(indices, patient.Id, "email", telecom.Value);
+                }
+
+                foreach (var address in patient.Address)
+                {
+                    AddIndex(indices, patient.Id, "address", address.Text);
+                    AddIndex(indices, patient.Id, "address-city", address.City);
+                    AddIndex(indices, patient.Id, "address-state", address.State);
+                    AddIndex(indices, patient.Id, "address-postalcode", address.PostalCode);
+                    AddIndex(indices, patient.Id, "address-country", address.Country);
+                    AddIndex(indices, patient.Id, "address-use", address.Use.ToString());
                 }
 
                 foreach (var name in patient.Name)
                 {
-                    if (!string.IsNullOrEmpty(name.Family))
+                    AddIndex(indices, patient.Id, "name", name.Text);
+                    AddIndex(indices, patient.Id, "family", name.Family);
+
+                    foreach (var given in name.Given)
                     {
-                        indices.Add(new ResourceIndex
-                        {
-                            ResourceType = "Patient",
-                            ResourceId = patient.Id,
-                            SearchParamCode = "family",
-                            Value = name.Family.ToLower()
-                        });
-                    }
-                    if (!string.IsNullOrEmpty(name.Given.First()))
-                    {
-                        indices.Add(new ResourceIndex
-                        {
-                            ResourceType = "Patient",
-                            ResourceId = patient.Id,
-                            SearchParamCode = "given",
-                            Value = name.Given.First().ToLower()
-                        });
+                        AddIndex(indices, patient.Id, "given", given);
                     }
                 }
+
+                foreach (var communication in patient.Communication)
+                {
+                    AddIndex(indices, patient.Id, "language", communication.Language?.Text);
+
+                    foreach (var coding in communication.Language?.Coding ?? [])
+                    {
+                        AddIndex(indices, patient.Id, "language", coding.Code);
+                    }
+                }
+
+                foreach (var practitioner in patient.GeneralPractitioner)
+                    AddIndex(indices, patient.Id, "general-practitioner", practitioner.Reference);
+
+                AddIndex(indices, patient.Id, "organization", patient.ManagingOrganization?.Reference);
+
+                foreach (var link in patient.Link)
+                    AddIndex(indices, patient.Id, "link", link.Other?.Reference);
             }
             return indices;
         }
