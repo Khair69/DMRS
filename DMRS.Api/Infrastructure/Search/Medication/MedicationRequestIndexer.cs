@@ -34,12 +34,11 @@ namespace DMRS.Api.Infrastructure.Search.Medication
 
             AddIndex(indices, medicationRequest.Id, "group-or-identifier", medicationRequest.GroupIdentifier?.Value);
 
-            AddIndex(indices, medicationRequest.Id, "medication", medicationRequest.Medication is ResourceReference medRef ? medRef.Reference : null);
-            AddIndex(indices, medicationRequest.Id, "code", medicationRequest.Medication is CodeableConcept medCodeableConcept ? medCodeableConcept.Text : null);
+            AddIndex(indices, medicationRequest.Id, "medication", medicationRequest.Medication?.Reference?.Reference);
+            AddIndex(indices, medicationRequest.Id, "code", medicationRequest.Medication?.Concept?.Text);
 
-            if (medicationRequest.Medication is CodeableConcept medicationCodeableConcept)
-                foreach (var coding in medicationCodeableConcept.Coding)
-                    AddIndex(indices, medicationRequest.Id, "code", coding.Code);
+            foreach (var coding in medicationRequest.Medication?.Concept?.Coding ?? [])
+                AddIndex(indices, medicationRequest.Id, "code", coding.Code);
 
             foreach (var category in medicationRequest.Category)
             {

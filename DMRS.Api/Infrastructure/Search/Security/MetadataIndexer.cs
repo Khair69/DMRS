@@ -1,14 +1,47 @@
-﻿using DMRS.Api.Application.Interfaces;
-using DMRS.Api.Domain;
+﻿using DMRS.Api.Domain;
 using Hl7.Fhir.Model;
 
 namespace DMRS.Api.Infrastructure.Search.Security
 {
-    public class MetadataIndexer : ISearchIndexer
+    public class MetadataIndexer : ResourceSearchIndexerBase
     {
-        public List<ResourceIndex> Extract(Resource resource)
+        protected override string ResourceType => "Provenance";
+
+        public override List<ResourceIndex> Extract(Resource resource)
         {
-            throw new NotImplementedException();
+            var indices = new List<ResourceIndex>();
+
+            if (resource is not Provenance provenance)
+                return indices;
+
+            AddIndex(indices, provenance.Id, "_id", provenance.Id);
+            AddIndex(indices, provenance.Id, "_lastUpdated", provenance.Meta?.LastUpdated?.ToString("o"));
+            AddIndex(indices, provenance.Id, "recorded", provenance.RecordedElement?.Value?.ToString("o"));
+            AddIndex(indices, provenance.Id, "location", provenance.Location?.Reference);
+
+            AddIndex(indices, provenance.Id, "activity", provenance.Activity?.Text);
+            foreach (var coding in provenance.Activity?.Coding ?? [])
+                AddIndex(indices, provenance.Id, "activity", coding.Code);
+
+            AddIndex(indices, provenance.Id, "when", provenance.Occurred is Period occurredPeriod ? occurredPeriod.Start : null);
+            AddIndex(indices, provenance.Id, "when", provenance.Occurred is Period endOccurredPeriod ? endOccurredPeriod.End : null);
+            AddIndex(indices, provenance.Id, "when", provenance.Occurred is FhirDateTime occurredDate ? occurredDate.Value : null);
+
+            foreach (var target in provenance.Target)
+            {
+                AddIndex(indices, provenance.Id, "target", target.Reference);
+
+                if (target.Reference is string targetRef && targetRef.StartsWith("patient/", StringComparison.OrdinalIgnoreCase))
+                    AddIndex(indices, provenance.Id, "patient", targetRef);
+            }
+
+            foreach (var agent in provenance.Agent)
+                AddIndex(indices, provenance.Id, "agent", agent.Who?.Reference);
+
+            foreach (var entity in provenance.Entity)
+                AddIndex(indices, provenance.Id, "entity", entity.What?.Reference);
+
+            return indices;
         }
     }
 }
