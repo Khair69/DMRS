@@ -2,7 +2,7 @@
 using DMRS.Api.Domain.Interfaces;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
-using DMRS.Api.Infrastructure.Search;
+using DMRS.Api.Infrastructure.Search.Administrative;
 
 namespace DMRS.Api.Controllers.Administrative
 {

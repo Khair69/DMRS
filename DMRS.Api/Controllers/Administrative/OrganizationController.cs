@@ -1,6 +1,6 @@
 ﻿using DMRS.Api.Application.Interfaces;
 using DMRS.Api.Domain.Interfaces;
-using DMRS.Api.Infrastructure.Search;
+using DMRS.Api.Infrastructure.Search.Administrative;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 

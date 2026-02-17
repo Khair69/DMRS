@@ -2,7 +2,7 @@
 using DMRS.Api.Domain;
 using Hl7.Fhir.Model;
 
-namespace DMRS.Api.Infrastructure.Search
+namespace DMRS.Api.Infrastructure.Search.Administrative
 {
     public class PatientIndexer : ISearchIndexer
     {
