@@ -6,9 +6,61 @@ namespace DMRS.Api.Infrastructure.Search.Medication
 {
     public class MedicationRequestIndexer : ISearchIndexer
     {
+        private static void AddIndex(List<ResourceIndex> indices, string resourceId, string code, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+
+            indices.Add(new ResourceIndex
+            {
+                ResourceType = "MedicationRequest",
+                ResourceId = resourceId,
+                SearchParamCode = code,
+                Value = value.ToLowerInvariant()
+            });
+        }
+
         public List<ResourceIndex> Extract(Resource resource)
         {
-            throw new NotImplementedException();
+            var indices = new List<ResourceIndex>();
+
+            if (resource is not MedicationRequest medicationRequest)
+                return indices;
+
+            AddIndex(indices, medicationRequest.Id, "_id", medicationRequest.Id);
+            AddIndex(indices, medicationRequest.Id, "_lastUpdated", medicationRequest.Meta?.LastUpdated?.ToString("o"));
+            AddIndex(indices, medicationRequest.Id, "status", medicationRequest.Status?.ToString());
+            AddIndex(indices, medicationRequest.Id, "intent", medicationRequest.Intent?.ToString());
+            AddIndex(indices, medicationRequest.Id, "priority", medicationRequest.Priority?.ToString());
+            AddIndex(indices, medicationRequest.Id, "subject", medicationRequest.Subject?.Reference);
+            AddIndex(indices, medicationRequest.Id, "patient", medicationRequest.Subject?.Reference);
+            AddIndex(indices, medicationRequest.Id, "encounter", medicationRequest.Encounter?.Reference);
+            AddIndex(indices, medicationRequest.Id, "authoredon", medicationRequest.AuthoredOnElement?.Value);
+            AddIndex(indices, medicationRequest.Id, "requester", medicationRequest.Requester?.Reference);
+            AddIndex(indices, medicationRequest.Id, "performer", medicationRequest.Performer?.Reference);
+
+            foreach (var identifier in medicationRequest.Identifier)
+            {
+                AddIndex(indices, medicationRequest.Id, "identifier", identifier.Value);
+                AddIndex(indices, medicationRequest.Id, "identifier", string.IsNullOrWhiteSpace(identifier.System) ? null : $"{identifier.System}|{identifier.Value}");
+            }
+
+            AddIndex(indices, medicationRequest.Id, "group-or-identifier", medicationRequest.GroupIdentifier?.Value);
+
+            AddIndex(indices, medicationRequest.Id, "medication", medicationRequest.Medication is ResourceReference medRef ? medRef.Reference : null);
+            AddIndex(indices, medicationRequest.Id, "code", medicationRequest.Medication is CodeableConcept medCodeableConcept ? medCodeableConcept.Text : null);
+
+            if (medicationRequest.Medication is CodeableConcept medicationCodeableConcept)
+                foreach (var coding in medicationCodeableConcept.Coding)
+                    AddIndex(indices, medicationRequest.Id, "code", coding.Code);
+
+            foreach (var category in medicationRequest.Category)
+            {
+                AddIndex(indices, medicationRequest.Id, "category", category.Text);
+                foreach (var coding in category.Coding)
+                    AddIndex(indices, medicationRequest.Id, "category", coding.Code);
+            }
+
+            return indices;
         }
     }
 }
