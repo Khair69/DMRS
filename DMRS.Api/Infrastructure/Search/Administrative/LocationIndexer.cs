@@ -1,25 +1,12 @@
-﻿using DMRS.Api.Application.Interfaces;
-using DMRS.Api.Domain;
+﻿using DMRS.Api.Domain;
 using Hl7.Fhir.Model;
 
 namespace DMRS.Api.Infrastructure.Search.Administrative
 {
-    public class LocationIndexer : ISearchIndexer
+    public class LocationIndexer : ResourceSearchIndexerBase
     {
-        private static void AddIndex(List<ResourceIndex> indices, string resourceId, string code, string? value)
-        {
-            if (string.IsNullOrWhiteSpace(value)) return;
-
-            indices.Add(new ResourceIndex
-            {
-                ResourceType = "Location",
-                ResourceId = resourceId,
-                SearchParamCode = code,
-                Value = value.ToLowerInvariant()
-            });
-        }
-
-        public List<ResourceIndex> Extract(Resource resource)
+        protected override string ResourceType => "Location";
+        public override List<ResourceIndex> Extract(Resource resource)
         {
             var indices = new List<ResourceIndex>();
 
