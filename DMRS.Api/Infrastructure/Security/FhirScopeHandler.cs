@@ -5,48 +5,67 @@ namespace DMRS.Api.Infrastructure.Security
     public class FhirScopeHandler : AuthorizationHandler<FhirScopeRequirement>
     {
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly ISmartAuthorizationService _authorizationService;
 
-        public FhirScopeHandler(IHttpContextAccessor contextAccessor)
+        public FhirScopeHandler(IHttpContextAccessor contextAccessor, ISmartAuthorizationService authorizationService)
         {
             _contextAccessor = contextAccessor;
+            _authorizationService = authorizationService;
         }
 
-        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, FhirScopeRequirement requirement)
+        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, FhirScopeRequirement requirement)
         {
             var httpContext = _contextAccessor.HttpContext;
-            if (httpContext == null) return Task.CompletedTask;
+            if (httpContext == null)
+            {
+                return;
+            }
 
-            var method = httpContext.Request.Method;
-            string action = method switch
+            var action = MapAction(httpContext.Request.Method);
+            var resourceType = httpContext.Request.RouteValues["controller"]?.ToString();
+
+            if (string.IsNullOrWhiteSpace(action) || string.IsNullOrWhiteSpace(resourceType))
+            {
+                return;
+            }
+
+            var accessLevel = _authorizationService.GetAccessLevel(context.User, resourceType, action);
+            if (accessLevel == SmartAccessLevel.None)
+            {
+                return;
+            }
+
+            if (accessLevel == SmartAccessLevel.Patient)
+            {
+                var patientId = _authorizationService.ResolvePatientId(context.User);
+                if (string.IsNullOrWhiteSpace(patientId))
+                {
+                    return;
+                }
+
+                var id = httpContext.Request.RouteValues["id"]?.ToString();
+                if (!string.IsNullOrWhiteSpace(id) && httpContext.Request.Method != HttpMethods.Post)
+                {
+                    var isOwned = await _authorizationService.IsResourceOwnedByPatientAsync(resourceType, id, patientId);
+                    if (!isOwned)
+                    {
+                        return;
+                    }
+                }
+            }
+
+            context.Succeed(requirement);
+        }
+
+        private static string MapAction(string method)
+        {
+            return method switch
             {
                 "GET" => "read",
-                "POST" => "write",
-                "PUT" or "PATCH" => "write",
+                "POST" or "PUT" or "PATCH" => "write",
                 "DELETE" => "delete",
                 _ => string.Empty
             };
-
-            var resourceName = httpContext.Request.RouteValues["controller"]?.ToString();
-
-            if (string.IsNullOrEmpty(action) || string.IsNullOrEmpty(resourceName))
-            {
-                return Task.CompletedTask;
-            }
-
-            var specificScope = $"user/{resourceName}.{action}";
-            var wildcardScope = $"user/*.{action}";
-
-            var scopeClaim = context.User.FindFirst("scope")?.Value;
-            if (string.IsNullOrEmpty(scopeClaim)) return Task.CompletedTask;
-
-            var userScopes = scopeClaim.Split(' ');
-
-            if (userScopes.Contains(specificScope) || userScopes.Contains(wildcardScope))
-            {
-                context.Succeed(requirement);
-            }
-
-            return Task.CompletedTask;
         }
     }
 }

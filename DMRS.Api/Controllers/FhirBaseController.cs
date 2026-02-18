@@ -1,5 +1,6 @@
 ﻿using DMRS.Api.Application.Interfaces;
 using DMRS.Api.Domain.Interfaces;
+using DMRS.Api.Infrastructure.Security;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 using Microsoft.AspNetCore.Authorization;
@@ -17,14 +18,22 @@ namespace DMRS.Api.Controllers
         protected readonly FhirJsonDeserializer _deserializer;
         protected readonly IFhirValidatorService _validator;
         protected readonly ISearchIndexer _searchIndexer;
+        protected readonly ISmartAuthorizationService _authorizationService;
 
-        public FhirBaseController(IFhirRepository repository, ILogger logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, ISearchIndexer searchIndexer)
+        public FhirBaseController(
+            IFhirRepository repository,
+            ILogger logger,
+            FhirJsonDeserializer deserializer,
+            IFhirValidatorService validator,
+            ISearchIndexer searchIndexer,
+            ISmartAuthorizationService authorizationService)
         {
             _repository = repository;
             _logger = logger;
             _deserializer = deserializer;
             _validator = validator;
             _searchIndexer = searchIndexer;
+            _authorizationService = authorizationService;
         }
 
         [HttpGet("{id}")]
@@ -32,6 +41,12 @@ namespace DMRS.Api.Controllers
         {
             var resource = await _repository.GetAsync<T>(id);
             if (resource == null) return NotFound();
+
+            if (!CanAccessResource(resource, "read"))
+            {
+                return Forbid();
+            }
+
             return Ok(resource);
         }
 
@@ -45,8 +60,11 @@ namespace DMRS.Api.Controllers
         public virtual async Task<IActionResult> Search(string searchParam, string value)
         {
             var resources = await _repository.SearchAsync<T>(searchParam, value);
-            if (resources.Count == 0) return NotFound();
-            return Ok(resources);
+
+            var filteredResources = resources.Where(r => CanAccessResource(r, "read")).ToList();
+            if (filteredResources.Count == 0) return NotFound();
+
+            return Ok(filteredResources);
         }
 
         [HttpPost]
@@ -71,6 +89,11 @@ namespace DMRS.Api.Controllers
             }
 
             if (resource == null) return BadRequest("No resource provided.");
+
+            if (!CanAccessResource(resource, "write"))
+            {
+                return Forbid();
+            }
 
             var outcome = await _validator.ValidateAsync(resource);
 
@@ -110,6 +133,11 @@ namespace DMRS.Api.Controllers
             if (resource == null) return BadRequest("No resource provided.");
             if (id != resource.Id) return BadRequest("ID mismatch");
 
+            if (!CanAccessResource(resource, "write"))
+            {
+                return Forbid();
+            }
+
             var outcome = await _validator.ValidateAsync(resource);
             if (!outcome.Success)
             {
@@ -146,6 +174,17 @@ namespace DMRS.Api.Controllers
         [HttpDelete("{id}")]
         public virtual async Task<IActionResult> Delete(string id)
         {
+            var existingResource = await _repository.GetAsync<T>(id);
+            if (existingResource == null)
+            {
+                return NotFound();
+            }
+
+            if (!CanAccessResource(existingResource, "write"))
+            {
+                return Forbid();
+            }
+
             try
             {
                 await _repository.DeleteAsync(typeof(T).Name, id);
@@ -170,6 +209,29 @@ namespace DMRS.Api.Controllers
         public virtual async Task<IActionResult> History(string id)
         {
             return Ok();
+        }
+
+        private bool CanAccessResource(T resource, string action)
+        {
+            var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, action);
+            if (accessLevel == SmartAccessLevel.None)
+            {
+                return false;
+            }
+
+            if (accessLevel is SmartAccessLevel.System or SmartAccessLevel.User)
+            {
+                return true;
+            }
+
+            var patientId = _authorizationService.ResolvePatientId(User);
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                return false;
+            }
+
+            var indices = _searchIndexer.Extract(resource);
+            return _authorizationService.IsResourceOwnedByPatient(resource, patientId, indices);
         }
     }
 }

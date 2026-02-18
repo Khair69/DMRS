@@ -8,7 +8,8 @@ namespace DMRS.Api.Infrastructure.Security
         {
             services.AddHttpContextAccessor();
 
-            services.AddSingleton<IAuthorizationHandler, FhirScopeHandler>();
+            services.AddScoped<ISmartAuthorizationService, SmartAuthorizationService>();
+            services.AddScoped<IAuthorizationHandler, FhirScopeHandler>();
 
             services.AddAuthorization(options =>
             {
