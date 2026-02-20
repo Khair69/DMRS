@@ -52,6 +52,7 @@ builder.Services.AddFhirAuthorization();
 builder.Services.AddScoped<IFhirRepository, FhirRepository>();
 builder.Services.AddScoped<PatientIndexer>();
 builder.Services.AddScoped<PractitionerIndexer>();
+builder.Services.AddScoped<PractitionerRoleIndexer>();
 builder.Services.AddScoped<OrganizationIndexer>();
 builder.Services.AddScoped<EncounterIndexer>();
 builder.Services.AddScoped<LocationIndexer>();

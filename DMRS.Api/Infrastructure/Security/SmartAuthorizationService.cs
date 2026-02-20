@@ -18,8 +18,12 @@ namespace DMRS.Api.Infrastructure.Security
     {
         SmartAccessLevel GetAccessLevel(ClaimsPrincipal user, string resourceType, string action);
         string? ResolvePatientId(ClaimsPrincipal user);
+        string? ResolvePractitionerId(ClaimsPrincipal user);
+        Task<IReadOnlyCollection<string>> ResolveOrganizationIdsAsync(ClaimsPrincipal user);
         Task<bool> IsResourceOwnedByPatientAsync(string resourceType, string resourceId, string patientId);
         bool IsResourceOwnedByPatient(Resource resource, string patientId, IEnumerable<ResourceIndex> resourceIndices);
+        Task<bool> IsResourceOwnedByOrganizationsAsync(string resourceType, string resourceId, IReadOnlyCollection<string> organizationIds);
+        bool IsResourceOwnedByOrganizations(Resource resource, IEnumerable<ResourceIndex> resourceIndices, IReadOnlyCollection<string> organizationIds);
     }
 
     public sealed class SmartAuthorizationService : ISmartAuthorizationService
@@ -30,6 +34,23 @@ namespace DMRS.Api.Infrastructure.Security
             "patient_id",
             "launch_patient",
             "launch/patient"
+        ];
+
+        private static readonly string[] PractitionerIdClaimTypes =
+        [
+            "practitioner",
+            "practitioner_id",
+            "launch_practitioner",
+            "launch/practitioner"
+        ];
+
+        private static readonly string[] OrganizationIdClaimTypes =
+        [
+            "organization",
+            "organization_id",
+            "org_id",
+            "launch_organization",
+            "launch/organization"
         ];
 
         private readonly AppDbContext _dbContext;
@@ -70,13 +91,10 @@ namespace DMRS.Api.Infrastructure.Security
 
         public string? ResolvePatientId(ClaimsPrincipal user)
         {
-            foreach (var claimType in PatientIdClaimTypes)
+            var patientId = ResolveFirstClaimReference(user, PatientIdClaimTypes, "patient");
+            if (!string.IsNullOrWhiteSpace(patientId))
             {
-                var claimValue = user.FindFirst(claimType)?.Value;
-                if (!string.IsNullOrWhiteSpace(claimValue))
-                {
-                    return ParsePatientId(claimValue);
-                }
+                return patientId;
             }
 
             var fhirUser = user.FindFirst("fhirUser")?.Value;
@@ -86,6 +104,79 @@ namespace DMRS.Api.Infrastructure.Security
             }
 
             return null;
+        }
+
+        public string? ResolvePractitionerId(ClaimsPrincipal user)
+        {
+            var practitionerId = ResolveFirstClaimReference(user, PractitionerIdClaimTypes, "practitioner");
+            if (!string.IsNullOrWhiteSpace(practitionerId))
+            {
+                return practitionerId;
+            }
+
+            var fhirUser = user.FindFirst("fhirUser")?.Value;
+            if (!string.IsNullOrWhiteSpace(fhirUser))
+            {
+                return ParseReferenceId(fhirUser, "practitioner");
+            }
+
+            return null;
+        }
+
+        public async Task<IReadOnlyCollection<string>> ResolveOrganizationIdsAsync(ClaimsPrincipal user)
+        {
+            var organizations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var claimType in OrganizationIdClaimTypes)
+            {
+                foreach (var claim in user.FindAll(claimType))
+                {
+                    foreach (var value in SplitClaimValues(claim.Value))
+                    {
+                        var organizationId = ParseReferenceId(value, "organization");
+                        if (!string.IsNullOrWhiteSpace(organizationId))
+                        {
+                            organizations.Add(organizationId);
+                        }
+                    }
+                }
+            }
+
+            var practitionerId = ResolvePractitionerId(user);
+            if (!string.IsNullOrWhiteSpace(practitionerId))
+            {
+                var practitionerReference = $"practitioner/{practitionerId}";
+
+                var practitionerRoleIds = await _dbContext.ResourceIndices
+                    .Where(i => i.ResourceType == "PractitionerRole"
+                        && i.SearchParamCode == "practitioner"
+                        && i.Value == practitionerReference)
+                    .Select(i => i.ResourceId)
+                    .Distinct()
+                    .ToListAsync();
+
+                if (practitionerRoleIds.Count > 0)
+                {
+                    var roleOrganizations = await _dbContext.ResourceIndices
+                        .Where(i => i.ResourceType == "PractitionerRole"
+                            && practitionerRoleIds.Contains(i.ResourceId)
+                            && i.SearchParamCode == "organization")
+                        .Select(i => i.Value)
+                        .Distinct()
+                        .ToListAsync();
+
+                    foreach (var roleOrganization in roleOrganizations)
+                    {
+                        var organizationId = ParseReferenceId(roleOrganization, "organization");
+                        if (!string.IsNullOrWhiteSpace(organizationId))
+                        {
+                            organizations.Add(organizationId);
+                        }
+                    }
+                }
+            }
+
+            return organizations.ToList();
         }
 
         public async Task<bool> IsResourceOwnedByPatientAsync(string resourceType, string resourceId, string patientId)
@@ -115,6 +206,48 @@ namespace DMRS.Api.Infrastructure.Security
 
             return resourceIndices.Any(i => (i.SearchParamCode == "patient" || i.SearchParamCode == "subject")
                 && string.Equals(i.Value, expectedReference, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public async Task<bool> IsResourceOwnedByOrganizationsAsync(string resourceType, string resourceId, IReadOnlyCollection<string> organizationIds)
+        {
+            if (organizationIds.Count == 0)
+            {
+                return false;
+            }
+
+            if (resourceType.Equals("Organization", StringComparison.OrdinalIgnoreCase))
+            {
+                return organizationIds.Contains(resourceId, StringComparer.OrdinalIgnoreCase);
+            }
+
+            var expectedOrganizationReferences = organizationIds
+                .Select(i => $"organization/{i}".ToLowerInvariant())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            return await _dbContext.ResourceIndices
+                .AnyAsync(i => i.ResourceType == resourceType
+                    && i.ResourceId == resourceId
+                    && i.SearchParamCode == "organization"
+                    && expectedOrganizationReferences.Contains(i.Value));
+        }
+
+        public bool IsResourceOwnedByOrganizations(Resource resource, IEnumerable<ResourceIndex> resourceIndices, IReadOnlyCollection<string> organizationIds)
+        {
+            if (organizationIds.Count == 0)
+            {
+                return false;
+            }
+
+            if (resource is Organization organization)
+            {
+                return organizationIds.Contains(organization.Id, StringComparer.OrdinalIgnoreCase);
+            }
+
+            var expectedOrganizationReferences = organizationIds
+                .Select(i => $"organization/{i}".ToLowerInvariant())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            return resourceIndices.Any(i => i.SearchParamCode == "organization" && expectedOrganizationReferences.Contains(i.Value));
         }
 
         private static IEnumerable<string> GetScopes(ClaimsPrincipal user)
@@ -152,7 +285,31 @@ namespace DMRS.Api.Infrastructure.Security
                     || scopes.Contains($"{context}/*.delete")));
         }
 
+        private static string? ResolveFirstClaimReference(ClaimsPrincipal user, IEnumerable<string> claimTypes, string expectedResourceType)
+        {
+            foreach (var claimType in claimTypes)
+            {
+                var claimValue = user.FindFirst(claimType)?.Value;
+                if (!string.IsNullOrWhiteSpace(claimValue))
+                {
+                    return ParseReferenceId(claimValue, expectedResourceType);
+                }
+            }
+
+            return null;
+        }
+
+        private static IEnumerable<string> SplitClaimValues(string claimValue)
+        {
+            return claimValue.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
+
         private static string? ParsePatientId(string value)
+        {
+            return ParseReferenceId(value, "patient");
+        }
+
+        private static string? ParseReferenceId(string value, string expectedResourceType)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -160,14 +317,15 @@ namespace DMRS.Api.Infrastructure.Security
             }
 
             var trimmed = value.Trim();
-            if (trimmed.StartsWith("Patient/", StringComparison.OrdinalIgnoreCase))
+            var prefix = $"{expectedResourceType}/";
+            if (trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
             {
-                return trimmed["Patient/".Length..];
+                return trimmed[prefix.Length..];
             }
 
-            if (trimmed.StartsWith("patient/", StringComparison.OrdinalIgnoreCase))
+            if (trimmed.Contains('/'))
             {
-                return trimmed["patient/".Length..];
+                return null;
             }
 
             return trimmed;

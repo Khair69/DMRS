@@ -42,7 +42,7 @@ namespace DMRS.Api.Controllers
             var resource = await _repository.GetAsync<T>(id);
             if (resource == null) return NotFound();
 
-            if (!CanAccessResource(resource, "read"))
+            if (!await CanAccessResource(resource, "read"))
             {
                 return Forbid();
             }
@@ -61,7 +61,14 @@ namespace DMRS.Api.Controllers
         {
             var resources = await _repository.SearchAsync<T>(searchParam, value);
 
-            var filteredResources = resources.Where(r => CanAccessResource(r, "read")).ToList();
+            var filteredResources = new List<T>();
+            foreach (var resource in resources)
+            {
+                if (await CanAccessResource(resource, "read"))
+                {
+                    filteredResources.Add(resource);
+                }
+            }
             if (filteredResources.Count == 0) return NotFound();
 
             return Ok(filteredResources);
@@ -90,7 +97,7 @@ namespace DMRS.Api.Controllers
 
             if (resource == null) return BadRequest("No resource provided.");
 
-            if (!CanAccessResource(resource, "write"))
+            if (!await CanAccessResource(resource, "write"))
             {
                 return Forbid();
             }
@@ -133,7 +140,7 @@ namespace DMRS.Api.Controllers
             if (resource == null) return BadRequest("No resource provided.");
             if (id != resource.Id) return BadRequest("ID mismatch");
 
-            if (!CanAccessResource(resource, "write"))
+            if (!await CanAccessResource(resource, "write"))
             {
                 return Forbid();
             }
@@ -180,7 +187,7 @@ namespace DMRS.Api.Controllers
                 return NotFound();
             }
 
-            if (!CanAccessResource(existingResource, "write"))
+            if (!await CanAccessResource(existingResource, "write"))
             {
                 return Forbid();
             }
@@ -211,7 +218,7 @@ namespace DMRS.Api.Controllers
             return Ok();
         }
 
-        private bool CanAccessResource(T resource, string action)
+        private async Task<bool> CanAccessResource(T resource, string action)
         {
             var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, action);
             if (accessLevel == SmartAccessLevel.None)
@@ -219,9 +226,17 @@ namespace DMRS.Api.Controllers
                 return false;
             }
 
-            if (accessLevel is SmartAccessLevel.System or SmartAccessLevel.User)
+            if (accessLevel == SmartAccessLevel.System)
             {
                 return true;
+            }
+
+            var indices = _searchIndexer.Extract(resource);
+
+            if (accessLevel == SmartAccessLevel.User)
+            {
+                var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
+                return _authorizationService.IsResourceOwnedByOrganizations(resource, indices, organizationIds);
             }
 
             var patientId = _authorizationService.ResolvePatientId(User);
@@ -230,7 +245,6 @@ namespace DMRS.Api.Controllers
                 return false;
             }
 
-            var indices = _searchIndexer.Extract(resource);
             return _authorizationService.IsResourceOwnedByPatient(resource, patientId, indices);
         }
     }

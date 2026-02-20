@@ -35,6 +35,9 @@ namespace DMRS.Api.Infrastructure.Security
                 return;
             }
 
+            var id = httpContext.Request.RouteValues["id"]?.ToString();
+            var isInstanceRequest = !string.IsNullOrWhiteSpace(id) && httpContext.Request.Method != HttpMethods.Post;
+
             if (accessLevel == SmartAccessLevel.Patient)
             {
                 var patientId = _authorizationService.ResolvePatientId(context.User);
@@ -43,14 +46,23 @@ namespace DMRS.Api.Infrastructure.Security
                     return;
                 }
 
-                var id = httpContext.Request.RouteValues["id"]?.ToString();
-                if (!string.IsNullOrWhiteSpace(id) && httpContext.Request.Method != HttpMethods.Post)
+                if (isInstanceRequest)
                 {
-                    var isOwned = await _authorizationService.IsResourceOwnedByPatientAsync(resourceType, id, patientId);
+                    var isOwned = await _authorizationService.IsResourceOwnedByPatientAsync(resourceType, id!, patientId);
                     if (!isOwned)
                     {
                         return;
                     }
+                }
+            }
+
+            if (accessLevel == SmartAccessLevel.User && isInstanceRequest)
+            {
+                var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(context.User);
+                var isOwned = await _authorizationService.IsResourceOwnedByOrganizationsAsync(resourceType, id!, organizationIds);
+                if (!isOwned)
+                {
+                    return;
                 }
             }
 
