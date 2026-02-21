@@ -1,3 +1,5 @@
 <Solution>
   <Project Path="DMRS.Api/DMRS.Api.csproj" Id="6355b1a3-ddcd-4903-a1de-31cb24b57a89" />
+  <Project Path="DMRS.Client/DMRS.Client.csproj" Id="24cc1efa-d846-44bf-a5e2-aad26eb18dae" />
+  <Project Path="DMRS.Shared/DMRS.Shared.csproj" Id="edb76a96-ddf6-4a6e-9694-92cb84cf4c6f" />
 </Solution>

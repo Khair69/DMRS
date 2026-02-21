@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Scheduling
 {
     public class AppointmentController : FhirBaseController<Appointment>
     {
-        public AppointmentController(IFhirRepository repository, ILogger<AppointmentController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, AppointmentIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public AppointmentController(IFhirRepository repository, ILogger<AppointmentController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, AppointmentIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }

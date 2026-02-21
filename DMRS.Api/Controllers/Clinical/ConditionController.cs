@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Clinical
 {
     public class ConditionController : FhirBaseController<Condition>
     {
-        public ConditionController(IFhirRepository repository, ILogger<ConditionController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, ConditionIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public ConditionController(IFhirRepository repository, ILogger<ConditionController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, ConditionIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }

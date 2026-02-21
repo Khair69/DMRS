@@ -1,0 +1,117 @@
+﻿@page "/test-bench"
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Microsoft.AspNetCore.Components.Authorization
+@using Hl7.Fhir.Model
+@using DMRS.Client.Services
+@inject FhirApiService FhirService
+@inject IAccessTokenProvider TokenProvider
+@inject NavigationManager Navigation
+
+<PageTitle>DMRS Test Bench</PageTitle>
+
+<div class="container mt-4">
+    <h2>DMRS API Test Bench</h2>
+    <p class="text-muted">Use this page to verify Keycloak integration and API connectivity.</p>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">1. Authentication Status</div>
+        <div class="card-body">
+            <AuthorizeView>
+                <Authorized>
+                    <div class="alert alert-success">✅ Logged in as: @context.User.Identity?.Name</div>
+                    <button class="btn btn-danger" @onclick="Logout">Logout</button>
+                    
+                    <div class="mt-3">
+                        <label><strong>Current Access Token (for debugging):</strong></label>
+                        <div class="p-2 bg-light border text-break" style="max-height: 100px; overflow-y: auto; font-family: monospace; font-size: 0.8rem;">
+                            @currentToken
+                        </div>
+                        <button class="btn btn-sm btn-secondary mt-2" @onclick="GetToken">Refresh/Show Token</button>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <div class="alert alert-warning">❌ Not Authenticated</div>
+                    <button class="btn btn-primary" @onclick="Login">Login via Keycloak</button>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+
+    <AuthorizeView>
+        <Authorized>
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">2. API Test: Get Patient</div>
+                <div class="card-body">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Patient ID</span>
+                        <input type="text" @bind="testPatientId" class="form-control" placeholder="example: 123" />
+                        <button class="btn btn-success" @onclick="FetchPatient">Fetch from API</button>
+                    </div>
+
+                    @if (isLoading) { <div class="spinner-border text-primary"></div> }
+
+                    @if (apiResult != null)
+                    {
+                        <pre class="bg-dark text-light p-3 rounded">@apiResult</pre>
+                    }
+                </div>
+            </div>
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+<button @onclick="TestApi" class="btn btn-info">test</button>
+
+@code {
+    private string? currentToken;
+    private string testPatientId = "example-id";
+    private string? apiResult;
+    private bool isLoading = false;
+
+    private void Login() => Navigation.NavigateToLogin("authentication/login");
+    private void Logout() => Navigation.NavigateToLogout("authentication/logout");
+
+    private async System.Threading.Tasks.Task GetToken()
+    {
+        var result = await TokenProvider.RequestAccessToken();
+        if (result.TryGetToken(out var token))
+        {
+            currentToken = token.Value;
+        }
+    }
+
+    private async System.Threading.Tasks.Task FetchPatient()
+    {
+        isLoading = true;
+        apiResult = null;
+        try
+        {
+            // This call automatically uses the Bearer token thanks to the handler in Program.cs
+            var patient = await FhirService.GetResourceAsync<Patient>(testPatientId);
+
+            if (patient != null)
+            {
+                apiResult = $"Found Patient: {patient.Name.FirstOrDefault()?.Family}, {patient.Name.FirstOrDefault()?.Given.FirstOrDefault()}";
+            }
+            else
+            {
+                apiResult = "Resource not found (404).";
+            }
+        }
+        catch (Exception ex)
+        {
+            apiResult = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async System.Threading.Tasks.Task TestApi()
+    {
+        var response = await FhirService.TestApi();
+        Console.WriteLine(response.Content);
+        Console.WriteLine(response.StatusCode);
+    }
+}

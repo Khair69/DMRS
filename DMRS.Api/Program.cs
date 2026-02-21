@@ -42,6 +42,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.RequireHttpsMetadata = false; // DEV ONLY
         options.TokenValidationParameters = new TokenValidationParameters
         {
+            ValidateIssuer = true,
+            ValidateAudience = true,
             RoleClaimType = "roles",
             NameClaimType = "preferred_username"
         };
@@ -73,6 +75,18 @@ builder.Services.AddSingleton<FhirJsonDeserializer>(new FhirJsonDeserializer(new
     Validator = null // We will handle validation separately
 }));
 
+var corsPolicy = "AllowBlazorClient";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(corsPolicy, policy =>
+    {
+        // Replace with the actual URL/Port your Blazor app runs on
+        policy.WithOrigins("https://localhost:7099", "http://localhost:5155")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -83,10 +97,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors(corsPolicy);
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
 
 app.MapControllers();
 

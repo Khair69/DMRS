@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Administrative
 {
     public class PractitionerController : FhirBaseController<Practitioner>
     {
-        public PractitionerController(IFhirRepository repository, ILogger<PractitionerController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, PractitionerIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public PractitionerController(IFhirRepository repository, ILogger<PractitionerController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, PractitionerIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }

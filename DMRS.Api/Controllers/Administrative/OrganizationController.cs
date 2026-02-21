@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Administrative
 {
     public class OrganizationController : FhirBaseController<Organization>
     {
-        public OrganizationController(IFhirRepository repository, ILogger<OrganizationController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, OrganizationIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public OrganizationController(IFhirRepository repository, ILogger<OrganizationController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, OrganizationIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }

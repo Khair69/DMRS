@@ -28,5 +28,11 @@ namespace DMRS.Api.Controllers
             var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
             return Ok(claims);
         }
+
+        [HttpGet("test-api")]
+        public IActionResult TestApi() 
+        {
+            return Ok("the api is working");
+        }
     }
 }

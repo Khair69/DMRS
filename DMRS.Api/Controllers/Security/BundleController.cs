@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Security
 {
     public class BundleController : FhirBaseController<Bundle>
     {
-        public BundleController(IFhirRepository repository, ILogger<BundleController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, BundleIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public BundleController(IFhirRepository repository, ILogger<BundleController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, BundleIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }

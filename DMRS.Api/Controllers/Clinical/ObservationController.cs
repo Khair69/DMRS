@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Clinical
 {
     public class ObservationController : FhirBaseController<Observation>
     {
-        public ObservationController(IFhirRepository repository, ILogger<ObservationController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, ObservationIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public ObservationController(IFhirRepository repository, ILogger<ObservationController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, ObservationIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }

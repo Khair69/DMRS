@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Clinical
 {
     public class ProcedureController : FhirBaseController<Procedure>
     {
-        public ProcedureController(IFhirRepository repository, ILogger<ProcedureController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, ProcedureIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public ProcedureController(IFhirRepository repository, ILogger<ProcedureController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, ProcedureIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }

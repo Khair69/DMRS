@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Administrative
 {
     public class LocationController : FhirBaseController<Location>
     {
-        public LocationController(IFhirRepository repository, ILogger<LocationController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, LocationIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public LocationController(IFhirRepository repository, ILogger<LocationController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, LocationIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }

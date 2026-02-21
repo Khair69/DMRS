@@ -1,0 +1,15 @@
+﻿@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject IAccessTokenProvider TokenProvider
+
+<button @onclick="ShowToken">Print Token to Console</button>
+
+@code {
+    private async Task ShowToken()
+    {
+        var result = await TokenProvider.RequestAccessToken();
+        if (result.TryGetToken(out var token))
+        {
+            Console.WriteLine($"Access Token: {token.Value}");
+        }
+    }
+}

@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Medication
 {
     public class MedicationRequestController : FhirBaseController<MedicationRequest>
     {
-        public MedicationRequestController(IFhirRepository repository, ILogger<MedicationRequestController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, MedicationRequestIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public MedicationRequestController(IFhirRepository repository, ILogger<MedicationRequestController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, MedicationRequestIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }

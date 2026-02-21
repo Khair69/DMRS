@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Security
 {
     public class MetadataController : FhirBaseController<Provenance>
     {
-        public MetadataController(IFhirRepository repository, ILogger<MetadataController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, MetadataIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public MetadataController(IFhirRepository repository, ILogger<MetadataController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, MetadataIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }

@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Administrativ
 {
     public class EncounterController : FhirBaseController<Encounter>
     {
-        public EncounterController(IFhirRepository repository, ILogger<EncounterController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, EncounterIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public EncounterController(IFhirRepository repository, ILogger<EncounterController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, EncounterIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }

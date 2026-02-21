@@ -16,6 +16,7 @@ namespace DMRS.Api.Controllers
         protected readonly IFhirRepository _repository;
         protected readonly ILogger _logger;
         protected readonly FhirJsonDeserializer _deserializer;
+        protected readonly FhirJsonSerializer _serializer;
         protected readonly IFhirValidatorService _validator;
         protected readonly ISearchIndexer _searchIndexer;
         protected readonly ISmartAuthorizationService _authorizationService;
@@ -24,6 +25,7 @@ namespace DMRS.Api.Controllers
             IFhirRepository repository,
             ILogger logger,
             FhirJsonDeserializer deserializer,
+            FhirJsonSerializer serializer,
             IFhirValidatorService validator,
             ISearchIndexer searchIndexer,
             ISmartAuthorizationService authorizationService)
@@ -31,6 +33,7 @@ namespace DMRS.Api.Controllers
             _repository = repository;
             _logger = logger;
             _deserializer = deserializer;
+            _serializer = serializer;
             _validator = validator;
             _searchIndexer = searchIndexer;
             _authorizationService = authorizationService;
@@ -47,7 +50,8 @@ namespace DMRS.Api.Controllers
                 return Forbid();
             }
 
-            return Ok(resource);
+            var jsonString = _serializer.SerializeToString(resource);
+            return Content(jsonString, "application/fhir+json");
         }
 
         [HttpGet("{id}/_history/{vid}")]

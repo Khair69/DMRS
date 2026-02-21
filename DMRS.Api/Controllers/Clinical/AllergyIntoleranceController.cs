@@ -9,7 +9,7 @@ namespace DMRS.Api.Controllers.Clinical
 {
     public class AllergyIntoleranceController : FhirBaseController<AllergyIntolerance>
     {
-        public AllergyIntoleranceController(IFhirRepository repository, ILogger<AllergyIntoleranceController> logger, FhirJsonDeserializer deserializer, IFhirValidatorService validator, AllergyIntoleranceIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, validator, searchIndexer, authorizationService)
+        public AllergyIntoleranceController(IFhirRepository repository, ILogger<AllergyIntoleranceController> logger, FhirJsonDeserializer deserializer, FhirJsonSerializer serializer, IFhirValidatorService validator, AllergyIntoleranceIndexer searchIndexer, ISmartAuthorizationService authorizationService) : base(repository, logger, deserializer, serializer, validator, searchIndexer, authorizationService)
         {
         }
     }
