@@ -45,6 +45,14 @@ namespace DMRS.Api.Infrastructure
             };
 
             _context.FhirResources.Add(dbEntity);
+            _context.FhirResourceVersions.Add(new FhirResourceVersion
+            {
+                Id = resource.Id,
+                ResourceType = resource.TypeName,
+                VersionId = dbEntity.VersionId,
+                LastUpdated = dbEntity.LastUpdated,
+                RawContent = json
+            });
 
             var indices = searchIndexer.Extract(resource);
             _context.ResourceIndices.AddRange(indices);
@@ -61,25 +69,31 @@ namespace DMRS.Api.Infrastructure
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentException("Resource id is required.", nameof(id));
 
-            var utcNow = DateTimeOffset.UtcNow;
+            var existing = await _context.FhirResources
+                .FirstOrDefaultAsync(r => r.ResourceType == resourceType && r.Id == id && !r.IsDeleted);
 
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-
-            var updated = await _context.FhirResources
-                .Where(r => r.ResourceType == resourceType && r.Id == id && !r.IsDeleted)
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(r => r.IsDeleted, true)
-                    .SetProperty(r => r.LastUpdated, utcNow)
-                    .SetProperty(r => r.VersionId, r => r.VersionId + 1));
-
-            if (updated == 0)
+            if (existing == null)
                 throw new KeyNotFoundException($"Resource '{resourceType}/{id}' not found.");
+
+            var utcNow = DateTimeOffset.UtcNow;
+            existing.IsDeleted = true;
+            existing.LastUpdated = utcNow;
+            existing.VersionId += 1;
+
+            _context.FhirResourceVersions.Add(new FhirResourceVersion
+            {
+                Id = existing.Id,
+                ResourceType = existing.ResourceType,
+                VersionId = existing.VersionId,
+                LastUpdated = existing.LastUpdated,
+                RawContent = existing.RawContent
+            });
+
+            await _context.SaveChangesAsync();
 
             await _context.ResourceIndices
                 .Where(i => i.ResourceType == resourceType && i.ResourceId == id)
                 .ExecuteDeleteAsync();
-
-            await transaction.CommitAsync();
 
         }
 
@@ -131,33 +145,67 @@ namespace DMRS.Api.Infrastructure
 
             resource.Id = id;
 
-            var updatedJson = _serializer.SerializeToString(resource);
+            var existing = await _context.FhirResources
+                .FirstOrDefaultAsync(r => r.ResourceType == resourceType && r.Id == id && !r.IsDeleted);
 
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-
-            var updated = await _context.FhirResources
-                .Where(r => r.ResourceType == resourceType && r.Id == id && !r.IsDeleted)
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(r => r.RawContent, updatedJson)
-                    .SetProperty(r => r.LastUpdated, utcNow)
-                    .SetProperty(r => r.VersionId, r => r.VersionId + 1));
-
-            if (updated == 0)
+            if (existing == null)
                 throw new KeyNotFoundException($"Resource '{resourceType}/{id}' not found.");
+
+            existing.RawContent = _serializer.SerializeToString(resource);
+            existing.LastUpdated = utcNow;
+            existing.VersionId += 1;
 
             await _context.ResourceIndices
                 .Where(i => i.ResourceType == resourceType && i.ResourceId == id)
                 .ExecuteDeleteAsync();
 
+            _context.FhirResourceVersions.Add(new FhirResourceVersion
+            {
+                Id = existing.Id,
+                ResourceType = existing.ResourceType,
+                VersionId = existing.VersionId,
+                LastUpdated = existing.LastUpdated,
+                RawContent = existing.RawContent
+            });
+
             var indices = searchIndexer.Extract(resource);
             if (indices.Count > 0)
             {
                 _context.ResourceIndices.AddRange(indices);
-                await _context.SaveChangesAsync();
             }
 
-            await transaction.CommitAsync();
+            await _context.SaveChangesAsync();
 
+        }
+
+        public async Task<T?> GetVersionAsync<T>(string id, int versionId) where T : Resource
+        {
+            var resourceType = typeof(T).Name;
+
+            var entity = await _context.FhirResourceVersions
+                .FirstOrDefaultAsync(r => r.ResourceType == resourceType && r.Id == id && r.VersionId == versionId);
+
+            if (entity == null)
+            {
+                return null;
+            }
+
+            return _deserializer.Deserialize<T>(entity.RawContent);
+        }
+
+        public async Task<List<T>> GetHistoryAsync<T>(string id) where T : Resource
+        {
+            var resourceType = typeof(T).Name;
+
+            var versions = await _context.FhirResourceVersions
+                .Where(r => r.ResourceType == resourceType && r.Id == id)
+                .OrderByDescending(r => r.VersionId)
+                .ToListAsync();
+
+            return versions
+                .Select(v => _deserializer.Deserialize<T>(v.RawContent))
+                .ToList();
         }
     }
 }
+

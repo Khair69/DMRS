@@ -6,6 +6,7 @@ namespace DMRS.Api.Infrastructure.Persistence
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
         public DbSet<FhirResource> FhirResources { get; set; }
+        public DbSet<FhirResourceVersion> FhirResourceVersions { get; set; }
         public DbSet<ResourceIndex> ResourceIndices { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -17,6 +18,13 @@ namespace DMRS.Api.Infrastructure.Persistence
                 entity.Property(e => e.LastUpdated).IsRequired();
                 entity.Property(e => e.RawContent).IsRequired(); // In Postgres, map this to JSONB
                 entity.Property(e => e.VersionId).IsConcurrencyToken(); // Optimistic Concurrency
+            });
+
+            modelBuilder.Entity<FhirResourceVersion>(entity =>
+            {
+                entity.HasKey(e => new { e.ResourceType, e.Id, e.VersionId });
+                entity.Property(e => e.LastUpdated).IsRequired();
+                entity.Property(e => e.RawContent).IsRequired();
             });
 
             // 2. ResourceIndex Configuration

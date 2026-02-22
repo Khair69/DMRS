@@ -57,8 +57,26 @@ namespace DMRS.Api.Controllers
         [HttpGet("{id}/_history/{vid}")]
         public virtual async Task<IActionResult> VRead(string id, string vid)
         {
-            return Ok();
+            if (!int.TryParse(vid, out var versionId) || versionId <= 0)
+            {
+                return BadRequest("Invalid version id.");
+            }
+
+            var resource = await _repository.GetVersionAsync<T>(id, versionId);
+            if (resource == null)
+            {
+                return NotFound();
+            }
+
+            if (!await CanAccessResource(resource, "read"))
+            {
+                return Forbid();
+            }
+
+            var jsonString = _serializer.SerializeToString(resource);
+            return Content(jsonString, "application/fhir+json");
         }
+
 
         [HttpGet("search/{searchParam}/{value}")]
         public virtual async Task<IActionResult> Search(string searchParam, string value)
@@ -175,12 +193,72 @@ namespace DMRS.Api.Controllers
             }
         }
 
-        //[HttpPut("{id}")]
-        //public virtual async Task<IActionResult> Patch(string id, [FromBody] T resource)
-        //{
-        //    if (id != resource.Id) return BadRequest("ID mismatch");
-        //    return Ok(resource);
-        //}
+        [HttpPatch("{id}")]
+        public virtual async Task<IActionResult> Patch(string id, [FromBody] System.Text.Json.JsonElement body)
+        {
+            var existingResource = await _repository.GetAsync<T>(id);
+            if (existingResource == null)
+            {
+                return NotFound();
+            }
+
+            if (!await CanAccessResource(existingResource, "write"))
+            {
+                return Forbid();
+            }
+
+            var jsonString = body.GetRawText();
+            T resource;
+
+            try
+            {
+                resource = _deserializer.Deserialize<T>(jsonString);
+            }
+            catch (DeserializationFailedException ex)
+            {
+                _logger.LogError(ex, "Failed to deserialize FHIR content for {ResourceType}", typeof(T).Name);
+                return BadRequest("Invalid FHIR content: " + ex.Message);
+            }
+
+            if (resource == null)
+            {
+                return BadRequest("No resource provided.");
+            }
+
+            if (string.IsNullOrWhiteSpace(resource.Id))
+            {
+                resource.Id = id;
+            }
+            else if (!string.Equals(id, resource.Id, StringComparison.Ordinal))
+            {
+                return BadRequest("ID mismatch");
+            }
+
+            var outcome = await _validator.ValidateAsync(resource);
+            if (!outcome.Success)
+            {
+                return BadRequest(outcome);
+            }
+
+            try
+            {
+                await _repository.UpdateAsync(id, resource, _searchIndexer);
+                return Ok(resource);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error patching {ResourceType} {Id}", typeof(T).Name, id);
+                return StatusCode(500, "Internal Server Error");
+            }
+        }
 
         [HttpDelete("{id}")]
         public virtual async Task<IActionResult> Delete(string id)
@@ -219,7 +297,27 @@ namespace DMRS.Api.Controllers
         [HttpGet("{id}/_history")]
         public virtual async Task<IActionResult> History(string id)
         {
-            return Ok();
+            var resources = await _repository.GetHistoryAsync<T>(id);
+            if (resources.Count == 0)
+            {
+                return NotFound();
+            }
+
+            var filteredResources = new List<T>();
+            foreach (var resource in resources)
+            {
+                if (await CanAccessResource(resource, "read"))
+                {
+                    filteredResources.Add(resource);
+                }
+            }
+
+            if (filteredResources.Count == 0)
+            {
+                return Forbid();
+            }
+
+            return Ok(filteredResources);
         }
 
         private async Task<bool> CanAccessResource(T resource, string action)
