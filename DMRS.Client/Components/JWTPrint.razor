@@ -1,7 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @inject IAccessTokenProvider TokenProvider
 
-<button @onclick="ShowToken">Print Token to Console</button>
+<button @onclick="ShowToken" class="btn btn-secondary">Print Token to Console</button>
 
 @code {
     private async Task ShowToken()

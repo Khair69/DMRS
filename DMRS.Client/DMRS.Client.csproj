@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <Folder Include="Auth\" />
+    <Folder Include="Pages\Shared\" />
   </ItemGroup>
 
 </Project>
