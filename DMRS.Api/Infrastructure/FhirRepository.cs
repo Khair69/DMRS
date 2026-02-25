@@ -97,7 +97,7 @@ namespace DMRS.Api.Infrastructure
 
         }
 
-        public async Task<T> GetAsync<T>(string id) where T : Resource
+        public async Task<T?> GetAsync<T>(string id) where T : Resource
         {
             var entity = await _context.FhirResources
                         .FirstOrDefaultAsync(r => r.Id == id && r.ResourceType == typeof(T).Name && !r.IsDeleted);
@@ -243,10 +243,6 @@ namespace DMRS.Api.Infrastructure
             }
 
             return resources;
-
-            return versions
-                .Select(v => _deserializer.Deserialize<T>(v.RawContent))
-                .ToList();
         }
     }
 }
