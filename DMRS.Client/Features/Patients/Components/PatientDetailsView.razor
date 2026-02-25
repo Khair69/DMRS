@@ -1,0 +1,41 @@
+﻿@using Hl7.Fhir.Model
+
+@if (Patient is null)
+{
+    <div class="alert alert-warning">Patient not found.</div>
+}
+else
+{
+    var primaryName = Patient.Name.FirstOrDefault();
+    var identifier = Patient.Identifier.FirstOrDefault();
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Patient @Patient.Id</span>
+            <div>
+                <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/patients/{Patient.Id}/edit")">Edit</NavLink>
+                <NavLink class="btn btn-sm btn-outline-info" href="@($"/patients/{Patient.Id}/history")">History</NavLink>
+            </div>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Name</dt>
+                <dd class="col-sm-9">@string.Join(" ", primaryName?.Given ?? []) @primaryName?.Family</dd>
+
+                <dt class="col-sm-3">Identifier</dt>
+                <dd class="col-sm-9">@identifier?.System / @identifier?.Value</dd>
+
+                <dt class="col-sm-3">Gender</dt>
+                <dd class="col-sm-9">@Patient.Gender.ToString()</dd>
+
+                <dt class="col-sm-3">Birth Date</dt>
+                <dd class="col-sm-9">@Patient.BirthDate</dd>
+            </dl>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Patient? Patient { get; set; }
+}

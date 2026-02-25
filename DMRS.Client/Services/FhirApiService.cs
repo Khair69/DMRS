@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
-using System.Net.Http;
 
 namespace DMRS.Client.Services;
 
@@ -35,7 +34,7 @@ public class FhirApiService
         var json = _serializer.SerializeToString(resource);
 
         var content = new StringContent(json, Encoding.UTF8, "application/fhir+json");
-        var response = await _httpClient.PostAsync($"api/fhir/{resourceType}", content);
+        var response = await _httpClient.PostAsync($"fhir/{resourceType}", content);
 
         response.EnsureSuccessStatusCode();
 
@@ -43,19 +42,19 @@ public class FhirApiService
         return _deserializer.Deserialize<T>(responseJson);
     }
 
-    public async Task<T?> UpdateResourceAsync<T>(string id, T resource) where T : Resource
-    {
-        var resourceType = typeof(T).Name;
-        var json = _serializer.SerializeToString(resource);
+    //public async Task<T?> UpdateResourceAsync<T>(string id, T resource) where T : Resource
+    //{
+    //    var resourceType = typeof(T).Name;
+    //    var json = _serializer.SerializeToString(resource);
 
-        var content = new StringContent(json, Encoding.UTF8, "application/fhir+json");
-        var response = await _httpClient.PutAsync($"api/fhir/{resourceType}/{id}", content);
+    //    var content = new StringContent(json, Encoding.UTF8, "application/fhir+json");
+    //    var response = await _httpClient.PutAsync($"fhir/{resourceType}/{id}", content);
 
-        response.EnsureSuccessStatusCode();
+    //    response.EnsureSuccessStatusCode();
 
-        var responseJson = await response.Content.ReadAsStringAsync();
-        return _deserializer.Deserialize<T>(responseJson);
-    }
+    //    var responseJson = await response.Content.ReadAsStringAsync();
+    //    return _deserializer.Deserialize<T>(responseJson);
+    //}
 
     public async Task<HttpResponseMessage> TestApi()
     {

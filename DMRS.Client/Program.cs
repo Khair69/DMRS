@@ -1,4 +1,5 @@
 using DMRS.Client;
+using DMRS.Client.Features.Patients.Services;
 using DMRS.Client.Services;
 using Hl7.Fhir.Serialization;
 using Microsoft.AspNetCore.Components.Web;
@@ -33,5 +34,7 @@ builder.Services.AddSingleton<FhirJsonDeserializer>(new FhirJsonDeserializer(new
 {
     Validator = null // We will handle validation separately
 }));
+
+builder.Services.AddScoped<PatientFeatureService>();
 
 await builder.Build().RunAsync();

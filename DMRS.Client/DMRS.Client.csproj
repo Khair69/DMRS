@@ -19,8 +19,4 @@
     <ProjectReference Include="..\DMRS.Shared\DMRS.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Auth\" />
-  </ItemGroup>
-
 </Project>

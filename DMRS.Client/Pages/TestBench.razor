@@ -20,7 +20,7 @@
                 <Authorized>
                     <div class="alert alert-success">✅ Logged in as: @context.User.Identity?.Name</div>
                     <button class="btn btn-danger" @onclick="Logout">Logout</button>
-                    
+
                     <div class="mt-3">
                         <label><strong>Current Access Token (for debugging):</strong></label>
                         <div class="p-2 bg-light border text-break" style="max-height: 100px; overflow-y: auto; font-family: monospace; font-size: 0.8rem;">
@@ -48,7 +48,10 @@
                         <button class="btn btn-success" @onclick="FetchPatient">Fetch from API</button>
                     </div>
 
-                    @if (isLoading) { <div class="spinner-border text-primary"></div> }
+                    @if (isLoading)
+                    {
+                        <div class="spinner-border text-primary"></div>
+                    }
 
                     @if (apiResult != null)
                     {
@@ -60,7 +63,7 @@
     </AuthorizeView>
 </div>
 
-<button @onclick="TestApi" class="btn btn-info">test</button>
+<button @onclick="TestApi" class="btn btn-info">test api</button>
 
 @code {
     private string? currentToken;

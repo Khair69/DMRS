@@ -1,0 +1,45 @@
+﻿@page "/patients/new"
+@attribute [Authorize]
+@inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Patient</PageTitle>
+
+<h1>Create Patient</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<PatientForm Model="model" IsBusy="@isSaving" SubmitText="Create Patient" OnSave="Save" />
+
+@code {
+    private readonly PatientEditModel model = new();
+    private bool isSaving;
+    private string? errorMessage;
+
+    private async Task Save()
+    {
+        isSaving = true;
+        errorMessage = null;
+        try
+        {
+            var createdPatient = await PatientService.CreatePatientAsync(model);
+            if (createdPatient?.Id is null)
+            {
+                errorMessage = "Patient was created but no id was returned.";
+                return;
+            }
+            NavigationManager.NavigateTo($"/patients/{createdPatient.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while creating the patient: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

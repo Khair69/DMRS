@@ -1,0 +1,52 @@
+﻿@page "/patients/{Id}"
+@attribute [Authorize]
+@inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
+
+<PageTitle>Patient Details</PageTitle>
+
+<h1>Patient Details</h1>
+
+@if (isBusy)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else
+{
+    <PatientDetailsView Patient="patient" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private Hl7.Fhir.Model.Patient? patient;
+    private bool isBusy;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorMessage = null;
+        isBusy = true;
+
+        try
+        {
+            patient = await PatientService.GetPatientAsync(Id);
+            if (patient is null)
+            {
+                errorMessage = $"Patient {Id} not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load patient: {ex.Message}";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}
