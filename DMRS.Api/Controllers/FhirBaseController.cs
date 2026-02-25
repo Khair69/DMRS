@@ -91,9 +91,12 @@ namespace DMRS.Api.Controllers
                     filteredResources.Add(_serializer.SerializeToString(resource));
                 }
             }
-            if (filteredResources.Count == 0) return NotFound();
 
-            return Ok(filteredResources);
+            var json = filteredResources.Count == 0
+                ? "[]"
+                : "[" + string.Join(",", filteredResources) + "]";
+
+            return Content(json, "application/fhir+json");
         }
 
         [HttpPost]

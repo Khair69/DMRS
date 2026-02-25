@@ -1,0 +1,61 @@
+﻿@page "/patients"
+@attribute [Authorize]
+@inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
+
+<PageTitle>Patients</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Patients</h1>
+    <NavLink class="btn btn-primary" href="/patients/new">New Patient</NavLink>
+</div>
+
+<PatientSearchForm SearchParam="@searchParam" SearchValue="@searchValue" IsBusy="@isBusy" OnSearch="RunSearch" />
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<PatientsTable Patients="@patients" />
+
+@code {
+    private string searchParam = "family";
+    private string searchValue = string.Empty;
+    private bool isBusy;
+    private string? errorMessage;
+    private IReadOnlyList<PatientSummaryViewModel> patients = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RunSearch((searchParam, ""));
+    }
+
+    private async Task RunSearch((string SearchParam, string SearchValue) criteria)
+    {
+        searchParam = criteria.SearchParam;
+        searchValue = criteria.SearchValue;
+        errorMessage = null;
+        isBusy = true;
+
+        if (string.IsNullOrWhiteSpace(searchValue))
+        {
+            isBusy = false;
+            patients = [];
+            return;
+        }
+
+        try
+        {
+            patients = await PatientService.SearchPatientsAsync(searchParam, searchValue);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load patients: {ex.Message}";
+            patients = [];
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}

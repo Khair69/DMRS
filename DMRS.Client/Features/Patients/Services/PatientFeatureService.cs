@@ -13,21 +13,21 @@ public class PatientFeatureService
         _fhirApiService = fhirApiService;
     }
 
-    //public async Task<IReadOnlyList<PatientSummaryViewModel>> SearchPatientsAsync(string searchParam, string value)
-    //{
-    //    var results = await _fhirApiService.SearchAsync<Patient>(searchParam, value);
-    //    return results.Select(ToSummary).ToList();
-    //}
+    public async Task<IReadOnlyList<PatientSummaryViewModel>> SearchPatientsAsync(string searchParam, string value)
+    {
+        var results = await _fhirApiService.SearchAsync<Patient>(searchParam, value);
+        return results.Select(ToSummary).ToList();
+    }
 
     public async Task<Patient?> GetPatientAsync(string id)
     {
         return await _fhirApiService.GetResourceAsync<Patient>(id);
     }
 
-    //public async Task<IReadOnlyList<Patient>> GetPatientHistoryAsync(string id)
-    //{
-    //    return await _fhirApiService.GetHistoryAsync<Patient>(id);
-    //}
+    public async Task<IReadOnlyList<Patient>> GetPatientHistoryAsync(string id)
+    {
+        return await _fhirApiService.GetHistoryAsync<Patient>(id);
+    }
 
     public async Task<Patient?> CreatePatientAsync(PatientEditModel model)
     {
@@ -36,17 +36,17 @@ public class PatientFeatureService
         return await _fhirApiService.CreateResourceAsync<Patient>(patient);
     }
 
-    //public async Task<Patient?> UpdatePatientAsync(string id, PatientEditModel model)
-    //{
-    //    var patient = model.ToFhirPatient();
-    //    patient.Id = id;
-    //    return await _fhirApiService.UpdateResourceAsync(id, patient);
-    //}
+    public async Task<Patient?> UpdatePatientAsync(string id, PatientEditModel model)
+    {
+        var patient = model.ToFhirPatient();
+        patient.Id = id;
+        return await _fhirApiService.UpdateResourceAsync(id, patient);
+    }
 
-    //public async System.Threading.Tasks.Task DeletePatientAsync(string id)
-    //{
-    //    await _fhirApiService.DeleteResourceAsync<Patient>(id);
-    //}
+    public async System.Threading.Tasks.Task DeletePatientAsync(string id)
+    {
+        await _fhirApiService.DeleteResourceAsync<Patient>(id);
+    }
 
     public static PatientSummaryViewModel ToSummary(Patient patient)
     {

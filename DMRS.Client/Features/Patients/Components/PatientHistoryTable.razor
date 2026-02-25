@@ -1,0 +1,39 @@
+﻿@using Hl7.Fhir.Model
+
+@if (History.Count == 0)
+{
+    <div class="alert alert-secondary">No history versions found for this patient.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Version</th>
+                <th>Last Updated</th>
+                <th>Name</th>
+                <th>Gender</th>
+                <th>Birth Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var version in History)
+            {
+                var name = version.Name.FirstOrDefault();
+
+                <tr>
+                    <td>@version.Meta?.VersionId</td>
+                    <td>@version.Meta?.LastUpdated?.ToString("u")</td>
+                    <td>@string.Join(" ", name?.Given ?? []) @name?.Family</td>
+                    <td>@version.Gender.ToString()</td>
+                    <td>@version.BirthDate</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Patient> History { get; set; } = [];
+}

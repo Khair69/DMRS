@@ -1,0 +1,78 @@
+﻿@page "/patients/{Id}/edit"
+@attribute [Authorize]
+@inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Patient</PageTitle>
+
+<h1>Edit Patient</h1>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <PatientForm Model="model" IsBusy="@isSaving" SubmitText="Update Patient" OnSave="Save" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private PatientEditModel model = new();
+    private bool isLoading;
+    private bool isSaving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var patient = await PatientService.GetPatientAsync(Id);
+            if (patient is null)
+            {
+                errorMessage = $"Patient {Id} not found.";
+                return;
+            }
+
+            model = PatientEditModel.FromPatient(patient);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load patient: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+        isSaving = true;
+
+        try
+        {
+            await PatientService.UpdatePatientAsync(Id, model);
+            Navigation.NavigateTo($"/patients/{Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update patient: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

@@ -1,0 +1,42 @@
+﻿<div class="card mb-3">
+    <div class="card-body">
+        <EditForm Model="this" OnSubmit="HandleSubmit">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Search Field</label>
+                    <InputSelect @bind-Value="SearchParam" class="form-select">
+                        <option value="family">Family Name</option>
+                        <option value="given">Given Name</option>
+                        <option value="identifier">Identifier</option>
+                    </InputSelect>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Search Value</label>
+                    <InputText @bind-Value="SearchValue" class="form-control" placeholder="e.g. Smith" />
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-primary" disabled="@IsBusy" type="submit">Search</button>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string SearchParam { get; set; } = "family";
+
+    [Parameter]
+    public string SearchValue { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public EventCallback<(string SearchParam, string SearchValue)> OnSearch { get; set; }
+
+    private async Task HandleSubmit()
+    {
+        await OnSearch.InvokeAsync((SearchParam, SearchValue));
+    }
+}

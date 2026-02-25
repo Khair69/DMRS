@@ -1,0 +1,45 @@
+﻿@using DMRS.Client.Features.Patients.Models
+
+@if (Patients.Count == 0)
+{
+    <div class="alert alert-secondary">No patients found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Identifier</th>
+                    <th>Gender</th>
+                    <th>Birth Date</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var patient in Patients)
+                {
+                    <tr>
+                        <td>@patient.Id</td>
+                        <td>@patient.DisplayName</td>
+                        <td>@patient.Identifier</td>
+                        <td>@patient.Gender</td>
+                        <td>@patient.BirthDate</td>
+                        <td class="text-nowrap">
+                            <NavLink class="btn btn-sm btn-outline-primary me-1" href="@($"/patients/{patient.Id}")">Details</NavLink>
+                            <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/patients/{patient.Id}/edit")">Edit</NavLink>
+                            <NavLink class="btn btn-sm btn-outline-info" href="@($"/patients/{patient.Id}/history")">History</NavLink>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PatientSummaryViewModel> Patients { get; set; } = [];
+}
