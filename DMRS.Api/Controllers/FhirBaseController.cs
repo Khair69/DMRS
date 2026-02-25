@@ -83,12 +83,12 @@ namespace DMRS.Api.Controllers
         {
             var resources = await _repository.SearchAsync<T>(searchParam, value);
 
-            var filteredResources = new List<T>();
+            var filteredResources = new List<string>();
             foreach (var resource in resources)
             {
                 if (await CanAccessResource(resource, "read"))
                 {
-                    filteredResources.Add(resource);
+                    filteredResources.Add(_serializer.SerializeToString(resource));
                 }
             }
             if (filteredResources.Count == 0) return NotFound();
@@ -134,7 +134,7 @@ namespace DMRS.Api.Controllers
             try
             {
                 var id = await _repository.CreateAsync(resource, _searchIndexer);
-                return CreatedAtAction(nameof(Read), new { id = id }, resource);
+                return CreatedAtAction(nameof(Read), new { id = id }, _serializer.SerializeToString(resource));
             }
             catch (Exception ex)
             {
@@ -176,7 +176,7 @@ namespace DMRS.Api.Controllers
             try
             {
                 await _repository.UpdateAsync(id, resource, _searchIndexer);
-                return Ok(resource);
+                return Ok(_serializer.SerializeToString(resource));
             }
             catch (KeyNotFoundException)
             {
@@ -243,7 +243,7 @@ namespace DMRS.Api.Controllers
             try
             {
                 await _repository.UpdateAsync(id, resource, _searchIndexer);
-                return Ok(resource);
+                return Ok(_serializer.SerializeToString(resource));
             }
             catch (KeyNotFoundException)
             {
@@ -303,12 +303,12 @@ namespace DMRS.Api.Controllers
                 return NotFound();
             }
 
-            var filteredResources = new List<T>();
+            var filteredResources = new List<string>();
             foreach (var resource in resources)
             {
                 if (await CanAccessResource(resource, "read"))
                 {
-                    filteredResources.Add(resource);
+                    filteredResources.Add(_serializer.SerializeToString(resource));
                 }
             }
 
