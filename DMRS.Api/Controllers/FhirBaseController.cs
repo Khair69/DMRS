@@ -78,23 +78,33 @@ namespace DMRS.Api.Controllers
         }
 
 
-        [HttpGet("search/{searchParam}/{value}")]
-        public virtual async Task<IActionResult> Search(string searchParam, string value)
+        [HttpGet]
+        public virtual async Task<IActionResult> Search()
         {
-            var resources = await _repository.SearchAsync<T>(searchParam, value);
+            var queryParams = Request.Query
+                .ToDictionary(q => q.Key, q => q.Value.ToString());
 
-            var filteredResources = new List<string>();
+            var resources = await _repository.SearchAsync<T>(queryParams);
+
+            var bundle = new Bundle
+            {
+                Type = Bundle.BundleType.Searchset,
+                Total = resources.Count
+            };
+
             foreach (var resource in resources)
             {
                 if (await CanAccessResource(resource, "read"))
                 {
-                    filteredResources.Add(_serializer.SerializeToString(resource));
+                    bundle.Entry.Add(new Bundle.EntryComponent
+                    {
+                        Resource = resource,
+                        FullUrl = $"{Request.Scheme}://{Request.Host}/fhir/{typeof(T).Name}/{resource.Id}"
+                    });
                 }
             }
 
-            var json = filteredResources.Count == 0
-                ? "[]"
-                : "[" + string.Join(",", filteredResources) + "]";
+            var json = _serializer.SerializeToString(bundle);
 
             return Content(json, "application/fhir+json");
         }

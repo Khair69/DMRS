@@ -108,25 +108,43 @@ namespace DMRS.Api.Infrastructure
             return _deserializer.Deserialize<T>(entity.RawContent);
         }
 
-        public async Task<List<T>> SearchAsync<T>(string searchParam, string value) where T : Resource
+        public async Task<List<T>> SearchAsync<T>(Dictionary<string, string> queryParams)
+            where T : Resource
         {
             var typeName = typeof(T).Name;
 
-            // 1. Find IDs in the Index Table
-            var matches = await _context.ResourceIndices
-                .Where(x => x.ResourceType == typeName
-                         && x.SearchParamCode == searchParam
-                         && x.Value == value.ToLower())
+            var query = _context.ResourceIndices
+                .Where(x => x.ResourceType == typeName);
+
+            foreach (var param in queryParams)
+            {
+                var key = param.Key.ToLower();
+                var value = param.Value.ToLower();
+
+                // Ignore control params
+                if (key.StartsWith("_"))
+                    continue;
+
+                query = query.Where(x =>
+                    x.SearchParamCode == key &&
+                    x.Value == value);
+            }
+
+            var matchedIds = await query
                 .Select(x => x.ResourceId)
+                .Distinct()
                 .ToListAsync();
 
-            // 2. Load the actual JSON for those IDs
             var resources = await _context.FhirResources
-                .Where(r => r.ResourceType == typeName && matches.Contains(r.Id))
+                .Where(r =>
+                    r.ResourceType == typeName &&
+                    !r.IsDeleted &&
+                    matchedIds.Contains(r.Id))
                 .ToListAsync();
 
-            // 3. Deserialize
-            return resources.Select(r => _deserializer.Deserialize<T>(r.RawContent)).ToList();
+            return resources
+                .Select(r => _deserializer.Deserialize<T>(r.RawContent))
+                .ToList();
         }
 
         public async System.Threading.Tasks.Task UpdateAsync<T>(string id, T resource, ISearchIndexer searchIndexer) where T : Resource

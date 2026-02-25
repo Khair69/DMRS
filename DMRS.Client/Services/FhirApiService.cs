@@ -1,5 +1,6 @@
 ﻿using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
+using Microsoft.AspNetCore.WebUtilities;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -64,15 +65,30 @@ public class FhirApiService
     public async Task<IReadOnlyList<T>> SearchAsync<T>(string searchParam, string value) where T : Resource
     {
         var resourceType = typeof(T).Name;
-        var response = await _httpClient.GetAsync($"fhir/{resourceType}/search/{searchParam}/{Uri.EscapeDataString(value)}");
+        var query = new Dictionary<string, string>
+        {
+            { searchParam, value }
+        };
 
+        var queryString = QueryHelpers.AddQueryString($"fhir/{resourceType}", query);
+
+        var response = await _httpClient.GetAsync(queryString);
         if (response.StatusCode == HttpStatusCode.NotFound)
             return [];
 
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync();
-        return DeserializeResourceList<T>(json);
+
+        var bundle = _deserializer.Deserialize<Bundle>(json);
+
+        if (bundle?.Entry == null || bundle.Entry.Count == 0)
+            return [];
+
+        return bundle.Entry
+            .Where(e => e.Resource is T)
+            .Select(e => (T)e.Resource)
+            .ToList();
     }
 
     public async Task<IReadOnlyList<T>> GetHistoryAsync<T>(string id) where T : Resource
