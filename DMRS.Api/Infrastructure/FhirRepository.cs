@@ -104,8 +104,13 @@ namespace DMRS.Api.Infrastructure
 
             if (entity == null) return null;
 
-            // Deserialize back to FHIR Object
-            return _deserializer.Deserialize<T>(entity.RawContent);
+            var resource = _deserializer.Deserialize<T>(entity.RawContent);
+
+            resource.Meta ??= new Meta();
+            resource.Meta.VersionId = entity.VersionId.ToString();
+            resource.Meta.LastUpdated = entity.LastUpdated;
+
+            return resource;
         }
 
         public async Task<List<T>> SearchAsync<T>(Dictionary<string, string> queryParams)
@@ -208,7 +213,13 @@ namespace DMRS.Api.Infrastructure
                 return null;
             }
 
-            return _deserializer.Deserialize<T>(entity.RawContent);
+            var resource = _deserializer.Deserialize<T>(entity.RawContent);
+
+            resource.Meta ??= new Meta();
+            resource.Meta.VersionId = entity.VersionId.ToString();
+            resource.Meta.LastUpdated = entity.LastUpdated;
+
+            return resource;
         }
 
         public async Task<List<T>> GetHistoryAsync<T>(string id) where T : Resource
@@ -219,6 +230,19 @@ namespace DMRS.Api.Infrastructure
                 .Where(r => r.ResourceType == resourceType && r.Id == id)
                 .OrderByDescending(r => r.VersionId)
                 .ToListAsync();
+
+            var resources = versions.Select(v => _deserializer.Deserialize<T>(v.RawContent))
+                .ToList();
+
+            for (int i = 0;i < resources.Count;i++)
+            {
+                var resource = resources[i];
+                resource.Meta ??= new Meta();
+                resource.Meta.VersionId = versions[i].VersionId.ToString();
+                resource.Meta.LastUpdated = versions[i].LastUpdated;
+            }
+
+            return resources;
 
             return versions
                 .Select(v => _deserializer.Deserialize<T>(v.RawContent))

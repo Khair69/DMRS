@@ -147,7 +147,10 @@ namespace DMRS.Api.Controllers
             try
             {
                 var id = await _repository.CreateAsync(resource, _searchIndexer);
-                return CreatedAtAction(nameof(Read), new { id = id }, _serializer.SerializeToString(resource));
+                Response.Headers.ETag = $"W/\"{resource.Meta?.VersionId}\"";
+                Response.Headers.Location = $"/fhir/{typeof(T).Name}/{id}";
+
+                return StatusCode(201, _serializer.SerializeToString(resource));
             }
             catch (Exception ex)
             {
@@ -316,21 +319,42 @@ namespace DMRS.Api.Controllers
                 return NotFound();
             }
 
-            var filteredResources = new List<string>();
+            var bundle = new Bundle
+            {
+                Type = Bundle.BundleType.History,
+                Total = resources.Count
+            };
+
             foreach (var resource in resources)
             {
                 if (await CanAccessResource(resource, "read"))
                 {
-                    filteredResources.Add(_serializer.SerializeToString(resource));
+                    bundle.Entry.Add(new Bundle.EntryComponent
+                    {
+                        Resource = resource,
+                        FullUrl = $"{Request.Scheme}://{Request.Host}/fhir/{typeof(T).Name}/{resource.Id}/_history/{resource.Meta.VersionId}",
+                        Request = new Bundle.RequestComponent
+                        {
+                            Method = Bundle.HTTPVerb.PUT,
+                            Url = $"{typeof(T).Name}/{resource.Id}"
+                        },
+                        Response = new Bundle.ResponseComponent
+                        {
+                            Status = "200 OK",
+                            LastModified = resource.Meta.LastUpdated
+                        }
+                    });
                 }
             }
 
-            if (filteredResources.Count == 0)
+            if (bundle.Total == 0)
             {
                 return Forbid();
             }
 
-            return Ok(filteredResources);
+            var json = _serializer.SerializeToString(bundle);
+
+            return Content(json, "application/fhir+json");
         }
 
         private async Task<bool> CanAccessResource(T resource, string action)

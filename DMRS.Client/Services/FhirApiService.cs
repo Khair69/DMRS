@@ -96,13 +96,22 @@ public class FhirApiService
         var resourceType = typeof(T).Name;
         var response = await _httpClient.GetAsync($"fhir/{resourceType}/{id}/_history");
 
-        if (!response.IsSuccessStatusCode)
-        {
+        if (response.StatusCode == HttpStatusCode.NotFound)
             return [];
-        }
+
+        response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync();
-        return DeserializeResourceList<T>(json);
+
+        var bundle = _deserializer.Deserialize<Bundle>(json);
+
+        if (bundle?.Entry == null || bundle.Entry.Count == 0)
+            return [];
+
+        return bundle.Entry
+            .Where(e => e.Resource is T)
+            .Select(e => (T)e.Resource)
+            .ToList();
     }
 
     public async System.Threading.Tasks.Task DeleteResourceAsync<T>(string id) where T : Resource
