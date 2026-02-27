@@ -64,3 +64,5 @@ obj/
 *.user
 *.suo
 *.shellmnt
+
+keycloak_data/

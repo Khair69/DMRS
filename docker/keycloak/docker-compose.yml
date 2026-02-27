@@ -1,13 +1,15 @@
 services:
-    keycloak:
-        image: quay.io/keycloak/keycloak:26.5.3
-        container_name: keycloak
-        command: start-dev 
-        # --import-realm
-        environment:
-            KEYCLOAK_ADMIN: admin
-            KEYCLOAK_ADMIN_PASSWORD: admin
-        # volumes:
-        #     - ./realm-export.json:/opt/keycloak/data/import/realm-export.json
-        ports:
-            - "8080:8080"
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5.3
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      # This line is the "save button" for your database
+      - ./keycloak_data:/opt/keycloak/data 
+      # Keep this only if you want to initialize a NEW setup
+      # - ./realm-export.json:/opt/keycloak/data/import/realm.json
+    ports:
+      - "8080:8080"
