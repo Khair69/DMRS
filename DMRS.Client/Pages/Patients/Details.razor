@@ -34,7 +34,7 @@ else
 
         try
         {
-            patient = await PatientService.GetPatientAsync(Id);
+            patient = await PatientService.GetAsync(Id);
             if (patient is null)
             {
                 errorMessage = $"Patient {Id} not found.";

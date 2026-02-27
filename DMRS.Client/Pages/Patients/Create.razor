@@ -25,7 +25,7 @@
         errorMessage = null;
         try
         {
-            var createdPatient = await PatientService.CreatePatientAsync(model);
+            var createdPatient = await PatientService.CreateAsync(model);
             if (createdPatient?.Id is null)
             {
                 errorMessage = "Patient was created but no id was returned.";

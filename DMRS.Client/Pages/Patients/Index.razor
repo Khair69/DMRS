@@ -46,7 +46,7 @@
 
         try
         {
-            patients = await PatientService.SearchPatientsAsync(searchParam, searchValue);
+            patients = await PatientService.SearchAsync(searchParam, searchValue);
         }
         catch (Exception ex)
         {

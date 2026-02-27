@@ -37,7 +37,7 @@ else
 
         try
         {
-            var patient = await PatientService.GetPatientAsync(Id);
+            var patient = await PatientService.GetAsync(Id);
             if (patient is null)
             {
                 errorMessage = $"Patient {Id} not found.";
@@ -63,7 +63,7 @@ else
 
         try
         {
-            await PatientService.UpdatePatientAsync(Id, model);
+            await PatientService.UpdateAsync(Id, model);
             Navigation.NavigateTo($"/patients/{Id}");
         }
         catch (Exception ex)

@@ -35,7 +35,7 @@ else
 
         try
         {
-            history = await PatientService.GetPatientHistoryAsync(Id);
+            history = await PatientService.GetHistoryAsync(Id);
         }
         catch (Exception ex)
         {
