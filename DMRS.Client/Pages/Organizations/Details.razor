@@ -1,0 +1,52 @@
+@page "/organizations/{Id}"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN")]
+@inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
+
+<PageTitle>Organization Details</PageTitle>
+
+<h1>Organization Details</h1>
+
+@if (isBusy)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else
+{
+    <OrganizationDetailsView Organization="organization" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private Hl7.Fhir.Model.Organization? organization;
+    private bool isBusy;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorMessage = null;
+        isBusy = true;
+
+        try
+        {
+            organization = await OrganizationService.GetAsync(Id);
+            if (organization is null)
+            {
+                errorMessage = $"Organization {Id} not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load organization: {ex.Message}";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}

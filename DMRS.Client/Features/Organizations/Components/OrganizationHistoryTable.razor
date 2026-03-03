@@ -1,0 +1,42 @@
+@using Hl7.Fhir.Model
+
+@if (History.Count == 0)
+{
+    <div class="alert alert-secondary">No history versions found for this organization.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Version</th>
+                <th>Last Updated</th>
+                <th>Name</th>
+                <th>Active</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var version in History)
+            {
+                var email = version.Contact
+                    .SelectMany(c => c.Telecom)
+                    .FirstOrDefault(t => t.System == ContactPoint.ContactPointSystem.Email)
+                    ?.Value;
+
+                <tr>
+                    <td>@version.Meta?.VersionId</td>
+                    <td>@version.Meta?.LastUpdated?.ToString("u")</td>
+                    <td>@version.Name</td>
+                    <td>@version.Active</td>
+                    <td>@email</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Organization> History { get; set; } = [];
+}

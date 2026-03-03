@@ -1,0 +1,66 @@
+@using Hl7.Fhir.Model
+
+@if (Organization is null)
+{
+    <div class="alert alert-warning">Organization not found.</div>
+}
+else
+{
+    var identifier = Organization.Identifier.FirstOrDefault();
+    var contact = Organization.Contact.FirstOrDefault();
+    var email = contact?.Telecom.FirstOrDefault(t => t.System == ContactPoint.ContactPointSystem.Email)?.Value;
+    var phone = contact?.Telecom.FirstOrDefault(t => t.System == ContactPoint.ContactPointSystem.Phone)?.Value;
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Organization @Organization.Id</span>
+            <div>
+                <NavLink class="btn btn-sm btn-outline-success me-1" href="@($"/organizations/{Organization.Id}/admins/new")">Add Admin</NavLink>
+                <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/organizations/{Organization.Id}/edit")">Edit</NavLink>
+                <NavLink class="btn btn-sm btn-outline-info" href="@($"/organizations/{Organization.Id}/history")">History</NavLink>
+            </div>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Name</dt>
+                <dd class="col-sm-9">@Organization.Name</dd>
+
+                <dt class="col-sm-3">Alias</dt>
+                <dd class="col-sm-9">@string.Join(", ", Organization.Alias)</dd>
+
+                <dt class="col-sm-3">Active</dt>
+                <dd class="col-sm-9">@Organization.Active</dd>
+
+                <dt class="col-sm-3">Identifier</dt>
+                <dd class="col-sm-9">@identifier?.System / @identifier?.Value</dd>
+
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">@email</dd>
+
+                <dt class="col-sm-3">Phone</dt>
+                <dd class="col-sm-9">@phone</dd>
+
+                <dt class="col-sm-3">Address</dt>
+                <dd class="col-sm-9">
+                    @if (contact?.Address is null)
+                    {
+                        <span>-</span>
+                    }
+                    else
+                    {
+                        <span>@string.Join(" ", contact.Address.Line ?? [])</span>
+                        <span>, @contact.Address.City</span>
+                        <span>, @contact.Address.State</span>
+                        <span> @contact.Address.PostalCode</span>
+                        <span>, @contact.Address.Country</span>
+                    }
+                </dd>
+            </dl>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Organization? Organization { get; set; }
+}

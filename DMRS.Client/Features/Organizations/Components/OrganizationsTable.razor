@@ -1,0 +1,45 @@
+@using DMRS.Client.Features.Organizations.Models
+
+@if (Organizations.Count == 0)
+{
+    <div class="alert alert-secondary">No organizations found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Active</th>
+                    <th>Identifier</th>
+                    <th>Email</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var organization in Organizations)
+                {
+                    <tr>
+                        <td>@organization.Id</td>
+                        <td>@organization.Name</td>
+                        <td>@organization.Active</td>
+                        <td>@organization.Identifier</td>
+                        <td>@organization.Email</td>
+                        <td class="text-nowrap">
+                            <NavLink class="btn btn-sm btn-outline-primary me-1" href="@($"/organizations/{organization.Id}")">Details</NavLink>
+                            <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/organizations/{organization.Id}/edit")">Edit</NavLink>
+                            <NavLink class="btn btn-sm btn-outline-info" href="@($"/organizations/{organization.Id}/history")">History</NavLink>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<OrganizationSummaryViewModel> Organizations { get; set; } = [];
+}

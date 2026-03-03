@@ -6,6 +6,7 @@
 @inject FhirApiService FhirService
 @inject IAccessTokenProvider TokenProvider
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>DMRS Test Bench</PageTitle>
 
@@ -64,6 +65,7 @@
 </div>
 
 <button @onclick="TestApi" class="btn btn-info">test api</button>
+<button @onclick="GetClaims" class="btn btn-info">get claims</button>
 
 @code {
     private string? currentToken;
@@ -116,5 +118,22 @@
         var response = await FhirService.TestApi();
         Console.WriteLine(response.Content);
         Console.WriteLine(response.StatusCode);
+    }
+
+    private async System.Threading.Tasks.Task GetClaims()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            foreach (var claim in user.Claims)
+            {
+                Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("User is not authenticated.");
+        }
     }
 }

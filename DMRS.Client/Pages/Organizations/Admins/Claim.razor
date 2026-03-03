@@ -1,0 +1,89 @@
+@page "/org-admin/claim"
+@attribute [Authorize]
+@inject DMRS.Client.Features.Organizations.Services.OrganizationAdminFeatureService OrganizationAdminService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Claim Organization Admin Invitation</PageTitle>
+
+<h1>Claim Organization Admin Invitation</h1>
+
+@if (isBusy)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else
+{
+    if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <EditForm Model="this" OnSubmit="ClaimInvite">
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label class="form-label">Invite Code</label>
+                <InputText @bind-Value="Code" class="form-control" />
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100" disabled="@isBusy">Claim Invitation</button>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Code { get; set; }
+
+    private bool isBusy;
+    private string? errorMessage;
+    private string? successMessage;
+
+    private async Task ClaimInvite()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (string.IsNullOrWhiteSpace(Code))
+        {
+            errorMessage = "Invite code is required.";
+            return;
+        }
+
+        isBusy = true;
+
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            var keycloakUserId = user.FindFirst("sub")?.Value
+                                 ?? user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(keycloakUserId))
+            {
+                errorMessage = "Could not resolve your Keycloak user id from token claims.";
+                return;
+            }
+
+            var keycloakUsername = user.FindFirst("preferred_username")?.Value
+                                   ?? user.Identity?.Name;
+
+            var result = await OrganizationAdminService.ClaimInviteAsync(Code.Trim(), keycloakUserId, keycloakUsername);
+            successMessage = $"Invitation claimed successfully. Linked to Practitioner/{result.PractitionerId}.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to claim invitation: {ex.Message}";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}

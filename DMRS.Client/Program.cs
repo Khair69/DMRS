@@ -1,10 +1,15 @@
 using DMRS.Client;
+using DMRS.Client.Features.Organizations.Services;
 using DMRS.Client.Features.Patients.Services;
 using DMRS.Client.Services;
 using Hl7.Fhir.Serialization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+//using System.IdentityModel.Tokens.Jwt;
+//if not remember to delete nugut package
+//JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+//Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -14,8 +19,9 @@ builder.Services.AddOidcAuthentication(options =>
 {
     builder.Configuration.Bind("Keycloak", options.ProviderOptions);
     options.ProviderOptions.ResponseType = "code";
-    options.UserOptions.RoleClaim = "role";
-});
+    options.UserOptions.RoleClaim = "roles";
+})
+    .AddAccountClaimsPrincipalFactory<KeycloakClaimsPrincipalFactory>();
 
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7029/";
 builder.Services.AddHttpClient<FhirApiService>(client =>
@@ -36,5 +42,7 @@ builder.Services.AddSingleton<FhirJsonDeserializer>(new FhirJsonDeserializer(new
 }));
 
 builder.Services.AddScoped<PatientFeatureService>();
+builder.Services.AddScoped<OrganizationFeatureService>();
+builder.Services.AddScoped<OrganizationAdminFeatureService>();
 
 await builder.Build().RunAsync();

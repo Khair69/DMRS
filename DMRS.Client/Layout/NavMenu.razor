@@ -24,6 +24,13 @@
                 <span class="bi bi-people-fill-nav-menu" aria-hidden="true"></span> Patients
             </NavLink>
         </div>
+        <AuthorizeView Roles="ROLE_SYSTEM_ADMIN">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="organizations">
+                    <span class="bi bi-building-fill-nav-menu" aria-hidden="true"></span> Organizations
+                </NavLink>
+            </div>
+        </AuthorizeView>
     </nav>
 </div>
 

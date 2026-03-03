@@ -1,0 +1,46 @@
+@page "/organizations/new"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN")]
+@inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Organization</PageTitle>
+
+<h1>Create Organization</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<OrganizationForm Model="model" IsBusy="@isSaving" SubmitText="Create Organization" OnSave="Save" />
+
+@code {
+    private readonly OrganizationEditModel model = new();
+    private bool isSaving;
+    private string? errorMessage;
+
+    private async Task Save()
+    {
+        isSaving = true;
+        errorMessage = null;
+        try
+        {
+            var createdOrganization = await OrganizationService.CreateAsync(model);
+            if (createdOrganization?.Id is null)
+            {
+                errorMessage = "Organization was created but no id was returned.";
+                return;
+            }
+
+            NavigationManager.NavigateTo($"/organizations/{createdOrganization.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while creating the organization: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

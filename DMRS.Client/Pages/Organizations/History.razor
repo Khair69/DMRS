@@ -1,0 +1,50 @@
+@page "/organizations/{Id}/history"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN")]
+@inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
+
+<PageTitle>Organization History</PageTitle>
+
+<h1>Organization History</h1>
+
+@if (isBusy)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <OrganizationHistoryTable History="history" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private IReadOnlyList<Hl7.Fhir.Model.Organization> history = [];
+    private bool isBusy;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isBusy = true;
+        errorMessage = null;
+
+        try
+        {
+            history = await OrganizationService.GetHistoryAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load history: {ex.Message}";
+            history = [];
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}

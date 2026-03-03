@@ -14,6 +14,7 @@
 	<PackageReference Include="Hl7.Fhir.R5" Version="6.0.2" />
 	<PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.3" />
 	<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.3" />
+	<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,78 @@
+@page "/organizations/{Id}/edit"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN")]
+@inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Organization</PageTitle>
+
+<h1>Edit Organization</h1>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <OrganizationForm Model="model" IsBusy="@isSaving" SubmitText="Update Organization" OnSave="Save" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private OrganizationEditModel model = new();
+    private bool isLoading;
+    private bool isSaving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var organization = await OrganizationService.GetAsync(Id);
+            if (organization is null)
+            {
+                errorMessage = $"Organization {Id} not found.";
+                return;
+            }
+
+            model = OrganizationEditModel.FromOrganization(organization);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load organization: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+        isSaving = true;
+
+        try
+        {
+            await OrganizationService.UpdateAsync(Id, model);
+            Navigation.NavigateTo($"/organizations/{Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update organization: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}
