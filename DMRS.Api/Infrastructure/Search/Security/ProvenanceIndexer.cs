@@ -3,7 +3,7 @@ using Hl7.Fhir.Model;
 
 namespace DMRS.Api.Infrastructure.Search.Security
 {
-    public class MetadataIndexer : ResourceSearchIndexerBase
+    public class ProvenanceIndexer : ResourceSearchIndexerBase
     {
         protected override string ResourceType => "Provenance";
 

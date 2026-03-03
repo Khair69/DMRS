@@ -88,8 +88,7 @@ namespace DMRS.Api.Controllers
 
             var bundle = new Bundle
             {
-                Type = Bundle.BundleType.Searchset,
-                Total = resources.Count
+                Type = Bundle.BundleType.Searchset
             };
 
             foreach (var resource in resources)
@@ -103,6 +102,9 @@ namespace DMRS.Api.Controllers
                     });
                 }
             }
+
+            bundle.Total = bundle.Entry.Count;
+
 
             var json = _serializer.SerializeToString(bundle);
 
@@ -285,7 +287,7 @@ namespace DMRS.Api.Controllers
                 return NotFound();
             }
 
-            if (!await CanAccessResource(existingResource, "write"))
+            if (!await CanAccessResource(existingResource, "delete"))
             {
                 return Forbid();
             }
@@ -321,8 +323,7 @@ namespace DMRS.Api.Controllers
 
             var bundle = new Bundle
             {
-                Type = Bundle.BundleType.History,
-                Total = resources.Count
+                Type = Bundle.BundleType.History
             };
 
             foreach (var resource in resources)
@@ -346,6 +347,8 @@ namespace DMRS.Api.Controllers
                     });
                 }
             }
+
+            bundle.Total = bundle.Entry.Count;
 
             if (bundle.Total == 0)
             {

@@ -66,7 +66,7 @@ builder.Services.AddScoped<MedicationRequestIndexer>();
 builder.Services.AddScoped<AppointmentIndexer>();
 builder.Services.AddScoped<ServiceRequestIndexer>();
 builder.Services.AddScoped<BundleIndexer>();
-builder.Services.AddScoped<MetadataIndexer>();
+builder.Services.AddScoped<ProvenanceIndexer>();
 builder.Services.AddSingleton<IFhirValidatorService, FhirValidatorService>();
 
 builder.Services.AddSingleton<FhirJsonSerializer>(new FhirJsonSerializer());
