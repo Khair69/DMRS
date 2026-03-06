@@ -71,7 +71,7 @@ namespace DMRS.Api.Infrastructure.Security
             resourceType = resourceType.ToLowerInvariant();
             action = action.ToLowerInvariant();
 
-            if (HasScope(scopes, "system", resourceType, action))
+            if (HasScope(scopes, "system", resourceType, action) && user.IsInRole("ROLE_SYSTEM_ADMIN"))
             {
                 return SmartAccessLevel.System;
             }
@@ -118,6 +118,27 @@ namespace DMRS.Api.Infrastructure.Security
             if (!string.IsNullOrWhiteSpace(fhirUser))
             {
                 return ParseReferenceId(fhirUser, "practitioner");
+            }
+
+            // Fallback: resolve practitioner by Keycloak subject linked in practitioner identifiers.
+            var keycloakUserId = user.FindFirst("sub")?.Value;
+            if (!string.IsNullOrWhiteSpace(keycloakUserId))
+            {
+                var authority = user.FindFirst("iss")?.Value;
+                var identifierSystem = BuildKeycloakIdentifierSystem(authority);
+                var target = $"{identifierSystem}|{keycloakUserId}".ToLowerInvariant();
+
+                practitionerId = _dbContext.ResourceIndices
+                    .Where(i => i.ResourceType == "Practitioner"
+                        && i.SearchParamCode == "identifier"
+                        && i.Value == target)
+                    .Select(i => i.ResourceId)
+                    .FirstOrDefault();
+
+                if (!string.IsNullOrWhiteSpace(practitionerId))
+                {
+                    return practitionerId;
+                }
             }
 
             return null;
@@ -329,6 +350,16 @@ namespace DMRS.Api.Infrastructure.Security
             }
 
             return trimmed;
+        }
+
+        private static string BuildKeycloakIdentifierSystem(string? issuer)
+        {
+            if (string.IsNullOrWhiteSpace(issuer))
+            {
+                return "https://keycloak.local/users";
+            }
+
+            return $"{issuer.TrimEnd('/')}/users";
         }
     }
 }

@@ -37,8 +37,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = "http://localhost:8080/realms/DMRS";
-        options.Audience = "dmrs-api";
+        options.Authority = builder.Configuration["Keycloak:Authority"] ?? "http://localhost:8080/realms/DMRS";
+        options.Audience = builder.Configuration["Keycloak:ClientId"] ?? "dmrs-api";
         options.RequireHttpsMetadata = false; // DEV ONLY
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -52,6 +52,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddFhirAuthorization();
 
 builder.Services.AddScoped<IFhirRepository, FhirRepository>();
+builder.Services.AddHttpClient<IKeycloakAdminService, KeycloakAdminService>();
 builder.Services.AddScoped<PatientIndexer>();
 builder.Services.AddScoped<PractitionerIndexer>();
 builder.Services.AddScoped<PractitionerRoleIndexer>();
