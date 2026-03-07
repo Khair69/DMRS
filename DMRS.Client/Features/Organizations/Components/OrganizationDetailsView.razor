@@ -15,9 +15,12 @@ else
         <div class="card-header d-flex justify-content-between align-items-center">
             <span>Organization @Organization.Id</span>
             <div>
-                <NavLink class="btn btn-sm btn-outline-success me-1" href="@($"/organizations/{Organization.Id}/admins/new")">Add Admin</NavLink>
-                <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/organizations/{Organization.Id}/edit")">Edit</NavLink>
-                <NavLink class="btn btn-sm btn-outline-info" href="@($"/organizations/{Organization.Id}/history")">History</NavLink>
+                <NavLink class="btn btn-sm btn-outline-primary me-1" href="@($"/organizations/{Organization.Id}/staff")">Manage Staff</NavLink>
+                <AuthorizeView Roles="ROLE_SYSTEM_ADMIN">
+                    <NavLink class="btn btn-sm btn-outline-success me-1" href="@($"/organizations/{Organization.Id}/admins/new")">Add Admin</NavLink>
+                    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/organizations/{Organization.Id}/edit")">Edit</NavLink>
+                    <NavLink class="btn btn-sm btn-outline-info" href="@($"/organizations/{Organization.Id}/history")">History</NavLink>
+                </AuthorizeView>
             </div>
         </div>
         <div class="card-body">

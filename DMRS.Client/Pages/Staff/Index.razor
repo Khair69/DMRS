@@ -1,0 +1,77 @@
+@page "/organizations/{OrganizationId}/staff"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
+@inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
+@inject DMRS.Client.Features.Staff.Services.StaffFeatureService StaffService
+
+<PageTitle>Organization Staff</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Organization Staff</h1>
+    <NavLink class="btn btn-primary" href="@($"/organizations/{OrganizationId}/staff/new")">Invite Staff</NavLink>
+</div>
+
+@if (organization is not null)
+{
+    <div class="alert alert-info">Organization: <strong>@organization.Name</strong> (@organization.Id)</div>
+}
+
+<StaffSearchForm RoleFilter="@roleFilter" TextFilter="@textFilter" IsBusy="@isBusy" OnSearch="RunSearch" />
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<StaffTable OrganizationId="@OrganizationId" Staff="@staff" />
+
+@code {
+    [Parameter]
+    public string OrganizationId { get; set; } = string.Empty;
+
+    private Hl7.Fhir.Model.Organization? organization;
+    private string roleFilter = "ALL";
+    private string textFilter = string.Empty;
+    private bool isBusy;
+    private string? errorMessage;
+    private IReadOnlyList<StaffSummaryViewModel> staff = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadOrganization();
+        await RunSearch((roleFilter, textFilter));
+    }
+
+    private async Task LoadOrganization()
+    {
+        try
+        {
+            organization = await OrganizationService.GetAsync(OrganizationId);
+        }
+        catch
+        {
+            organization = null;
+        }
+    }
+
+    private async Task RunSearch((string RoleFilter, string TextFilter) criteria)
+    {
+        roleFilter = criteria.RoleFilter;
+        textFilter = criteria.TextFilter;
+        errorMessage = null;
+        isBusy = true;
+
+        try
+        {
+            staff = await StaffService.GetByOrganizationAsync(OrganizationId, roleFilter, textFilter);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load staff: {ex.Message}";
+            staff = [];
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}

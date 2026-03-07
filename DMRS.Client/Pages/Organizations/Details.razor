@@ -1,5 +1,5 @@
 @page "/organizations/{Id}"
-@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN")]
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
 @inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
 
 <PageTitle>Organization Details</PageTitle>

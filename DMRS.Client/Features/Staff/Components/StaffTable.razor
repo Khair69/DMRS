@@ -1,0 +1,50 @@
+@using DMRS.Client.Features.Staff.Models
+
+@if (Staff.Count == 0)
+{
+    <div class="alert alert-secondary">No staff found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Active</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var staff in Staff)
+                {
+                    <tr>
+                        <td>@staff.DisplayName</td>
+                        <td>@staff.Email</td>
+                        <td>@staff.Phone</td>
+                        <td>
+                            <span class="badge @(staff.RoleCode == StaffRoleCodes.OrganizationAdmin ? "bg-warning text-dark" : "bg-primary")">
+                                @staff.RoleDisplay
+                            </span>
+                        </td>
+                        <td>@staff.Active</td>
+                        <td>
+                            <NavLink class="btn btn-sm btn-outline-primary" href="@($"/organizations/{OrganizationId}/staff/{staff.PractitionerId}")">Details</NavLink>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string OrganizationId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<StaffSummaryViewModel> Staff { get; set; } = [];
+}

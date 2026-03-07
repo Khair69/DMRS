@@ -8,21 +8,17 @@ namespace DMRS.Client.Features.Organizations.Services;
 
 public sealed class OrganizationAdminFeatureService
 {
-    private const string InviteCodeIdentifierSystem = "https://dmrs.local/invites/org-admin";
+    private const string InviteCodeIdentifierSystem = "https://dmrs.local/invites/practitioner";
 
     private readonly FhirApiService _fhirApiService;
-    private readonly string _keycloakIdentifierSystem;
     private readonly string _keycloakAuthority;
     private readonly string _keycloakClientId;
-    private readonly string _keycloakRedirectUri;
 
     public OrganizationAdminFeatureService(FhirApiService fhirApiService, IConfiguration configuration)
     {
         _fhirApiService = fhirApiService;
         _keycloakAuthority = configuration["Keycloak:Authority"] ?? "http://localhost:8080/realms/DMRS";
         _keycloakClientId = configuration["Keycloak:ClientId"] ?? "dmrs-api";
-        _keycloakRedirectUri = configuration["Keycloak:RedirectUri"] ?? "https://localhost:7099/authentication/login-callback";
-        _keycloakIdentifierSystem = BuildKeycloakIdentifierSystem(_keycloakAuthority);
     }
 
     public async Task<OrganizationAdminInviteResult> CreateAdminInviteAsync(string organizationId, OrganizationAdminEditModel model, string appBaseUri)
@@ -66,7 +62,8 @@ public sealed class OrganizationAdminFeatureService
             await _fhirApiService.UpdateResourceAsync<Practitioner>(createdPractitioner.Id, createdPractitioner);
 
             var claimLink = $"{appBaseUri.TrimEnd('/')}/org-admin/claim?code={Uri.EscapeDataString(inviteCode)}";
-            var registrationLink = BuildKeycloakRegistrationUrl(claimLink);
+            var autoClaimLink = $"{claimLink}&auto=true";
+            var registrationLink = BuildKeycloakRegistrationUrl(autoClaimLink);
 
             return new OrganizationAdminInviteResult(
                 createdPractitioner.Id,
@@ -83,7 +80,7 @@ public sealed class OrganizationAdminFeatureService
             }
             catch
             {
-                Console.WriteLine("error kteer... dbr rask");
+                // Best-effort cleanup only.
             }
 
             throw;
@@ -102,64 +99,30 @@ public sealed class OrganizationAdminFeatureService
             throw new InvalidOperationException("Current user id claim (sub) is missing.");
         }
 
-        var matches = await _fhirApiService.SearchAsync<Practitioner>("identifier", $"{InviteCodeIdentifierSystem}|{inviteCode}");
-        if (matches.Count == 0)
-        {
-            throw new InvalidOperationException("Invite code is invalid or already claimed.");
-        }
-
-        if (matches.Count > 1)
-        {
-            throw new InvalidOperationException("Invite code is not unique. Contact support.");
-        }
-
-        var practitioner = matches[0];
-        if (string.IsNullOrWhiteSpace(practitioner.Id))
-        {
-            throw new InvalidOperationException("Matched practitioner has no id.");
-        }
-
-        practitioner.Identifier ??= [];
-
-        practitioner.Identifier = practitioner.Identifier
-            .Where(i => !string.Equals(i.System, InviteCodeIdentifierSystem, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        AddOrReplaceIdentifier(practitioner.Identifier, _keycloakIdentifierSystem, keycloakUserId);
-
-        if (!string.IsNullOrWhiteSpace(keycloakUsername))
-        {
-            AddOrReplaceIdentifier(practitioner.Identifier, $"{_keycloakIdentifierSystem}/username", keycloakUsername);
-        }
-
-        await _fhirApiService.UpdateResourceAsync<Practitioner>(practitioner.Id, practitioner);
-        return new OrganizationAdminClaimResult(practitioner.Id);
-    }
-
-    private static void AddOrReplaceIdentifier(List<Identifier> identifiers, string system, string value)
-    {
-        var existing = identifiers.FirstOrDefault(i => string.Equals(i.System, system, StringComparison.OrdinalIgnoreCase));
-        if (existing is null)
-        {
-            identifiers.Add(new Identifier
+        var response = await _fhirApiService.PostApiJsonAsync<StaffClaimRequest, StaffClaimApiResponse>("api/staff/claim-invite",
+            new StaffClaimRequest
             {
-                System = system,
-                Value = value
+                InviteCode = inviteCode,
+                KeycloakUserId = keycloakUserId,
+                KeycloakUsername = keycloakUsername
             });
-            return;
+
+        if (response is null || string.IsNullOrWhiteSpace(response.PractitionerId))
+        {
+            throw new InvalidOperationException("Claim failed: empty response from API.");
         }
 
-        existing.Value = value;
+        return new OrganizationAdminClaimResult(response.PractitionerId);
     }
 
-    private string BuildKeycloakRegistrationUrl(string _)
+    private string BuildKeycloakRegistrationUrl(string redirectUri)
     {
         var authBase = _keycloakAuthority.TrimEnd('/');
         return $"{authBase}/protocol/openid-connect/registrations" +
                $"?client_id={Uri.EscapeDataString(_keycloakClientId)}" +
                $"&response_type=code" +
-                $"&scope={Uri.EscapeDataString("openid profile")}" +
-               $"&redirect_uri={Uri.EscapeDataString(_keycloakRedirectUri)}";
+               $"&scope={Uri.EscapeDataString("openid profile")}" +
+               $"&redirect_uri={Uri.EscapeDataString(redirectUri)}";
     }
 
     private static string GenerateInviteCode()
@@ -168,15 +131,6 @@ public sealed class OrganizationAdminFeatureService
         return Convert.ToHexString(bytes);
     }
 
-    private static string BuildKeycloakIdentifierSystem(string? keycloakAuthority)
-    {
-        if (string.IsNullOrWhiteSpace(keycloakAuthority))
-        {
-            return "https://keycloak.local/users";
-        }
-
-        return $"{keycloakAuthority.TrimEnd('/')}/users";
-    }
 }
 
 public sealed record OrganizationAdminInviteResult(
@@ -188,3 +142,16 @@ public sealed record OrganizationAdminInviteResult(
 
 public sealed record OrganizationAdminClaimResult(
     string PractitionerId);
+
+internal sealed class StaffClaimRequest
+{
+    public string InviteCode { get; set; } = string.Empty;
+    public string KeycloakUserId { get; set; } = string.Empty;
+    public string? KeycloakUsername { get; set; }
+}
+
+internal sealed class StaffClaimApiResponse
+{
+    public string PractitionerId { get; set; } = string.Empty;
+    public string AssignedRealmRole { get; set; } = string.Empty;
+}

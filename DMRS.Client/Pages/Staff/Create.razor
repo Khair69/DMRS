@@ -1,12 +1,12 @@
-@page "/organizations/{OrganizationId}/admins/new"
-@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN")]
+@page "/organizations/{OrganizationId}/staff/new"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
 @inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
-@inject DMRS.Client.Features.Organizations.Services.OrganizationAdminFeatureService OrganizationAdminService
+@inject DMRS.Client.Features.Staff.Services.StaffFeatureService StaffService
 @inject NavigationManager Navigation
 
-<PageTitle>Create Organization Admin</PageTitle>
+<PageTitle>Invite Staff</PageTitle>
 
-<h1>Create Organization Admin</h1>
+<h1>Invite Staff</h1>
 
 @if (isLoadingOrganization)
 {
@@ -19,7 +19,7 @@ else if (organization is null)
 else
 {
     <div class="alert alert-info">
-        Creating admin for organization: <strong>@organization.Name</strong> (@organization.Id)
+        Inviting staff for organization: <strong>@organization.Name</strong> (@organization.Id)
     </div>
 
     @if (!string.IsNullOrWhiteSpace(errorMessage))
@@ -34,7 +34,7 @@ else
 
     @if (inviteResult is not null)
     {
-        <div class="card mt-3">
+        <div class="card mt-3 mb-3">
             <div class="card-header">Invitation Generated</div>
             <div class="card-body">
                 <p class="mb-2"><strong>Invite code</strong>: <code>@inviteResult.InviteCode</code></p>
@@ -44,21 +44,21 @@ else
         </div>
     }
 
-    <OrganizationAdminForm Model="model" IsBusy="@isSaving" OnSave="Save" />
+    <StaffInviteForm Model="model" IsBusy="@isSaving" SubmitText="Create Invitation" OnSave="Save" />
 }
 
 @code {
     [Parameter]
     public string OrganizationId { get; set; } = string.Empty;
 
-    private readonly OrganizationAdminEditModel model = new();
+    private readonly StaffInviteEditModel model = new();
     private Hl7.Fhir.Model.Organization? organization;
     private bool isLoadingOrganization;
     private bool isSaving;
     private string? errorMessage;
     private string? successMessage;
     private string? organizationError;
-    private DMRS.Client.Features.Organizations.Services.OrganizationAdminInviteResult? inviteResult;
+    private DMRS.Client.Features.Staff.Services.StaffInviteResult? inviteResult;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -99,12 +99,12 @@ else
 
         try
         {
-            inviteResult = await OrganizationAdminService.CreateAdminInviteAsync(OrganizationId, model, Navigation.BaseUri);
-            successMessage = $"Organization admin invitation created. Practitioner: {inviteResult.PractitionerId}, PractitionerRole: {inviteResult.PractitionerRoleId}.";
+            inviteResult = await StaffService.CreateInviteAsync(OrganizationId, model, Navigation.BaseUri);
+            successMessage = $"Staff invitation created. Practitioner: {inviteResult.PractitionerId}, PractitionerRole: {inviteResult.PractitionerRoleId}.";
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to create organization admin: {ex.Message}";
+            errorMessage = $"Failed to create invitation: {ex.Message}";
         }
         finally
         {

@@ -2,6 +2,7 @@
 using Hl7.Fhir.Serialization;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Net;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 
@@ -125,6 +126,19 @@ public class FhirApiService
     {
         var response = await _httpClient.GetAsync("api/test/test-api");
         return response;
+    }
+
+    public async Task<TResponse?> PostApiJsonAsync<TRequest, TResponse>(string path, TRequest payload)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, path);
+        request.Headers.Accept.Clear();
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        request.Content = JsonContent.Create(payload);
+
+        using var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<TResponse>();
     }
 
     private IReadOnlyList<T> DeserializeResourceList<T>(string json) where T : Resource

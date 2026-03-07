@@ -1,6 +1,7 @@
 using DMRS.Client;
 using DMRS.Client.Features.Organizations.Services;
 using DMRS.Client.Features.Patients.Services;
+using DMRS.Client.Features.Staff.Services;
 using DMRS.Client.Services;
 using Hl7.Fhir.Serialization;
 using Microsoft.AspNetCore.Components.Web;
@@ -44,5 +45,6 @@ builder.Services.AddSingleton<FhirJsonDeserializer>(new FhirJsonDeserializer(new
 builder.Services.AddScoped<PatientFeatureService>();
 builder.Services.AddScoped<OrganizationFeatureService>();
 builder.Services.AddScoped<OrganizationAdminFeatureService>();
+builder.Services.AddScoped<StaffFeatureService>();
 
 await builder.Build().RunAsync();

@@ -1,11 +1,11 @@
-@page "/org-admin/claim"
+@page "/staff/claim"
 @attribute [Authorize]
-@inject DMRS.Client.Features.Organizations.Services.OrganizationAdminFeatureService OrganizationAdminService
+@inject DMRS.Client.Features.Staff.Services.StaffFeatureService StaffService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
-<PageTitle>Claim Organization Admin Invitation</PageTitle>
+<PageTitle>Claim Staff Invitation</PageTitle>
 
-<h1>Claim Organization Admin Invitation</h1>
+<h1>Claim Staff Invitation</h1>
 
 @if (isBusy)
 {
@@ -87,7 +87,7 @@ else
             var keycloakUsername = user.FindFirst("preferred_username")?.Value
                                    ?? user.Identity?.Name;
 
-            var result = await OrganizationAdminService.ClaimInviteAsync(Code.Trim(), keycloakUserId, keycloakUsername);
+            var result = await StaffService.ClaimInviteAsync(Code.Trim(), keycloakUserId, keycloakUsername);
             successMessage = $"Invitation claimed successfully. Linked to Practitioner/{result.PractitionerId}.";
         }
         catch (Exception ex)

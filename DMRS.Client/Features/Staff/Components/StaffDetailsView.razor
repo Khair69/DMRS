@@ -1,0 +1,75 @@
+@using Hl7.Fhir.Model
+
+@if (Practitioner is null)
+{
+    <div class="alert alert-warning">Practitioner not found.</div>
+}
+else
+{
+    var name = Practitioner.Name.FirstOrDefault();
+    var email = Practitioner.Telecom.FirstOrDefault(t => t.System == ContactPoint.ContactPointSystem.Email)?.Value;
+    var phone = Practitioner.Telecom.FirstOrDefault(t => t.System == ContactPoint.ContactPointSystem.Phone)?.Value;
+
+    <div class="card">
+        <div class="card-header">
+            Practitioner @Practitioner.Id
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Name</dt>
+                <dd class="col-sm-9">@string.Join(" ", name?.Given ?? []) @name?.Family</dd>
+
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">@email</dd>
+
+                <dt class="col-sm-3">Phone</dt>
+                <dd class="col-sm-9">@phone</dd>
+
+                <dt class="col-sm-3">Active</dt>
+                <dd class="col-sm-9">@Practitioner.Active</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">Roles</div>
+        <div class="card-body">
+            @if (Roles.Count == 0)
+            {
+                <div class="alert alert-secondary mb-0">No practitioner roles found.</div>
+            }
+            else
+            {
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Organization</th>
+                            <th>Active</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var role in Roles)
+                        {
+                            var coding = role.Code.SelectMany(c => c.Coding).FirstOrDefault();
+                            var roleName = coding?.Display ?? role.Code.FirstOrDefault()?.Text ?? coding?.Code ?? "(unknown)";
+                            <tr>
+                                <td>@roleName</td>
+                                <td>@role.Organization?.Reference</td>
+                                <td>@role.Active</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Practitioner? Practitioner { get; set; }
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<PractitionerRole> Roles { get; set; } = [];
+}

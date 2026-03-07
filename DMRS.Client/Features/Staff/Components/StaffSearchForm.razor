@@ -1,0 +1,44 @@
+@using DMRS.Client.Features.Staff.Models
+
+<div class="card mb-3">
+    <div class="card-body">
+        <EditForm Model="this" OnSubmit="HandleSubmit">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Role</label>
+                    <InputSelect @bind-Value="RoleFilter" class="form-select">
+                        <option value="ALL">All</option>
+                        <option value="@StaffRoleCodes.Doctor">Doctors</option>
+                        <option value="@StaffRoleCodes.OrganizationAdmin">Org Admins</option>
+                    </InputSelect>
+                </div>
+                <div class="col-md-7">
+                    <label class="form-label">Search</label>
+                    <InputText @bind-Value="TextFilter" class="form-control" placeholder="Name, email, role..." />
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-primary" disabled="@IsBusy" type="submit">Search</button>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string RoleFilter { get; set; } = "ALL";
+
+    [Parameter]
+    public string TextFilter { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public EventCallback<(string RoleFilter, string TextFilter)> OnSearch { get; set; }
+
+    private async Task HandleSubmit()
+    {
+        await OnSearch.InvokeAsync((RoleFilter, TextFilter));
+    }
+}

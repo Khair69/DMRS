@@ -1,0 +1,80 @@
+@using DMRS.Client.Features.Staff.Models
+
+<EditForm Model="Model" OnValidSubmit="OnSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Given Name</label>
+            <InputText @bind-Value="Model.GivenName" class="form-control" />
+            <ValidationMessage For="() => Model.GivenName" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Family Name</label>
+            <InputText @bind-Value="Model.FamilyName" class="form-control" />
+            <ValidationMessage For="() => Model.FamilyName" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <InputText @bind-Value="Model.Email" class="form-control" />
+            <ValidationMessage For="() => Model.Email" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Phone</label>
+            <InputText @bind-Value="Model.Phone" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Identifier System</label>
+            <InputText @bind-Value="Model.IdentifierSystem" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Identifier Value</label>
+            <InputText @bind-Value="Model.IdentifierValue" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Role</label>
+            <InputSelect @bind-Value="Model.RoleCode" class="form-select" @onchange="HandleRoleChange">
+                <option value="@StaffRoleCodes.Doctor">Doctor</option>
+                <option value="@StaffRoleCodes.OrganizationAdmin">Organization Admin</option>
+            </InputSelect>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Role Display</label>
+            <InputText @bind-Value="Model.RoleDisplay" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Role System</label>
+            <InputText @bind-Value="Model.RoleSystem" class="form-control" />
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary" disabled="@IsBusy">@SubmitText</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public StaffInviteEditModel Model { get; set; } = new();
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Create Invitation";
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    private async Task OnSubmit()
+    {
+        await OnSave.InvokeAsync();
+    }
+
+    private void HandleRoleChange(ChangeEventArgs _)
+    {
+        Model.RoleDisplay = string.Equals(Model.RoleCode, StaffRoleCodes.OrganizationAdmin, StringComparison.OrdinalIgnoreCase)
+            ? "Organization Administrator"
+            : "Doctor";
+    }
+}

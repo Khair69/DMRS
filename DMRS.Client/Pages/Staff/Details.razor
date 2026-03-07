@@ -1,0 +1,64 @@
+@page "/organizations/{OrganizationId}/staff/{PractitionerId}"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
+@inject DMRS.Client.Features.Staff.Services.StaffFeatureService StaffService
+
+<PageTitle>Staff Details</PageTitle>
+
+<h1>Staff Details</h1>
+
+@if (isBusy)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else
+{
+    <StaffDetailsView Practitioner="@practitioner" Roles="@roles" />
+}
+
+@code {
+    [Parameter]
+    public string OrganizationId { get; set; } = string.Empty;
+
+    [Parameter]
+    public string PractitionerId { get; set; } = string.Empty;
+
+    private Hl7.Fhir.Model.Practitioner? practitioner;
+    private IReadOnlyList<Hl7.Fhir.Model.PractitionerRole> roles = [];
+    private bool isBusy;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isBusy = true;
+        errorMessage = null;
+
+        try
+        {
+            practitioner = await StaffService.GetPractitionerAsync(PractitionerId);
+            roles = await StaffService.GetPractitionerRolesAsync(PractitionerId);
+
+            if (practitioner is null)
+            {
+                errorMessage = $"Practitioner {PractitionerId} not found.";
+                roles = [];
+                return;
+            }
+
+            roles = roles
+                .Where(r => string.Equals(r.Organization?.Reference, $"Organization/{OrganizationId}", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load practitioner details: {ex.Message}";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}
