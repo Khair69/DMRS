@@ -54,10 +54,12 @@ namespace DMRS.Api.Infrastructure.Security
         ];
 
         private readonly AppDbContext _dbContext;
+        private readonly IResourceOwnershipResolver _ownershipResolver;
 
-        public SmartAuthorizationService(AppDbContext dbContext)
+        public SmartAuthorizationService(AppDbContext dbContext, IResourceOwnershipResolver ownershipResolver)
         {
             _dbContext = dbContext;
+            _ownershipResolver = ownershipResolver;
         }
 
         public SmartAccessLevel GetAccessLevel(ClaimsPrincipal user, string resourceType, string action)
@@ -236,20 +238,8 @@ namespace DMRS.Api.Infrastructure.Security
                 return false;
             }
 
-            if (resourceType.Equals("Organization", StringComparison.OrdinalIgnoreCase))
-            {
-                return organizationIds.Contains(resourceId, StringComparer.OrdinalIgnoreCase);
-            }
-
-            var expectedOrganizationReferences = organizationIds
-                .Select(i => $"organization/{i}".ToLowerInvariant())
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            return await _dbContext.ResourceIndices
-                .AnyAsync(i => i.ResourceType == resourceType
-                    && i.ResourceId == resourceId
-                    && i.SearchParamCode == "organization"
-                    && expectedOrganizationReferences.Contains(i.Value));
+            var ownedOrganizations = await _ownershipResolver.ResolveOrganizationsAsync(resourceType, resourceId);
+            return ownedOrganizations.Any(orgId => organizationIds.Contains(orgId, StringComparer.OrdinalIgnoreCase));
         }
 
         public bool IsResourceOwnedByOrganizations(Resource resource, IEnumerable<ResourceIndex> resourceIndices, IReadOnlyCollection<string> organizationIds)

@@ -1,24 +1,16 @@
-using System.Security.Cryptography;
 using DMRS.Client.Features.Staff.Models;
 using DMRS.Client.Services;
 using Hl7.Fhir.Model;
-using Microsoft.Extensions.Configuration;
 
 namespace DMRS.Client.Features.Staff.Services;
 
 public sealed class StaffFeatureService
 {
-    private const string InviteCodeIdentifierSystem = "https://dmrs.local/invites/practitioner";
-
     private readonly FhirApiService _fhirApiService;
-    private readonly string _keycloakAuthority;
-    private readonly string _keycloakClientId;
 
-    public StaffFeatureService(FhirApiService fhirApiService, IConfiguration configuration)
+    public StaffFeatureService(FhirApiService fhirApiService)
     {
         _fhirApiService = fhirApiService;
-        _keycloakAuthority = configuration["Keycloak:Authority"] ?? "http://localhost:8080/realms/DMRS";
-        _keycloakClientId = configuration["Keycloak:ClientId"] ?? "dmrs-api";
     }
 
     public async Task<IReadOnlyList<StaffSummaryViewModel>> GetByOrganizationAsync(string organizationId, string? roleCodeFilter, string? textFilter)
@@ -71,56 +63,35 @@ public sealed class StaffFeatureService
 
     public async Task<StaffInviteResult> CreateInviteAsync(string organizationId, StaffInviteEditModel model, string appBaseUri)
     {
-        var practitioner = model.ToPractitioner();
-        var createdPractitioner = await _fhirApiService.CreateResourceAsync(practitioner);
-        if (createdPractitioner?.Id is null)
-        {
-            throw new InvalidOperationException("Practitioner was created but no id was returned.");
-        }
-
-        try
-        {
-            var role = model.ToPractitionerRole(createdPractitioner.Id, organizationId);
-            var createdRole = await _fhirApiService.CreateResourceAsync(role);
-            if (createdRole?.Id is null)
+        var response = await _fhirApiService.PostApiJsonAsync<CreateStaffInviteRequest, CreateStaffInviteResponse>(
+            "api/staff/create-invite",
+            new CreateStaffInviteRequest
             {
-                throw new InvalidOperationException("PractitionerRole was created but no id was returned.");
-            }
-
-            var inviteCode = GenerateInviteCode();
-            createdPractitioner.Identifier ??= [];
-            createdPractitioner.Identifier.Add(new Identifier
-            {
-                System = InviteCodeIdentifierSystem,
-                Value = inviteCode
+                OrganizationId = organizationId,
+                AppBaseUri = appBaseUri,
+                ClaimPath = "/staff/claim",
+                GivenName = model.GivenName,
+                FamilyName = model.FamilyName,
+                Email = model.Email,
+                Phone = model.Phone,
+                IdentifierSystem = model.IdentifierSystem,
+                IdentifierValue = model.IdentifierValue,
+                RoleSystem = model.RoleSystem,
+                RoleCode = model.RoleCode,
+                RoleDisplay = model.RoleDisplay
             });
 
-            await _fhirApiService.UpdateResourceAsync<Practitioner>(createdPractitioner.Id, createdPractitioner);
-
-            var claimLink = $"{appBaseUri.TrimEnd('/')}/staff/claim?code={Uri.EscapeDataString(inviteCode)}";
-            var autoClaimLink = $"{claimLink}&auto=true";
-            var registrationLink = BuildKeycloakRegistrationUrl(autoClaimLink);
-
-            return new StaffInviteResult(
-                createdPractitioner.Id,
-                createdRole.Id,
-                inviteCode,
-                claimLink,
-                registrationLink);
-        }
-        catch
+        if (response is null || string.IsNullOrWhiteSpace(response.PractitionerId) || string.IsNullOrWhiteSpace(response.PractitionerRoleId))
         {
-            try
-            {
-                await _fhirApiService.DeleteResourceAsync<Practitioner>(createdPractitioner.Id);
-            }
-            catch
-            {
-                Console.WriteLine("BIG ERROR ig");
-            }
-
-            throw;
+            throw new InvalidOperationException("Invite creation failed: empty response from API.");
         }
+
+        return new StaffInviteResult(
+            response.PractitionerId,
+            response.PractitionerRoleId,
+            response.InviteCode,
+            response.ClaimLink,
+            response.RegistrationLink);
     }
 
     public async Task<StaffClaimResult> ClaimInviteAsync(string inviteCode, string keycloakUserId, string? keycloakUsername)
@@ -193,22 +164,6 @@ public sealed class StaffFeatureService
             roleDisplay);
     }
 
-    private string BuildKeycloakRegistrationUrl(string redirectUri)
-    {
-        var authBase = _keycloakAuthority.TrimEnd('/');
-        return $"{authBase}/protocol/openid-connect/registrations" +
-               $"?client_id={Uri.EscapeDataString(_keycloakClientId)}" +
-               $"&response_type=code" +
-               $"&scope={Uri.EscapeDataString("openid profile")}" +
-               $"&redirect_uri={Uri.EscapeDataString(redirectUri)}";
-    }
-
-    private static string GenerateInviteCode()
-    {
-        var bytes = RandomNumberGenerator.GetBytes(12);
-        return Convert.ToHexString(bytes);
-    }
-
     private static string? ParseReferenceId(string? reference, string expectedType)
     {
         if (string.IsNullOrWhiteSpace(reference))
@@ -247,4 +202,29 @@ internal sealed class StaffClaimApiResponse
 {
     public string PractitionerId { get; set; } = string.Empty;
     public string AssignedRealmRole { get; set; } = string.Empty;
+}
+
+internal sealed class CreateStaffInviteRequest
+{
+    public string OrganizationId { get; set; } = string.Empty;
+    public string AppBaseUri { get; set; } = string.Empty;
+    public string? ClaimPath { get; set; }
+    public string GivenName { get; set; } = string.Empty;
+    public string FamilyName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string? IdentifierSystem { get; set; }
+    public string? IdentifierValue { get; set; }
+    public string? RoleSystem { get; set; }
+    public string? RoleCode { get; set; }
+    public string? RoleDisplay { get; set; }
+}
+
+internal sealed class CreateStaffInviteResponse
+{
+    public string PractitionerId { get; set; } = string.Empty;
+    public string PractitionerRoleId { get; set; } = string.Empty;
+    public string InviteCode { get; set; } = string.Empty;
+    public string ClaimLink { get; set; } = string.Empty;
+    public string RegistrationLink { get; set; } = string.Empty;
 }

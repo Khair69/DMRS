@@ -134,7 +134,7 @@ namespace DMRS.Api.Controllers
 
             if (resource == null) return BadRequest("No resource provided.");
 
-            if (!await CanAccessResource(resource, "write"))
+            if (!await CanCreateResource(resource))
             {
                 return Forbid();
             }
@@ -164,6 +164,12 @@ namespace DMRS.Api.Controllers
         [HttpPut("{id}")]
         public virtual async Task<IActionResult> Update(string id, [FromBody] System.Text.Json.JsonElement body)
         {
+            var existingResource = await _repository.GetAsync<T>(id);
+            if (existingResource == null)
+            {
+                return NotFound();
+            }
+
             string jsonString = body.GetRawText();
             T resource;
 
@@ -180,7 +186,7 @@ namespace DMRS.Api.Controllers
             if (resource == null) return BadRequest("No resource provided.");
             if (id != resource.Id) return BadRequest("ID mismatch");
 
-            if (!await CanAccessResource(resource, "write"))
+            if (!await CanUpdateResource(existingResource, resource))
             {
                 return Forbid();
             }
@@ -220,11 +226,6 @@ namespace DMRS.Api.Controllers
                 return NotFound();
             }
 
-            if (!await CanAccessResource(existingResource, "write"))
-            {
-                return Forbid();
-            }
-
             var jsonString = body.GetRawText();
             T resource;
 
@@ -250,6 +251,11 @@ namespace DMRS.Api.Controllers
             else if (!string.Equals(id, resource.Id, StringComparison.Ordinal))
             {
                 return BadRequest("ID mismatch");
+            }
+
+            if (!await CanUpdateResource(existingResource, resource))
+            {
+                return Forbid();
             }
 
             var outcome = await _validator.ValidateAsync(resource);
@@ -287,7 +293,7 @@ namespace DMRS.Api.Controllers
                 return NotFound();
             }
 
-            if (!await CanAccessResource(existingResource, "delete"))
+            if (!await CanDeleteResource(existingResource))
             {
                 return Forbid();
             }
@@ -360,6 +366,133 @@ namespace DMRS.Api.Controllers
             return Content(json, "application/fhir+json");
         }
 
+        private async Task<bool> CanCreateResource(T resource)
+        {
+            var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, "write");
+            if (accessLevel == SmartAccessLevel.None)
+            {
+                return false;
+            }
+
+            if (accessLevel == SmartAccessLevel.User)
+            {
+                // Practitioner ownership is indirect and established only after PractitionerRole creation.
+                if (resource is Practitioner)
+                {
+                    return true;
+                }
+
+                var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
+                var indices = _searchIndexer.Extract(resource);
+                return _authorizationService.IsResourceOwnedByOrganizations(resource, indices, organizationIds);
+            }
+
+            if (accessLevel == SmartAccessLevel.System)
+            {
+                return true;
+            }
+
+            var patientId = _authorizationService.ResolvePatientId(User);
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                return false;
+            }
+
+            var patientIndices = _searchIndexer.Extract(resource);
+            return _authorizationService.IsResourceOwnedByPatient(resource, patientId, patientIndices);
+        }
+
+        private async Task<bool> CanUpdateResource(T existingResource, T updatedResource)
+        {
+            var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, "write");
+            if (accessLevel == SmartAccessLevel.None)
+            {
+                return false;
+            }
+
+            if (accessLevel == SmartAccessLevel.System)
+            {
+                return true;
+            }
+
+            if (accessLevel == SmartAccessLevel.User)
+            {
+                if (string.IsNullOrWhiteSpace(existingResource.Id))
+                {
+                    return false;
+                }
+
+                var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
+                if (organizationIds.Count == 0)
+                {
+                    return false;
+                }
+
+                var isCurrentOwned = await _authorizationService.IsResourceOwnedByOrganizationsAsync(typeof(T).Name, existingResource.Id, organizationIds);
+                if (!isCurrentOwned)
+                {
+                    return false;
+                }
+
+                if (updatedResource is Practitioner)
+                {
+                    return true;
+                }
+
+                var updatedIndices = _searchIndexer.Extract(updatedResource);
+                return _authorizationService.IsResourceOwnedByOrganizations(updatedResource, updatedIndices, organizationIds);
+            }
+
+            var patientId = _authorizationService.ResolvePatientId(User);
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                return false;
+            }
+
+            var existingIndices = _searchIndexer.Extract(existingResource);
+            if (!_authorizationService.IsResourceOwnedByPatient(existingResource, patientId, existingIndices))
+            {
+                return false;
+            }
+
+            var updatedResourceIndices = _searchIndexer.Extract(updatedResource);
+            return _authorizationService.IsResourceOwnedByPatient(updatedResource, patientId, updatedResourceIndices);
+        }
+
+        private async Task<bool> CanDeleteResource(T existingResource)
+        {
+            var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, "delete");
+            if (accessLevel == SmartAccessLevel.None)
+            {
+                return false;
+            }
+
+            if (accessLevel == SmartAccessLevel.System)
+            {
+                return true;
+            }
+
+            if (accessLevel == SmartAccessLevel.User)
+            {
+                if (string.IsNullOrWhiteSpace(existingResource.Id))
+                {
+                    return false;
+                }
+
+                var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
+                return await _authorizationService.IsResourceOwnedByOrganizationsAsync(typeof(T).Name, existingResource.Id, organizationIds);
+            }
+
+            var patientId = _authorizationService.ResolvePatientId(User);
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                return false;
+            }
+
+            var indices = _searchIndexer.Extract(existingResource);
+            return _authorizationService.IsResourceOwnedByPatient(existingResource, patientId, indices);
+        }
+
         private async Task<bool> CanAccessResource(T resource, string action)
         {
             var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, action);
@@ -373,11 +506,16 @@ namespace DMRS.Api.Controllers
                 return true;
             }
 
-            var indices = _searchIndexer.Extract(resource);
-
             if (accessLevel == SmartAccessLevel.User)
             {
                 var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
+
+                if (!string.IsNullOrWhiteSpace(resource.Id))
+                {
+                    return await _authorizationService.IsResourceOwnedByOrganizationsAsync(typeof(T).Name, resource.Id, organizationIds);
+                }
+
+                var indices = _searchIndexer.Extract(resource);
                 return _authorizationService.IsResourceOwnedByOrganizations(resource, indices, organizationIds);
             }
 
@@ -387,7 +525,8 @@ namespace DMRS.Api.Controllers
                 return false;
             }
 
-            return _authorizationService.IsResourceOwnedByPatient(resource, patientId, indices);
+            var resourceIndices = _searchIndexer.Extract(resource);
+            return _authorizationService.IsResourceOwnedByPatient(resource, patientId, resourceIndices);
         }
     }
 }
