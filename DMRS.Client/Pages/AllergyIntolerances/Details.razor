@@ -1,0 +1,44 @@
+@page "/allergy-intolerances/{Id}"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.AllergyIntolerances.Services.AllergyIntoleranceFeatureService AllergyService
+
+<PageTitle>Allergy Details</PageTitle>
+
+<h1>Allergy Details</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<div class="mb-3">
+    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/allergy-intolerances/{Id}/edit")">Edit</NavLink>
+    <NavLink class="btn btn-sm btn-outline-info" href="@($"/allergy-intolerances/{Id}/history")">History</NavLink>
+</div>
+
+<FhirJsonView Resource="allergy" />
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private Hl7.Fhir.Model.AllergyIntolerance? allergy;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            allergy = await AllergyService.GetAsync(Id);
+            if (allergy is null)
+            {
+                errorMessage = $"Allergy {Id} not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load allergy: {ex.Message}";
+        }
+    }
+}

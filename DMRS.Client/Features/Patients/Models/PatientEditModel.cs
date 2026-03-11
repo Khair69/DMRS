@@ -27,10 +27,14 @@ public sealed class PatientEditModel
     [MaxLength(100)]
     public string? IdentifierValue { get; set; }
 
+    [MaxLength(100)]
+    public string? ManagingOrganizationId { get; set; }
+
     public static PatientEditModel FromPatient(Patient patient)
     {
         var name = patient.Name.FirstOrDefault();
         var identifier = patient.Identifier.FirstOrDefault();
+        var managingOrganizationId = ParseReferenceId(patient.ManagingOrganization?.Reference, "organization");
 
         DateTime? birthDate = null;
         if (DateTime.TryParse(patient.BirthDate, out var parsedBirthDate))
@@ -46,7 +50,8 @@ public sealed class PatientEditModel
             Gender = patient.Gender.ToString(),
             BirthDate = birthDate,
             IdentifierSystem = identifier?.System,
-            IdentifierValue = identifier?.Value
+            IdentifierValue = identifier?.Value,
+            ManagingOrganizationId = managingOrganizationId
         };
     }
 
@@ -79,7 +84,34 @@ public sealed class PatientEditModel
             ];
         }
 
+        if (!string.IsNullOrWhiteSpace(ManagingOrganizationId))
+        {
+            patient.ManagingOrganization = new ResourceReference($"Organization/{ManagingOrganizationId}");
+        }
+
         return patient;
+    }
+
+    private static string? ParseReferenceId(string? value, string expectedResourceType)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        var prefix = $"{expectedResourceType}/";
+        if (trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed[prefix.Length..];
+        }
+
+        if (trimmed.Contains('/'))
+        {
+            return null;
+        }
+
+        return trimmed;
     }
 
     private static AdministrativeGender ParseGender(string? value)

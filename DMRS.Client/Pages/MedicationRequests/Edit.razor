@@ -1,0 +1,78 @@
+@page "/medication-requests/{Id}/edit"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.MedicationRequests.Services.MedicationRequestFeatureService MedicationService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Medication Request</PageTitle>
+
+<h1>Edit Medication Request</h1>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <MedicationRequestForm Model="model" IsBusy="@isSaving" SubmitText="Update Medication Request" OnSave="Save" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private DMRS.Client.Features.MedicationRequests.Models.MedicationRequestEditModel model = new();
+    private bool isLoading;
+    private bool isSaving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var request = await MedicationService.GetAsync(Id);
+            if (request is null)
+            {
+                errorMessage = $"Medication request {Id} not found.";
+                return;
+            }
+
+            model = DMRS.Client.Features.MedicationRequests.Models.MedicationRequestEditModel.FromMedicationRequest(request);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load medication request: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+        isSaving = true;
+
+        try
+        {
+            await MedicationService.UpdateAsync(Id, model);
+            Navigation.NavigateTo($"/medication-requests/{Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update medication request: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

@@ -1,0 +1,45 @@
+@using DMRS.Client.Features.AllergyIntolerances.Models
+
+<EditForm Model="Model" OnValidSubmit="OnSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Patient Id</label>
+            <InputText @bind-Value="Model.PatientId" class="form-control" />
+            <ValidationMessage For="() => Model.PatientId" />
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">Code</label>
+            <InputText @bind-Value="Model.CodeText" class="form-control" />
+            <ValidationMessage For="() => Model.CodeText" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Clinical Status</label>
+            <InputText @bind-Value="Model.ClinicalStatus" class="form-control" />
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary" disabled="@IsBusy">@SubmitText</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public AllergyIntoleranceEditModel Model { get; set; } = new();
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Save Allergy";
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    private async Task OnSubmit()
+    {
+        await OnSave.InvokeAsync();
+    }
+}

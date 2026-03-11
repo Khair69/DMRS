@@ -1,5 +1,5 @@
 ﻿@page "/patients/{Id}/history"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
 
 <PageTitle>Patient History</PageTitle>

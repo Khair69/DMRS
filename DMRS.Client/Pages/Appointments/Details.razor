@@ -1,0 +1,44 @@
+@page "/appointments/{Id}"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Appointments.Services.AppointmentFeatureService AppointmentService
+
+<PageTitle>Appointment Details</PageTitle>
+
+<h1>Appointment Details</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<div class="mb-3">
+    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/appointments/{Id}/edit")">Edit</NavLink>
+    <NavLink class="btn btn-sm btn-outline-info" href="@($"/appointments/{Id}/history")">History</NavLink>
+</div>
+
+<FhirJsonView Resource="appointment" />
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private Hl7.Fhir.Model.Appointment? appointment;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            appointment = await AppointmentService.GetAsync(Id);
+            if (appointment is null)
+            {
+                errorMessage = $"Appointment {Id} not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load appointment: {ex.Message}";
+        }
+    }
+}

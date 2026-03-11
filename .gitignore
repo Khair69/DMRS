@@ -66,3 +66,4 @@ obj/
 *.shellmnt
 
 keycloak_data/
+.dotnet

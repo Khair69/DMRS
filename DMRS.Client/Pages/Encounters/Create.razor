@@ -1,0 +1,46 @@
+@page "/encounters/new"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Encounters.Services.EncounterFeatureService EncounterService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Encounter</PageTitle>
+
+<h1>Create Encounter</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<EncounterForm Model="model" IsBusy="@isSaving" SubmitText="Create Encounter" OnSave="Save" />
+
+@code {
+    private readonly DMRS.Client.Features.Encounters.Models.EncounterEditModel model = new();
+    private bool isSaving;
+    private string? errorMessage;
+
+    private async Task Save()
+    {
+        isSaving = true;
+        errorMessage = null;
+        try
+        {
+            var created = await EncounterService.CreateAsync(model);
+            if (created?.Id is null)
+            {
+                errorMessage = "Encounter was created but no id was returned.";
+                return;
+            }
+
+            NavigationManager.NavigateTo($"/encounters/{created.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while creating the encounter: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

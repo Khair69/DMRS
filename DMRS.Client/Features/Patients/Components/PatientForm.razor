@@ -36,6 +36,14 @@
             <label class="form-label">Identifier Value</label>
             <InputText @bind-Value="Model.IdentifierValue" class="form-control" />
         </div>
+        @if (ShowOrganizationField)
+        {
+            <div class="col-md-6">
+                <label class="form-label">Managing Organization Id</label>
+                <InputText @bind-Value="Model.ManagingOrganizationId" class="form-control" />
+                <ValidationMessage For="() => Model.ManagingOrganizationId" />
+            </div>
+        }
     </div>
 
     <div class="mt-3">
@@ -52,6 +60,9 @@
 
     [Parameter]
     public bool IsBusy { get; set; }
+
+    [Parameter]
+    public bool ShowOrganizationField { get; set; }
 
     [Parameter]
     public EventCallback OnSave { get; set; }

@@ -1,0 +1,29 @@
+@using Hl7.Fhir.Model
+@using Hl7.Fhir.Serialization
+@inject FhirJsonSerializer Serializer
+
+@if (Resources.Count == 0)
+{
+    <div class="alert alert-secondary">No history versions found.</div>
+}
+else
+{
+    <div class="d-flex flex-column gap-3">
+        @foreach (var resource in Resources)
+        {
+            <details class="border rounded p-2">
+                <summary>
+                    <strong>@resource.TypeName</strong>
+                    <span class="ms-2">Version: @resource.Meta?.VersionId</span>
+                    <span class="ms-2">Updated: @resource.Meta?.LastUpdated?.ToString("u")</span>
+                </summary>
+                <pre class="bg-light p-3 border rounded mt-2">@Serializer.SerializeToString(resource)</pre>
+            </details>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Resource> Resources { get; set; } = [];
+}

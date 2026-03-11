@@ -1,0 +1,44 @@
+@page "/procedures/{Id}"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Procedures.Services.ProcedureFeatureService ProcedureService
+
+<PageTitle>Procedure Details</PageTitle>
+
+<h1>Procedure Details</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<div class="mb-3">
+    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/procedures/{Id}/edit")">Edit</NavLink>
+    <NavLink class="btn btn-sm btn-outline-info" href="@($"/procedures/{Id}/history")">History</NavLink>
+</div>
+
+<FhirJsonView Resource="procedure" />
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private Hl7.Fhir.Model.Procedure? procedure;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            procedure = await ProcedureService.GetAsync(Id);
+            if (procedure is null)
+            {
+                errorMessage = $"Procedure {Id} not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load procedure: {ex.Message}";
+        }
+    }
+}

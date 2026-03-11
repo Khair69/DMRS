@@ -1,0 +1,105 @@
+@page "/procedures"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Procedures.Models
+@inject DMRS.Client.Features.Procedures.Services.ProcedureFeatureService ProcedureService
+
+<PageTitle>Procedures</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Procedures</h1>
+    <NavLink class="btn btn-primary" href="/procedures/new">New Procedure</NavLink>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <EditForm Model="this" OnSubmit="HandleSubmit">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Search Field</label>
+                    <InputSelect @bind-Value="searchParam" class="form-select">
+                        <option value="patient">Patient</option>
+                        <option value="code">Code</option>
+                    </InputSelect>
+                </div>
+                <div class="col-md-7">
+                    <label class="form-label">Search Value</label>
+                    <InputText @bind-Value="searchValue" class="form-control" placeholder="e.g. Patient/123" />
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-primary" disabled="@isBusy" type="submit">Search</button>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (procedures.Count == 0)
+{
+    <div class="alert alert-secondary">No procedures found.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Patient</th>
+                <th>Code</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var procedure in procedures)
+            {
+                <tr>
+                    <td>
+                        <NavLink href="@($"/procedures/{procedure.Id}")">@procedure.Id</NavLink>
+                    </td>
+                    <td>@procedure.PatientId</td>
+                    <td>@procedure.CodeText</td>
+                    <td>@procedure.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private string searchParam = "patient";
+    private string searchValue = string.Empty;
+    private bool isBusy;
+    private string? errorMessage;
+    private IReadOnlyList<ProcedureSummaryViewModel> procedures = [];
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+        isBusy = true;
+
+        if (string.IsNullOrWhiteSpace(searchValue))
+        {
+            procedures = [];
+            isBusy = false;
+            return;
+        }
+
+        try
+        {
+            procedures = await ProcedureService.SearchAsync(searchParam, searchValue);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load procedures: {ex.Message}";
+            procedures = [];
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}

@@ -1,6 +1,7 @@
 ﻿@page "/patients/new"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
+@inject DMRS.Client.Services.OrganizationContextService OrgContextService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Create Patient</PageTitle>
@@ -12,12 +13,27 @@
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<PatientForm Model="model" IsBusy="@isSaving" SubmitText="Create Patient" OnSave="Save" />
+<PatientForm Model="model" IsBusy="@isSaving" SubmitText="Create Patient" OnSave="Save" ShowOrganizationField="@showOrganizationField" />
 
 @code {
     private readonly PatientEditModel model = new();
     private bool isSaving;
     private string? errorMessage;
+    private bool showOrganizationField;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var organizationIds = await OrgContextService.GetOrganizationIdsAsync();
+        if (organizationIds.Count > 0)
+        {
+            model.ManagingOrganizationId = organizationIds[0];
+            showOrganizationField = organizationIds.Count != 1;
+        }
+        else
+        {
+            showOrganizationField = true;
+        }
+    }
 
     private async Task Save()
     {
@@ -25,6 +41,12 @@
         errorMessage = null;
         try
         {
+            if (showOrganizationField && string.IsNullOrWhiteSpace(model.ManagingOrganizationId))
+            {
+                errorMessage = "Managing organization is required.";
+                return;
+            }
+
             var createdPatient = await PatientService.CreateAsync(model);
             if (createdPatient?.Id is null)
             {

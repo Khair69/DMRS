@@ -1,0 +1,78 @@
+@page "/service-requests/{Id}/edit"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.ServiceRequests.Services.ServiceRequestFeatureService ServiceRequestService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Service Request</PageTitle>
+
+<h1>Edit Service Request</h1>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <ServiceRequestForm Model="model" IsBusy="@isSaving" SubmitText="Update Service Request" OnSave="Save" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private DMRS.Client.Features.ServiceRequests.Models.ServiceRequestEditModel model = new();
+    private bool isLoading;
+    private bool isSaving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var request = await ServiceRequestService.GetAsync(Id);
+            if (request is null)
+            {
+                errorMessage = $"Service request {Id} not found.";
+                return;
+            }
+
+            model = DMRS.Client.Features.ServiceRequests.Models.ServiceRequestEditModel.FromServiceRequest(request);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load service request: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+        isSaving = true;
+
+        try
+        {
+            await ServiceRequestService.UpdateAsync(Id, model);
+            Navigation.NavigateTo($"/service-requests/{Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update service request: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

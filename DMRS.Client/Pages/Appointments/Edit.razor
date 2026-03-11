@@ -1,0 +1,78 @@
+@page "/appointments/{Id}/edit"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Appointments.Services.AppointmentFeatureService AppointmentService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Appointment</PageTitle>
+
+<h1>Edit Appointment</h1>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <AppointmentForm Model="model" IsBusy="@isSaving" SubmitText="Update Appointment" OnSave="Save" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private DMRS.Client.Features.Appointments.Models.AppointmentEditModel model = new();
+    private bool isLoading;
+    private bool isSaving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var appointment = await AppointmentService.GetAsync(Id);
+            if (appointment is null)
+            {
+                errorMessage = $"Appointment {Id} not found.";
+                return;
+            }
+
+            model = DMRS.Client.Features.Appointments.Models.AppointmentEditModel.FromAppointment(appointment);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load appointment: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+        isSaving = true;
+
+        try
+        {
+            await AppointmentService.UpdateAsync(Id, model);
+            Navigation.NavigateTo($"/appointments/{Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update appointment: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

@@ -1,0 +1,78 @@
+@page "/procedures/{Id}/edit"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Procedures.Services.ProcedureFeatureService ProcedureService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Procedure</PageTitle>
+
+<h1>Edit Procedure</h1>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <ProcedureForm Model="model" IsBusy="@isSaving" SubmitText="Update Procedure" OnSave="Save" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private DMRS.Client.Features.Procedures.Models.ProcedureEditModel model = new();
+    private bool isLoading;
+    private bool isSaving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var procedure = await ProcedureService.GetAsync(Id);
+            if (procedure is null)
+            {
+                errorMessage = $"Procedure {Id} not found.";
+                return;
+            }
+
+            model = DMRS.Client.Features.Procedures.Models.ProcedureEditModel.FromProcedure(procedure);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load procedure: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+        isSaving = true;
+
+        try
+        {
+            await ProcedureService.UpdateAsync(Id, model);
+            Navigation.NavigateTo($"/procedures/{Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update procedure: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

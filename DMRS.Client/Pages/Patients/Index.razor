@@ -1,6 +1,7 @@
 ﻿@page "/patients"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
+@inject DMRS.Client.Services.OrganizationContextService OrgContextService
 
 <PageTitle>Patients</PageTitle>
 
@@ -27,7 +28,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await RunSearch((searchParam, ""));
+        var orgId = await OrgContextService.GetPrimaryOrganizationIdAsync();
+        if (!string.IsNullOrWhiteSpace(orgId))
+        {
+            searchParam = "organization";
+            searchValue = $"Organization/{orgId}";
+        }
+
+        await RunSearch((searchParam, searchValue));
     }
 
     private async Task RunSearch((string SearchParam, string SearchValue) criteria)

@@ -1,0 +1,46 @@
+@page "/observations/new"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Observations.Services.ObservationFeatureService ObservationService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Observation</PageTitle>
+
+<h1>Create Observation</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<ObservationForm Model="model" IsBusy="@isSaving" SubmitText="Create Observation" OnSave="Save" />
+
+@code {
+    private readonly DMRS.Client.Features.Observations.Models.ObservationEditModel model = new();
+    private bool isSaving;
+    private string? errorMessage;
+
+    private async Task Save()
+    {
+        isSaving = true;
+        errorMessage = null;
+        try
+        {
+            var created = await ObservationService.CreateAsync(model);
+            if (created?.Id is null)
+            {
+                errorMessage = "Observation was created but no id was returned.";
+                return;
+            }
+
+            NavigationManager.NavigateTo($"/observations/{created.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while creating the observation: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

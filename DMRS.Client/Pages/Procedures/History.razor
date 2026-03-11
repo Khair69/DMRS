@@ -1,0 +1,38 @@
+@page "/procedures/{Id}/history"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Procedures.Services.ProcedureFeatureService ProcedureService
+
+<PageTitle>Procedure History</PageTitle>
+
+<h1>Procedure History</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<FhirJsonListView Resources="historyResources" />
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private IReadOnlyList<Hl7.Fhir.Model.Resource> historyResources = [];
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorMessage = null;
+
+        try
+        {
+            var history = await ProcedureService.GetHistoryAsync(Id);
+            historyResources = history.Cast<Hl7.Fhir.Model.Resource>().ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load history: {ex.Message}";
+            historyResources = [];
+        }
+    }
+}

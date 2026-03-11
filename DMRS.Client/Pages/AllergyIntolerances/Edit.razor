@@ -1,0 +1,78 @@
+@page "/allergy-intolerances/{Id}/edit"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.AllergyIntolerances.Services.AllergyIntoleranceFeatureService AllergyService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Allergy</PageTitle>
+
+<h1>Edit Allergy</h1>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <AllergyIntoleranceForm Model="model" IsBusy="@isSaving" SubmitText="Update Allergy" OnSave="Save" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private DMRS.Client.Features.AllergyIntolerances.Models.AllergyIntoleranceEditModel model = new();
+    private bool isLoading;
+    private bool isSaving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var allergy = await AllergyService.GetAsync(Id);
+            if (allergy is null)
+            {
+                errorMessage = $"Allergy {Id} not found.";
+                return;
+            }
+
+            model = DMRS.Client.Features.AllergyIntolerances.Models.AllergyIntoleranceEditModel.FromAllergy(allergy);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load allergy: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+        isSaving = true;
+
+        try
+        {
+            await AllergyService.UpdateAsync(Id, model);
+            Navigation.NavigateTo($"/allergy-intolerances/{Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update allergy: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

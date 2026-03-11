@@ -1,0 +1,46 @@
+@page "/appointments/new"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Appointments.Services.AppointmentFeatureService AppointmentService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Appointment</PageTitle>
+
+<h1>Create Appointment</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<AppointmentForm Model="model" IsBusy="@isSaving" SubmitText="Create Appointment" OnSave="Save" />
+
+@code {
+    private readonly DMRS.Client.Features.Appointments.Models.AppointmentEditModel model = new();
+    private bool isSaving;
+    private string? errorMessage;
+
+    private async Task Save()
+    {
+        isSaving = true;
+        errorMessage = null;
+        try
+        {
+            var created = await AppointmentService.CreateAsync(model);
+            if (created?.Id is null)
+            {
+                errorMessage = "Appointment was created but no id was returned.";
+                return;
+            }
+
+            NavigationManager.NavigateTo($"/appointments/{created.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while creating the appointment: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

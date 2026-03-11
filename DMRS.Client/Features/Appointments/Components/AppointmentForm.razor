@@ -1,0 +1,57 @@
+@using DMRS.Client.Features.Appointments.Models
+
+<EditForm Model="Model" OnValidSubmit="OnSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Patient Id</label>
+            <InputText @bind-Value="Model.PatientId" class="form-control" />
+            <ValidationMessage For="() => Model.PatientId" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <InputSelect @bind-Value="Model.Status" class="form-select">
+                <option value="proposed">Proposed</option>
+                <option value="pending">Pending</option>
+                <option value="booked">Booked</option>
+                <option value="arrived">Arrived</option>
+                <option value="fulfilled">Fulfilled</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="noshow">No Show</option>
+                <option value="entered-in-error">Entered in Error</option>
+            </InputSelect>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Start</label>
+            <InputDate @bind-Value="Model.Start" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">End</label>
+            <InputDate @bind-Value="Model.End" class="form-control" />
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary" disabled="@IsBusy">@SubmitText</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public AppointmentEditModel Model { get; set; } = new();
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Save Appointment";
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    private async Task OnSubmit()
+    {
+        await OnSave.InvokeAsync();
+    }
+}

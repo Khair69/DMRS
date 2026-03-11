@@ -1,0 +1,78 @@
+@page "/locations/{Id}/edit"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Locations.Services.LocationFeatureService LocationService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Location</PageTitle>
+
+<h1>Edit Location</h1>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <LocationForm Model="model" IsBusy="@isSaving" SubmitText="Update Location" OnSave="Save" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private DMRS.Client.Features.Locations.Models.LocationEditModel model = new();
+    private bool isLoading;
+    private bool isSaving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var location = await LocationService.GetAsync(Id);
+            if (location is null)
+            {
+                errorMessage = $"Location {Id} not found.";
+                return;
+            }
+
+            model = DMRS.Client.Features.Locations.Models.LocationEditModel.FromLocation(location);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load location: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+        isSaving = true;
+
+        try
+        {
+            await LocationService.UpdateAsync(Id, model);
+            Navigation.NavigateTo($"/locations/{Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update location: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

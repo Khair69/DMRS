@@ -1,0 +1,44 @@
+@page "/locations/{Id}"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Locations.Services.LocationFeatureService LocationService
+
+<PageTitle>Location Details</PageTitle>
+
+<h1>Location Details</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<div class="mb-3">
+    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/locations/{Id}/edit")">Edit</NavLink>
+    <NavLink class="btn btn-sm btn-outline-info" href="@($"/locations/{Id}/history")">History</NavLink>
+</div>
+
+<FhirJsonView Resource="location" />
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private Hl7.Fhir.Model.Location? location;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            location = await LocationService.GetAsync(Id);
+            if (location is null)
+            {
+                errorMessage = $"Location {Id} not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load location: {ex.Message}";
+        }
+    }
+}

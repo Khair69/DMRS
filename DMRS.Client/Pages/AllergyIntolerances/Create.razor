@@ -1,0 +1,46 @@
+@page "/allergy-intolerances/new"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.AllergyIntolerances.Services.AllergyIntoleranceFeatureService AllergyService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Allergy</PageTitle>
+
+<h1>Create Allergy</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<AllergyIntoleranceForm Model="model" IsBusy="@isSaving" SubmitText="Create Allergy" OnSave="Save" />
+
+@code {
+    private readonly DMRS.Client.Features.AllergyIntolerances.Models.AllergyIntoleranceEditModel model = new();
+    private bool isSaving;
+    private string? errorMessage;
+
+    private async Task Save()
+    {
+        isSaving = true;
+        errorMessage = null;
+        try
+        {
+            var created = await AllergyService.CreateAsync(model);
+            if (created?.Id is null)
+            {
+                errorMessage = "Allergy was created but no id was returned.";
+                return;
+            }
+
+            NavigationManager.NavigateTo($"/allergy-intolerances/{created.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while creating the allergy: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

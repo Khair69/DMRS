@@ -1,0 +1,78 @@
+@page "/conditions/{Id}/edit"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Conditions.Services.ConditionFeatureService ConditionService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Condition</PageTitle>
+
+<h1>Edit Condition</h1>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <ConditionForm Model="model" IsBusy="@isSaving" SubmitText="Update Condition" OnSave="Save" />
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private DMRS.Client.Features.Conditions.Models.ConditionEditModel model = new();
+    private bool isLoading;
+    private bool isSaving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var condition = await ConditionService.GetAsync(Id);
+            if (condition is null)
+            {
+                errorMessage = $"Condition {Id} not found.";
+                return;
+            }
+
+            model = DMRS.Client.Features.Conditions.Models.ConditionEditModel.FromCondition(condition);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load condition: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+        isSaving = true;
+
+        try
+        {
+            await ConditionService.UpdateAsync(Id, model);
+            Navigation.NavigateTo($"/conditions/{Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update condition: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

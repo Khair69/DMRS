@@ -1,0 +1,44 @@
+@page "/medication-requests/{Id}"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.MedicationRequests.Services.MedicationRequestFeatureService MedicationService
+
+<PageTitle>Medication Request Details</PageTitle>
+
+<h1>Medication Request Details</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<div class="mb-3">
+    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/medication-requests/{Id}/edit")">Edit</NavLink>
+    <NavLink class="btn btn-sm btn-outline-info" href="@($"/medication-requests/{Id}/history")">History</NavLink>
+</div>
+
+<FhirJsonView Resource="request" />
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private Hl7.Fhir.Model.MedicationRequest? request;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorMessage = null;
+        try
+        {
+            request = await MedicationService.GetAsync(Id);
+            if (request is null)
+            {
+                errorMessage = $"Medication request {Id} not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load medication request: {ex.Message}";
+        }
+    }
+}

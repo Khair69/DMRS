@@ -1,0 +1,67 @@
+@using DMRS.Client.Features.MedicationRequests.Models
+
+<EditForm Model="Model" OnValidSubmit="OnSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Patient Id</label>
+            <InputText @bind-Value="Model.PatientId" class="form-control" />
+            <ValidationMessage For="() => Model.PatientId" />
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">Medication</label>
+            <InputText @bind-Value="Model.MedicationText" class="form-control" />
+            <ValidationMessage For="() => Model.MedicationText" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <InputSelect @bind-Value="Model.Status" class="form-select">
+                <option value="active">Active</option>
+                <option value="on-hold">On Hold</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="completed">Completed</option>
+                <option value="entered-in-error">Entered in Error</option>
+                <option value="stopped">Stopped</option>
+                <option value="draft">Draft</option>
+                <option value="unknown">Unknown</option>
+            </InputSelect>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Intent</label>
+            <InputSelect @bind-Value="Model.Intent" class="form-select">
+                <option value="order">Order</option>
+                <option value="plan">Plan</option>
+                <option value="proposal">Proposal</option>
+                <option value="original-order">Original Order</option>
+                <option value="reflex-order">Reflex Order</option>
+                <option value="filler-order">Filler Order</option>
+                <option value="instance-order">Instance Order</option>
+                <option value="option">Option</option>
+            </InputSelect>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary" disabled="@IsBusy">@SubmitText</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public MedicationRequestEditModel Model { get; set; } = new();
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Save Medication Request";
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    private async Task OnSubmit()
+    {
+        await OnSave.InvokeAsync();
+    }
+}

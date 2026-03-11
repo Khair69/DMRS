@@ -1,0 +1,46 @@
+@page "/procedures/new"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inject DMRS.Client.Features.Procedures.Services.ProcedureFeatureService ProcedureService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Procedure</PageTitle>
+
+<h1>Create Procedure</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<ProcedureForm Model="model" IsBusy="@isSaving" SubmitText="Create Procedure" OnSave="Save" />
+
+@code {
+    private readonly DMRS.Client.Features.Procedures.Models.ProcedureEditModel model = new();
+    private bool isSaving;
+    private string? errorMessage;
+
+    private async Task Save()
+    {
+        isSaving = true;
+        errorMessage = null;
+        try
+        {
+            var created = await ProcedureService.CreateAsync(model);
+            if (created?.Id is null)
+            {
+                errorMessage = "Procedure was created but no id was returned.";
+                return;
+            }
+
+            NavigationManager.NavigateTo($"/procedures/{created.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while creating the procedure: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

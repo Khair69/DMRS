@@ -1,0 +1,60 @@
+@using DMRS.Client.Features.Observations.Models
+
+<EditForm Model="Model" OnValidSubmit="OnSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Patient Id</label>
+            <InputText @bind-Value="Model.PatientId" class="form-control" />
+            <ValidationMessage For="() => Model.PatientId" />
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">Code</label>
+            <InputText @bind-Value="Model.CodeText" class="form-control" />
+            <ValidationMessage For="() => Model.CodeText" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <InputSelect @bind-Value="Model.Status" class="form-select">
+                <option value="registered">Registered</option>
+                <option value="preliminary">Preliminary</option>
+                <option value="final">Final</option>
+                <option value="amended">Amended</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="unknown">Unknown</option>
+            </InputSelect>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Effective Date</label>
+            <InputDate @bind-Value="Model.EffectiveDateTime" class="form-control" />
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">Value</label>
+            <InputText @bind-Value="Model.ValueText" class="form-control" />
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary" disabled="@IsBusy">@SubmitText</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public ObservationEditModel Model { get; set; } = new();
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Save Observation";
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    private async Task OnSubmit()
+    {
+        await OnSave.InvokeAsync();
+    }
+}

@@ -1,0 +1,105 @@
+@page "/appointments"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Appointments.Models
+@inject DMRS.Client.Features.Appointments.Services.AppointmentFeatureService AppointmentService
+
+<PageTitle>Appointments</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Appointments</h1>
+    <NavLink class="btn btn-primary" href="/appointments/new">New Appointment</NavLink>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <EditForm Model="this" OnSubmit="HandleSubmit">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Search Field</label>
+                    <InputSelect @bind-Value="searchParam" class="form-select">
+                        <option value="patient">Patient</option>
+                        <option value="date">Date</option>
+                    </InputSelect>
+                </div>
+                <div class="col-md-7">
+                    <label class="form-label">Search Value</label>
+                    <InputText @bind-Value="searchValue" class="form-control" placeholder="e.g. Patient/123" />
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-primary" disabled="@isBusy" type="submit">Search</button>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (appointments.Count == 0)
+{
+    <div class="alert alert-secondary">No appointments found.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Patient</th>
+                <th>Status</th>
+                <th>Start</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var appointment in appointments)
+            {
+                <tr>
+                    <td>
+                        <NavLink href="@($"/appointments/{appointment.Id}")">@appointment.Id</NavLink>
+                    </td>
+                    <td>@appointment.PatientId</td>
+                    <td>@appointment.Status</td>
+                    <td>@appointment.Start</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private string searchParam = "patient";
+    private string searchValue = string.Empty;
+    private bool isBusy;
+    private string? errorMessage;
+    private IReadOnlyList<AppointmentSummaryViewModel> appointments = [];
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+        isBusy = true;
+
+        if (string.IsNullOrWhiteSpace(searchValue))
+        {
+            appointments = [];
+            isBusy = false;
+            return;
+        }
+
+        try
+        {
+            appointments = await AppointmentService.SearchAsync(searchParam, searchValue);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load appointments: {ex.Message}";
+            appointments = [];
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}
