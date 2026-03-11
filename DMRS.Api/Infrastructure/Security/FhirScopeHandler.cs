@@ -37,6 +37,9 @@ namespace DMRS.Api.Infrastructure.Security
 
             var id = httpContext.Request.RouteValues["id"]?.ToString();
             var isInstanceRequest = !string.IsNullOrWhiteSpace(id) && httpContext.Request.Method != HttpMethods.Post;
+            var isHistoryRequest = httpContext.Request.Path.HasValue
+                && httpContext.Request.Path.Value!.Contains("/_history", StringComparison.OrdinalIgnoreCase);
+            var isVersionedRequest = isHistoryRequest || httpContext.Request.RouteValues.ContainsKey("vid");
 
             if (accessLevel == SmartAccessLevel.Patient)
             {
@@ -46,7 +49,7 @@ namespace DMRS.Api.Infrastructure.Security
                     return;
                 }
 
-                if (isInstanceRequest)
+                if (isInstanceRequest && !isVersionedRequest)
                 {
                     var isOwned = await _authorizationService.IsResourceOwnedByPatientAsync(resourceType, id!, patientId);
                     if (!isOwned)
@@ -56,7 +59,7 @@ namespace DMRS.Api.Infrastructure.Security
                 }
             }
 
-            if (accessLevel == SmartAccessLevel.User && isInstanceRequest)
+            if (accessLevel == SmartAccessLevel.User && isInstanceRequest && !isVersionedRequest)
             {
                 var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(context.User);
                 var isOwned = await _authorizationService.IsResourceOwnedByOrganizationsAsync(resourceType, id!, organizationIds);

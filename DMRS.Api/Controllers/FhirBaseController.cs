@@ -1,4 +1,4 @@
-﻿using DMRS.Api.Application.Interfaces;
+using DMRS.Api.Application.Interfaces;
 using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Infrastructure.Security;
 using Hl7.Fhir.Model;
@@ -68,7 +68,7 @@ namespace DMRS.Api.Controllers
                 return NotFound();
             }
 
-            if (!await CanAccessResource(resource, "read"))
+            if (!await CanAccessResource(resource, "read", useResourceOwnership: true))
             {
                 return Forbid();
             }
@@ -334,7 +334,7 @@ namespace DMRS.Api.Controllers
 
             foreach (var resource in resources)
             {
-                if (await CanAccessResource(resource, "read"))
+                if (await CanAccessResource(resource, "read", useResourceOwnership: true))
                 {
                     bundle.Entry.Add(new Bundle.EntryComponent
                     {
@@ -493,7 +493,7 @@ namespace DMRS.Api.Controllers
             return _authorizationService.IsResourceOwnedByPatient(existingResource, patientId, indices);
         }
 
-        private async Task<bool> CanAccessResource(T resource, string action)
+        private async Task<bool> CanAccessResource(T resource, string action, bool useResourceOwnership = false)
         {
             var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, action);
             if (accessLevel == SmartAccessLevel.None)
@@ -510,7 +510,7 @@ namespace DMRS.Api.Controllers
             {
                 var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
 
-                if (!string.IsNullOrWhiteSpace(resource.Id))
+                if (!useResourceOwnership && !string.IsNullOrWhiteSpace(resource.Id))
                 {
                     return await _authorizationService.IsResourceOwnedByOrganizationsAsync(typeof(T).Name, resource.Id, organizationIds);
                 }
@@ -530,3 +530,4 @@ namespace DMRS.Api.Controllers
         }
     }
 }
+

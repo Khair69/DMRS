@@ -34,6 +34,9 @@ namespace DMRS.Api.Infrastructure.Security
                 case HealthcareService svc:
                     return ReferenceToIds(svc.ProvidedBy?.Reference, "Organization");
 
+                case Patient patient:
+                    return ReferenceToIds(patient.ManagingOrganization?.Reference, "Organization");
+
                 case Practitioner practitioner:
                     if (string.IsNullOrWhiteSpace(practitioner.Id))
                     {
@@ -57,6 +60,7 @@ namespace DMRS.Api.Infrastructure.Security
             return resourceType.Trim() switch
             {
                 "Organization" => [resourceId],
+                "Patient" => await ResolveByResourceAsync<Patient>(resourceId),
                 "Practitioner" => await ResolvePractitionerOrganizations(resourceId),
                 "PractitionerRole" => await ResolveByResourceAsync<PractitionerRole>(resourceId),
                 "Location" => await ResolveByResourceAsync<Location>(resourceId),
