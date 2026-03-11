@@ -23,6 +23,7 @@ namespace DMRS.Api.Infrastructure.Security
         Task<bool> IsResourceOwnedByPatientAsync(string resourceType, string resourceId, string patientId);
         bool IsResourceOwnedByPatient(Resource resource, string patientId, IEnumerable<ResourceIndex> resourceIndices);
         Task<bool> IsResourceOwnedByOrganizationsAsync(string resourceType, string resourceId, IReadOnlyCollection<string> organizationIds);
+        Task<bool> IsResourceOwnedByOrganizationsAsync(Resource resource, IReadOnlyCollection<string> organizationIds);
         bool IsResourceOwnedByOrganizations(Resource resource, IEnumerable<ResourceIndex> resourceIndices, IReadOnlyCollection<string> organizationIds);
     }
 
@@ -259,6 +260,17 @@ namespace DMRS.Api.Infrastructure.Security
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             return resourceIndices.Any(i => i.SearchParamCode == "organization" && expectedOrganizationReferences.Contains(i.Value));
+        }
+
+        public async Task<bool> IsResourceOwnedByOrganizationsAsync(Resource resource, IReadOnlyCollection<string> organizationIds)
+        {
+            if (organizationIds.Count == 0)
+            {
+                return false;
+            }
+
+            var ownedOrganizations = await _ownershipResolver.ResolveOrganizationsAsync(resource);
+            return ownedOrganizations.Any(orgId => organizationIds.Contains(orgId, StringComparer.OrdinalIgnoreCase));
         }
 
         private static IEnumerable<string> GetScopes(ClaimsPrincipal user)

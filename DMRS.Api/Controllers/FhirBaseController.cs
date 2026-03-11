@@ -383,8 +383,7 @@ namespace DMRS.Api.Controllers
                 }
 
                 var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
-                var indices = _searchIndexer.Extract(resource);
-                return _authorizationService.IsResourceOwnedByOrganizations(resource, indices, organizationIds);
+                return await _authorizationService.IsResourceOwnedByOrganizationsAsync(resource, organizationIds);
             }
 
             if (accessLevel == SmartAccessLevel.System)
@@ -439,8 +438,7 @@ namespace DMRS.Api.Controllers
                     return true;
                 }
 
-                var updatedIndices = _searchIndexer.Extract(updatedResource);
-                return _authorizationService.IsResourceOwnedByOrganizations(updatedResource, updatedIndices, organizationIds);
+                return await _authorizationService.IsResourceOwnedByOrganizationsAsync(updatedResource, organizationIds);
             }
 
             var patientId = _authorizationService.ResolvePatientId(User);
@@ -515,8 +513,7 @@ namespace DMRS.Api.Controllers
                     return await _authorizationService.IsResourceOwnedByOrganizationsAsync(typeof(T).Name, resource.Id, organizationIds);
                 }
 
-                var indices = _searchIndexer.Extract(resource);
-                return _authorizationService.IsResourceOwnedByOrganizations(resource, indices, organizationIds);
+                return await _authorizationService.IsResourceOwnedByOrganizationsAsync(resource, organizationIds);
             }
 
             var patientId = _authorizationService.ResolvePatientId(User);
@@ -530,4 +527,5 @@ namespace DMRS.Api.Controllers
         }
     }
 }
+
 
