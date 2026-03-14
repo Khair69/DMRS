@@ -1,6 +1,8 @@
 ﻿@page "/patients/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
 
 <PageTitle>Patient Details</PageTitle>
 
@@ -17,6 +19,50 @@ else if (!string.IsNullOrWhiteSpace(errorMessage))
 else
 {
     <PatientDetailsView Patient="patient" />
+
+    <div class="card mt-3">
+        <div class="card-header">Patient Account</div>
+        <div class="card-body">
+            @if (isLinkedToAccount)
+            {
+                <div class="alert alert-success mb-0">This patient is already linked to a user account.</div>
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(inviteError))
+                {
+                    <div class="alert alert-danger">@inviteError</div>
+                }
+
+                if (inviteResult is not null)
+                {
+                    <div class="alert alert-success">Invitation generated for Patient/@inviteResult.PatientId.</div>
+                }
+
+                if (!string.IsNullOrWhiteSpace(existingInviteCode))
+                {
+                    <p class="mb-2"><strong>Invite code</strong>: <code>@existingInviteCode</code></p>
+                }
+
+                var claimLink = inviteResult?.ClaimLink ?? BuildClaimLink(existingInviteCode);
+                var registrationLink = inviteResult?.RegistrationLink ?? BuildRegistrationLink(existingInviteCode);
+
+                if (!string.IsNullOrWhiteSpace(registrationLink))
+                {
+                    <p class="mb-2"><strong>Self-registration (auto-claim)</strong>: <a href="@registrationLink" target="_blank">@registrationLink</a></p>
+                }
+
+                if (!string.IsNullOrWhiteSpace(claimLink))
+                {
+                    <p class="mb-0"><strong>Manual claim fallback</strong>: <a href="@claimLink" target="_blank">@claimLink</a></p>
+                }
+
+                <button class="btn btn-outline-primary mt-3" disabled="@isGeneratingInvite" @onclick="GenerateInvite">
+                    @(string.IsNullOrWhiteSpace(existingInviteCode) ? "Generate Invite Link" : "Regenerate Invite Link")
+                </button>
+            }
+        </div>
+    </div>
 }
 
 @code {
@@ -26,11 +72,18 @@ else
     private Hl7.Fhir.Model.Patient? patient;
     private bool isBusy;
     private string? errorMessage;
+    private bool isLinkedToAccount;
+    private string? existingInviteCode;
+    private bool isGeneratingInvite;
+    private string? inviteError;
+    private DMRS.Client.Features.Patients.Services.PatientInviteResult? inviteResult;
 
     protected override async Task OnParametersSetAsync()
     {
         errorMessage = null;
         isBusy = true;
+        inviteError = null;
+        inviteResult = null;
 
         try
         {
@@ -38,6 +91,11 @@ else
             if (patient is null)
             {
                 errorMessage = $"Patient {Id} not found.";
+            }
+            else
+            {
+                isLinkedToAccount = IsLinkedToAccount(patient);
+                existingInviteCode = GetInviteCode(patient);
             }
         }
         catch (Exception ex)
@@ -49,4 +107,90 @@ else
             isBusy = false;
         }
     }
+
+    private async Task GenerateInvite()
+    {
+        if (patient?.Id is null)
+        {
+            return;
+        }
+
+        isGeneratingInvite = true;
+        inviteError = null;
+
+        try
+        {
+            inviteResult = await PatientService.GenerateInviteAsync(patient.Id, NavigationManager.BaseUri);
+            existingInviteCode = inviteResult.InviteCode;
+        }
+        catch (Exception ex)
+        {
+            inviteError = $"Unable to generate invite: {ex.Message}";
+        }
+        finally
+        {
+            isGeneratingInvite = false;
+        }
+    }
+
+    private bool IsLinkedToAccount(Hl7.Fhir.Model.Patient resource)
+    {
+        var keycloakSystem = BuildKeycloakIdentifierSystem(Configuration["Keycloak:Authority"]);
+        return resource.Identifier.Any(i => string.Equals(i.System, keycloakSystem, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string? GetInviteCode(Hl7.Fhir.Model.Patient resource)
+    {
+        return resource.Identifier
+            .FirstOrDefault(i => string.Equals(i.System, InviteCodeIdentifierSystem, StringComparison.OrdinalIgnoreCase))
+            ?.Value;
+    }
+
+    private static string BuildKeycloakIdentifierSystem(string? authority)
+    {
+        if (string.IsNullOrWhiteSpace(authority))
+        {
+            return "https://keycloak.local/users";
+        }
+
+        return $"{authority.TrimEnd('/')}/users";
+    }
+
+    private string? BuildClaimLink(string? inviteCode)
+    {
+        if (string.IsNullOrWhiteSpace(inviteCode))
+        {
+            return null;
+        }
+
+        var baseUri = NavigationManager.BaseUri.TrimEnd('/');
+        return $"{baseUri}/patients/claim?code={Uri.EscapeDataString(inviteCode)}";
+    }
+
+    private string? BuildRegistrationLink(string? inviteCode)
+    {
+        if (string.IsNullOrWhiteSpace(inviteCode))
+        {
+            return null;
+        }
+
+        var claimLink = BuildClaimLink(inviteCode);
+        if (string.IsNullOrWhiteSpace(claimLink))
+        {
+            return null;
+        }
+
+        var autoClaimLink = $"{claimLink}&auto=true";
+        var keycloakAuthority = Configuration["Keycloak:Authority"] ?? "http://localhost:8080/realms/DMRS";
+        var keycloakClientId = Configuration["Keycloak:ClientId"] ?? "dmrs-api";
+        var authBase = keycloakAuthority.TrimEnd('/');
+
+        return $"{authBase}/protocol/openid-connect/registrations"
+            + $"?client_id={Uri.EscapeDataString(keycloakClientId)}"
+            + "&response_type=code"
+            + $"&scope={Uri.EscapeDataString("openid profile")}"
+            + $"&redirect_uri={Uri.EscapeDataString(autoClaimLink)}";
+    }
+
+    private const string InviteCodeIdentifierSystem = "https://dmrs.local/invites/patient";
 }

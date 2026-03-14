@@ -13,13 +13,32 @@
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<PatientForm Model="model" IsBusy="@isSaving" SubmitText="Create Patient" OnSave="Save" ShowOrganizationField="@showOrganizationField" />
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (inviteResult is not null)
+{
+    <div class="card mt-3 mb-3">
+        <div class="card-header">Invitation Generated</div>
+        <div class="card-body">
+            <p class="mb-2"><strong>Invite code</strong>: <code>@inviteResult.InviteCode</code></p>
+            <p class="mb-2"><strong>Self-registration (auto-claim)</strong>: <a href="@inviteResult.RegistrationLink" target="_blank">@inviteResult.RegistrationLink</a></p>
+            <p class="mb-0"><strong>Manual claim fallback</strong>: <a href="@inviteResult.ClaimLink" target="_blank">@inviteResult.ClaimLink</a></p>
+        </div>
+    </div>
+}
+
+<PatientForm Model="model" IsBusy="@isSaving" SubmitText="Create Patient & Invite" OnSave="Save" ShowOrganizationField="@showOrganizationField" />
 
 @code {
     private readonly PatientEditModel model = new();
     private bool isSaving;
     private string? errorMessage;
+    private string? successMessage;
     private bool showOrganizationField;
+    private DMRS.Client.Features.Patients.Services.PatientInviteResult? inviteResult;
 
     protected override async Task OnInitializedAsync()
     {
@@ -39,6 +58,8 @@
     {
         isSaving = true;
         errorMessage = null;
+        successMessage = null;
+        inviteResult = null;
         try
         {
             if (showOrganizationField && string.IsNullOrWhiteSpace(model.ManagingOrganizationId))
@@ -47,13 +68,8 @@
                 return;
             }
 
-            var createdPatient = await PatientService.CreateAsync(model);
-            if (createdPatient?.Id is null)
-            {
-                errorMessage = "Patient was created but no id was returned.";
-                return;
-            }
-            NavigationManager.NavigateTo($"/patients/{createdPatient.Id}");
+            inviteResult = await PatientService.CreateInviteAsync(model, NavigationManager.BaseUri);
+            successMessage = $"Patient created. Invitation ready for Patient/{inviteResult.PatientId}.";
         }
         catch (Exception ex)
         {
