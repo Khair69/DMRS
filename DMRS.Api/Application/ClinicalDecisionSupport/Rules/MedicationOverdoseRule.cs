@@ -14,10 +14,10 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Rules
             CdsAlertCollector collector = null!;
 
             When()
-                .Match<MedicationOrderFact>(() => order, m => m.MedicationCodes.Count > 0)
+                .Match<MedicationOrderFact>(() => order, m => m.NormalizedIngredientIds.Count > 0)
                 .Match<DoseFact>(() => dose, d => d.DailyDoseMg > 0)
                 .Match<DrugKnowledge>(() => knowledge,
-                    k => order.MedicationCodes.Contains(k.Code),
+                    k => order.NormalizedIngredientIds.Contains(k.Code),
                     k => dose.DailyDoseMg > k.MaxDailyDoseMg)
                 .Match<CdsAlertCollector>(() => collector);
 

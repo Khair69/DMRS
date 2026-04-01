@@ -2,15 +2,15 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Models
 {
     public sealed class AllergyFact
     {
-        public AllergyFact(string patientReference, IReadOnlyCollection<string> allergyCodes, string? allergyDisplay)
+        public AllergyFact(string patientReference, IReadOnlyCollection<string> normalizedIngredientIds, string? allergyDisplay)
         {
             PatientReference = patientReference;
-            AllergyCodes = allergyCodes;
+            NormalizedIngredientIds = normalizedIngredientIds;
             AllergyDisplay = allergyDisplay;
         }
 
         public string PatientReference { get; }
-        public IReadOnlyCollection<string> AllergyCodes { get; }
+        public IReadOnlyCollection<string> NormalizedIngredientIds { get; }
         public string? AllergyDisplay { get; }
     }
 }

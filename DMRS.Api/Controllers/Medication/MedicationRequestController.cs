@@ -1,4 +1,5 @@
 ﻿using DMRS.Api.Application.ClinicalDecisionSupport.Interfaces;
+using DMRS.Api.Application.ClinicalDecisionSupport.Models;
 using DMRS.Api.Application.Interfaces;
 using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Infrastructure.Search.Medication;
@@ -67,6 +68,7 @@ namespace DMRS.Api.Controllers.Medication
             {
                 return UnprocessableEntity(cdsResult.Outcome);
             }
+            AddCdsWarnings(cdsResult);
 
             try
             {
@@ -124,6 +126,7 @@ namespace DMRS.Api.Controllers.Medication
             {
                 return UnprocessableEntity(cdsResult.Outcome);
             }
+            AddCdsWarnings(cdsResult);
 
             try
             {
@@ -197,6 +200,7 @@ namespace DMRS.Api.Controllers.Medication
             {
                 return UnprocessableEntity(cdsResult.Outcome);
             }
+            AddCdsWarnings(cdsResult);
 
             try
             {
@@ -217,5 +221,28 @@ namespace DMRS.Api.Controllers.Medication
                 return StatusCode(500, "Internal Server Error");
             }
         }
+
+        private void AddCdsWarnings(CdsEvaluationResult? result)
+        {
+            if (result?.HasWarnings != true)
+            {
+                return;
+            }
+
+            var warnings = result.Alerts
+                .Where(a => a.Severity == OperationOutcome.IssueSeverity.Warning)
+                .Select(a => a.Message)
+                .Where(m => !string.IsNullOrWhiteSpace(m))
+                .Distinct()
+                .ToList();
+
+            if (warnings.Count == 0)
+            {
+                return;
+            }
+
+            Response.Headers.Append("X-CDS-Warnings", string.Join(" | ", warnings));
+        }
     }
 }
+

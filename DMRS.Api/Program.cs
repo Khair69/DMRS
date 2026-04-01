@@ -75,8 +75,15 @@ builder.Services.AddScoped<ServiceRequestIndexer>();
 builder.Services.AddScoped<BundleIndexer>();
 builder.Services.AddScoped<ProvenanceIndexer>();
 builder.Services.AddSingleton<IFhirValidatorService, FhirValidatorService>();
-builder.Services.Configure<DrugKnowledgeOptions>(builder.Configuration.GetSection(DrugKnowledgeOptions.SectionName));
-builder.Services.AddSingleton<IDrugKnowledgeService, InMemoryDrugKnowledgeService>();
+builder.Services.Configure<RxNormOptions>(builder.Configuration.GetSection(RxNormOptions.SectionName));
+builder.Services.AddHttpClient<IRxNormClient, RxNormClient>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<RxNormOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+});
+builder.Services.AddScoped<IDrugNormalizationService, DrugNormalizationService>();
+builder.Services.AddScoped<IDrugKnowledgeService, DbDrugKnowledgeService>();
 builder.Services.AddScoped<IClinicalDecisionSupportService, ClinicalDecisionSupportService>();
 builder.Services.AddSingleton<ISessionFactory>(_ =>
 {

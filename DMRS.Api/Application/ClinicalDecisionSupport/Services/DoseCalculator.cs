@@ -18,7 +18,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             ["micrograms"] = 0.001
         };
 
-        public static bool TryCalculateDailyDoseMg(MedicationRequest request, out double dailyDoseMg)
+        public static bool TryCalculateDailyDoseMg(MedicationRequest request, Medication? medication, out double dailyDoseMg)
         {
             dailyDoseMg = 0;
             if (request.DosageInstruction.Count == 0)
@@ -28,7 +28,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 
             foreach (var dosage in request.DosageInstruction)
             {
-                if (!TryGetDoseMg(dosage, out var doseMg))
+                if (!TryGetDoseMg(dosage, medication, out var doseMg))
                 {
                     continue;
                 }
@@ -44,7 +44,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             return dailyDoseMg > 0;
         }
 
-        private static bool TryGetDoseMg(Dosage dosage, out double doseMg)
+        private static bool TryGetDoseMg(Dosage dosage, Medication? medication, out double doseMg)
         {
             doseMg = 0;
             foreach (var doseAndRate in dosage.DoseAndRate)
@@ -52,17 +52,74 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 if (doseAndRate.Dose is Quantity quantity && quantity.Value.HasValue)
                 {
                     var unitKey = quantity.Code ?? quantity.Unit ?? string.Empty;
-                    if (!UnitToMg.TryGetValue(unitKey, out var multiplier))
+                    if (UnitToMg.TryGetValue(unitKey, out var multiplier))
                     {
-                        return false;
+                        doseMg = Convert.ToDouble(quantity.Value.Value) * multiplier;
+                        return true;
                     }
 
-                    doseMg = Convert.ToDouble(quantity.Value.Value) * multiplier;
-                    return true;
+                    if (TryGetMedicationStrengthMgPerUnit(medication, unitKey, out var mgPerUnit))
+                    {
+                        doseMg = Convert.ToDouble(quantity.Value.Value) * mgPerUnit;
+                        return true;
+                    }
                 }
             }
 
             return false;
+        }
+
+        private static bool TryGetMedicationStrengthMgPerUnit(Medication? medication, string unitKey, out double mgPerUnit)
+        {
+            mgPerUnit = 0;
+            if (medication == null)
+            {
+                return false;
+            }
+
+            if (medication.Ingredient.Count != 1)
+            {
+                return false;
+            }
+
+            var ingredient = medication.Ingredient[0];
+            if (ingredient.Strength is not Ratio strength)
+            {
+                return false;
+            }
+
+            if (strength.Numerator is not Quantity numerator || strength.Denominator is not Quantity denominator)
+            {
+                return false;
+            }
+
+            if (!numerator.Value.HasValue || !denominator.Value.HasValue)
+            {
+                return false;
+            }
+
+            var numeratorUnit = numerator.Code ?? numerator.Unit ?? string.Empty;
+            if (!UnitToMg.TryGetValue(numeratorUnit, out var numeratorMultiplier))
+            {
+                return false;
+            }
+
+            var denominatorUnit = (denominator.Code ?? denominator.Unit ?? string.Empty).ToLowerInvariant();
+            var inputUnit = unitKey.ToLowerInvariant();
+            if (!string.IsNullOrWhiteSpace(denominatorUnit) && denominatorUnit != inputUnit)
+            {
+                return false;
+            }
+
+            var strengthMg = Convert.ToDouble(numerator.Value.Value) * numeratorMultiplier;
+            var perUnit = Convert.ToDouble(denominator.Value.Value);
+            if (perUnit <= 0)
+            {
+                return false;
+            }
+
+            mgPerUnit = strengthMg / perUnit;
+            return mgPerUnit > 0;
         }
 
         private static bool TryGetAdministrationsPerDay(Dosage dosage, out double administrationsPerDay)

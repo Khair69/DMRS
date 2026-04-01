@@ -13,11 +13,11 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Rules
             CdsAlertCollector collector = null!;
 
             When()
-                .Match<MedicationOrderFact>(() => order, m => m.MedicationCodes.Count > 0)
+                .Match<MedicationOrderFact>(() => order, m => m.NormalizedIngredientIds.Count > 0)
                 .Match<AllergyFact>(() => allergy,
                     a => a.PatientReference == order.PatientReference,
-                    a => a.AllergyCodes.Count > 0,
-                    a => a.AllergyCodes.Intersect(order.MedicationCodes).Any())
+                    a => a.NormalizedIngredientIds.Count > 0,
+                    a => a.NormalizedIngredientIds.Intersect(order.NormalizedIngredientIds).Any())
                 .Match<CdsAlertCollector>(() => collector);
 
             Then()

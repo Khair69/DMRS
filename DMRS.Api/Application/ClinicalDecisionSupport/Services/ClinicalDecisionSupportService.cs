@@ -10,15 +10,18 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
     {
         private readonly IFhirRepository _repository;
         private readonly IDrugKnowledgeService _drugKnowledgeService;
+        private readonly IDrugNormalizationService _drugNormalizationService;
         private readonly ISessionFactory _sessionFactory;
 
         public ClinicalDecisionSupportService(
             IFhirRepository repository,
             IDrugKnowledgeService drugKnowledgeService,
+            IDrugNormalizationService drugNormalizationService,
             ISessionFactory sessionFactory)
         {
             _repository = repository;
             _drugKnowledgeService = drugKnowledgeService;
+            _drugNormalizationService = drugNormalizationService;
             _sessionFactory = sessionFactory;
         }
 
@@ -30,8 +33,8 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 return null;
             }
 
-            var medicationCodes = ExtractMedicationCodes(request);
-            if (medicationCodes.Count == 0)
+            var medicationConcepts = ExtractMedicationConcepts(request);
+            if (medicationConcepts.Count == 0)
             {
                 return null;
             }
@@ -41,20 +44,32 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 ["patient"] = patientReference
             });
 
-            var allergyFacts = allergies
-                .Select(a => new AllergyFact(
-                    patientReference,
-                    ExtractAllergyCodes(a),
-                    a.Code?.Text))
-                .Where(a => a.AllergyCodes.Count > 0)
-                .ToList();
+            var warningAlerts = new List<CdsAlert>();
+            var normalizedMedicationIds = await NormalizeConceptsAsync(medicationConcepts, warningAlerts, cancellationToken);
+            if (normalizedMedicationIds.Count == 0)
+            {
+                return BuildWarningOnlyResult(warningAlerts);
+            }
 
-            var knowledge = await _drugKnowledgeService.FindByCodesAsync(medicationCodes, cancellationToken);
+            var allergyFacts = new List<AllergyFact>();
+            foreach (var allergy in allergies)
+            {
+                var allergyConcepts = ExtractAllergyConcepts(allergy);
+                var normalizedAllergyIds = await NormalizeConceptsAsync(allergyConcepts, warningAlerts, cancellationToken);
+                if (normalizedAllergyIds.Count == 0)
+                {
+                    continue;
+                }
+
+                allergyFacts.Add(new AllergyFact(patientReference, normalizedAllergyIds, allergy.Code?.Text));
+            }
+
+            var knowledge = await _drugKnowledgeService.FindByCodesAsync(normalizedMedicationIds, cancellationToken);
 
             var session = _sessionFactory.CreateSession();
             var collector = new CdsAlertCollector();
             session.Insert(collector);
-            session.Insert(new MedicationOrderFact(patientReference, medicationCodes, request.Medication?.Concept?.Text));
+            session.Insert(new MedicationOrderFact(patientReference, normalizedMedicationIds, request.Medication?.Concept?.Text));
 
             foreach (var allergy in allergyFacts)
             {
@@ -66,14 +81,15 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 session.Insert(item);
             }
 
-            if (DoseCalculator.TryCalculateDailyDoseMg(request, out var dailyDoseMg))
+            var medicationResource = await ResolveMedicationAsync(request);
+            if (DoseCalculator.TryCalculateDailyDoseMg(request, medicationResource, out var dailyDoseMg))
             {
                 session.Insert(new DoseFact(dailyDoseMg));
             }
 
             session.Fire();
 
-            var alerts = collector.Alerts;
+            var alerts = collector.Alerts.Concat(warningAlerts).ToList();
             if (alerts.Count == 0)
             {
                 return null;
@@ -85,7 +101,9 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 outcome.Issue.Add(new OperationOutcome.IssueComponent
                 {
                     Severity = alert.Severity,
-                    Code = OperationOutcome.IssueType.Processing,
+                    Code = alert.Severity == OperationOutcome.IssueSeverity.Warning
+                        ? OperationOutcome.IssueType.Incomplete
+                        : OperationOutcome.IssueType.Processing,
                     Details = new CodeableConcept("urn:dmrs:cds", alert.Code, alert.Message)
                 });
             }
@@ -93,48 +111,121 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             return new CdsEvaluationResult(alerts, outcome);
         }
 
-        private static IReadOnlyCollection<string> ExtractMedicationCodes(MedicationRequest request)
+        private static IReadOnlyList<DrugConcept> ExtractMedicationConcepts(MedicationRequest request)
         {
-            var codes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var concepts = new List<DrugConcept>();
 
             if (request.Medication?.Concept != null)
             {
-                if (!string.IsNullOrWhiteSpace(request.Medication.Concept.Text))
-                {
-                    codes.Add(request.Medication.Concept.Text.Trim().ToLowerInvariant());
-                }
-
                 foreach (var coding in request.Medication.Concept.Coding)
                 {
-                    if (!string.IsNullOrWhiteSpace(coding.Code))
+                    if (!string.IsNullOrWhiteSpace(coding.Code) || !string.IsNullOrWhiteSpace(coding.Display))
                     {
-                        codes.Add(coding.Code.Trim().ToLowerInvariant());
+                        concepts.Add(new DrugConcept(coding.Code?.Trim(), coding.System?.Trim(), coding.Display?.Trim()));
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Medication.Concept.Text))
+                {
+                    concepts.Add(new DrugConcept(null, "text", request.Medication.Concept.Text.Trim()));
+                }
+            }
+
+            return concepts;
+        }
+
+        private static IReadOnlyList<DrugConcept> ExtractAllergyConcepts(AllergyIntolerance allergy)
+        {
+            var concepts = new List<DrugConcept>();
+            if (allergy.Code != null)
+            {
+                foreach (var coding in allergy.Code.Coding)
+                {
+                    if (!string.IsNullOrWhiteSpace(coding.Code) || !string.IsNullOrWhiteSpace(coding.Display))
+                    {
+                        concepts.Add(new DrugConcept(coding.Code?.Trim(), coding.System?.Trim(), coding.Display?.Trim()));
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(allergy.Code.Text))
+                {
+                    concepts.Add(new DrugConcept(null, "text", allergy.Code.Text.Trim()));
+                }
+            }
+
+            return concepts;
+        }
+
+        private async Task<IReadOnlyList<string>> NormalizeConceptsAsync(
+            IEnumerable<DrugConcept> concepts,
+            List<CdsAlert> warnings,
+            CancellationToken cancellationToken)
+        {
+            var normalized = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var concept in concepts)
+            {
+                var ids = await _drugNormalizationService.NormalizeAsync(concept, cancellationToken);
+                foreach (var id in ids)
+                {
+                    if (!string.IsNullOrWhiteSpace(id))
+                    {
+                        normalized.Add(id);
                     }
                 }
             }
 
-            return codes;
+            if (normalized.Count == 0)
+            {
+                warnings.Add(new CdsAlert(
+                    "normalization-failed",
+                    "Unable to normalize medication or allergy concepts to ingredient identifiers. CDS checks may be incomplete.",
+                    OperationOutcome.IssueSeverity.Warning));
+            }
+
+            return normalized.ToList();
         }
 
-        private static IReadOnlyCollection<string> ExtractAllergyCodes(AllergyIntolerance allergy)
+        private static CdsEvaluationResult? BuildWarningOnlyResult(List<CdsAlert> warnings)
         {
-            var codes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            if (!string.IsNullOrWhiteSpace(allergy.Code?.Text))
+            if (warnings.Count == 0)
             {
-                codes.Add(allergy.Code.Text.Trim().ToLowerInvariant());
+                return null;
             }
 
-            foreach (var coding in allergy.Code?.Coding ?? [])
+            var outcome = new OperationOutcome();
+            foreach (var alert in warnings)
             {
-                if (!string.IsNullOrWhiteSpace(coding.Code))
+                outcome.Issue.Add(new OperationOutcome.IssueComponent
                 {
-                    codes.Add(coding.Code.Trim().ToLowerInvariant());
-                }
+                    Severity = alert.Severity,
+                    Code = OperationOutcome.IssueType.Incomplete,
+                    Details = new CodeableConcept("urn:dmrs:cds", alert.Code, alert.Message)
+                });
             }
 
-            return codes;
+            return new CdsEvaluationResult(warnings, outcome);
+        }
+
+        private async Task<Medication?> ResolveMedicationAsync(MedicationRequest request)
+        {
+            if (request.Medication?.Reference == null)
+            {
+                return null;
+            }
+
+            var reference = request.Medication.Reference.Reference;
+            if (string.IsNullOrWhiteSpace(reference))
+            {
+                return null;
+            }
+
+            var parts = reference.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (parts.Length != 2 || !string.Equals(parts[0], "Medication", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            return await _repository.GetAsync<Medication>(parts[1]);
         }
     }
 }
-
