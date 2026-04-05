@@ -21,6 +21,17 @@ Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.DefaultInboundClaimTyp
 
 var builder = WebApplication.CreateBuilder(args);
 
+var logsPath = Path.Combine(builder.Environment.ContentRootPath, "logs");
+Directory.CreateDirectory(logsPath);
+
+builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext();
+});
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -100,6 +111,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(corsPolicy);
 app.UseHttpsRedirection();
+
+app.UseSerilogRequestLogging();
 
 app.UseAuthentication();
 app.UseAuthorization();

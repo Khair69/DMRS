@@ -11,13 +11,12 @@ namespace DMRS.Api.Infrastructure.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // 1. FhirResource Configuration
             modelBuilder.Entity<FhirResource>(entity =>
             {
-                entity.HasKey(e => new { e.ResourceType, e.Id }); // Composite Key
+                entity.HasKey(e => new { e.ResourceType, e.Id }); 
                 entity.Property(e => e.LastUpdated).IsRequired();
-                entity.Property(e => e.RawContent).IsRequired(); // In Postgres, map this to JSONB
-                entity.Property(e => e.VersionId).IsConcurrencyToken(); // Optimistic Concurrency
+                entity.Property(e => e.RawContent).IsRequired(); 
+                entity.Property(e => e.VersionId).IsConcurrencyToken();
             });
 
             modelBuilder.Entity<FhirResourceVersion>(entity =>
@@ -27,12 +26,10 @@ namespace DMRS.Api.Infrastructure.Persistence
                 entity.Property(e => e.RawContent).IsRequired();
             });
 
-            // 2. ResourceIndex Configuration
             modelBuilder.Entity<ResourceIndex>(entity =>
             {
                 entity.HasKey(i => i.Id);
 
-                // CRITICAL: Indexes for performance
                 entity.HasIndex(i => new { i.ResourceType, i.SearchParamCode, i.Value });
             });
         }
