@@ -1,11 +1,7 @@
 ﻿using DMRS.Api.Application;
-using DMRS.Api.Application.ClinicalDecisionSupport.Interfaces;
-using DMRS.Api.Application.ClinicalDecisionSupport.Rules;
-using DMRS.Api.Application.ClinicalDecisionSupport.Services;
 using DMRS.Api.Application.Interfaces;
 using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Infrastructure;
-using DMRS.Api.Infrastructure.ClinicalDecisionSupport;
 using DMRS.Api.Infrastructure.Persistence;
 using DMRS.Api.Infrastructure.Search.Administrative;
 using DMRS.Api.Infrastructure.Search.Clinical;
@@ -17,8 +13,7 @@ using Hl7.Fhir.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using NRules;
-using NRules.Fluent;
+using Serilog;
 using System.IdentityModel.Tokens.Jwt;
 
 //to prevent mapping of standard claims to Microsoft-specific claim types
@@ -86,22 +81,6 @@ builder.Services.AddScoped<ServiceRequestIndexer>();
 builder.Services.AddScoped<BundleIndexer>();
 builder.Services.AddScoped<ProvenanceIndexer>();
 builder.Services.AddSingleton<IFhirValidatorService, FhirValidatorService>();
-builder.Services.Configure<RxNormOptions>(builder.Configuration.GetSection(RxNormOptions.SectionName));
-builder.Services.AddHttpClient<IRxNormClient, RxNormClient>((serviceProvider, client) =>
-{
-    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<RxNormOptions>>().Value;
-    client.BaseAddress = new Uri(options.BaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-});
-builder.Services.AddScoped<IDrugNormalizationService, DrugNormalizationService>();
-builder.Services.AddScoped<IDrugKnowledgeService, DbDrugKnowledgeService>();
-builder.Services.AddScoped<IClinicalDecisionSupportService, ClinicalDecisionSupportService>();
-builder.Services.AddSingleton<ISessionFactory>(_ =>
-{
-    var repository = new RuleRepository();
-    repository.Load(x => x.From(typeof(MedicationAllergyRule).Assembly));
-    return repository.Compile();
-});
 
 builder.Services.AddSingleton<FhirJsonSerializer>(new FhirJsonSerializer());
 builder.Services.AddSingleton<FhirJsonDeserializer>(new FhirJsonDeserializer(new DeserializerSettings
@@ -143,6 +122,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-
-
