@@ -14,7 +14,7 @@ namespace DMRS.Api.Infrastructure.Search.Medication
             if (resource is not MedicationRequest medicationRequest)
                 return indices;
 
-            AddIndex(indices, medicationRequest.Id, "_id", medicationRequest.Id);
+            AddIndex(indices, medicationRequest?.Id, "_id", medicationRequest?.Id);
             AddIndex(indices, medicationRequest.Id, "_lastUpdated", medicationRequest.Meta?.LastUpdated?.ToString("o"));
             AddIndex(indices, medicationRequest.Id, "status", medicationRequest.Status?.ToString());
             AddIndex(indices, medicationRequest.Id, "intent", medicationRequest.Intent?.ToString());
@@ -24,9 +24,9 @@ namespace DMRS.Api.Infrastructure.Search.Medication
             AddIndex(indices, medicationRequest.Id, "encounter", medicationRequest.Encounter?.Reference);
             AddIndex(indices, medicationRequest.Id, "authoredon", medicationRequest.AuthoredOnElement?.Value);
             AddIndex(indices, medicationRequest.Id, "requester", medicationRequest.Requester?.Reference);
-            AddIndex(indices, medicationRequest.Id, "performer", medicationRequest.Performer.FirstOrDefault().Reference);
+            AddIndex(indices, medicationRequest.Id, "performer", medicationRequest?.Performer?.FirstOrDefault().Reference);
 
-            foreach (var identifier in medicationRequest.Identifier)
+            foreach (var identifier in medicationRequest?.Identifier)
             {
                 AddIndex(indices, medicationRequest.Id, "identifier", identifier.Value);
                 AddIndex(indices, medicationRequest.Id, "identifier", string.IsNullOrWhiteSpace(identifier.System) ? null : $"{identifier.System}|{identifier.Value}");
