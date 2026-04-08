@@ -1,4 +1,4 @@
-using DMRS.Api.Application.Interfaces;
+﻿using DMRS.Api.Application.Interfaces;
 using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Infrastructure.Security;
 using Hl7.Fhir.Model;
@@ -366,7 +366,7 @@ namespace DMRS.Api.Controllers
             return Content(json, "application/fhir+json");
         }
 
-        private async Task<bool> CanCreateResource(T resource)
+        protected async Task<bool> CanCreateResource(T resource)
         {
             var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, "write");
             if (accessLevel == SmartAccessLevel.None)
@@ -401,7 +401,7 @@ namespace DMRS.Api.Controllers
             return _authorizationService.IsResourceOwnedByPatient(resource, patientId, patientIndices);
         }
 
-        private async Task<bool> CanUpdateResource(T existingResource, T updatedResource)
+        protected async Task<bool> CanUpdateResource(T existingResource, T updatedResource)
         {
             var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, "write");
             if (accessLevel == SmartAccessLevel.None)
@@ -457,7 +457,7 @@ namespace DMRS.Api.Controllers
             return _authorizationService.IsResourceOwnedByPatient(updatedResource, patientId, updatedResourceIndices);
         }
 
-        private async Task<bool> CanDeleteResource(T existingResource)
+        protected async Task<bool> CanDeleteResource(T existingResource)
         {
             var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, "delete");
             if (accessLevel == SmartAccessLevel.None)
@@ -491,7 +491,7 @@ namespace DMRS.Api.Controllers
             return _authorizationService.IsResourceOwnedByPatient(existingResource, patientId, indices);
         }
 
-        private async Task<bool> CanAccessResource(T resource, string action, bool useResourceOwnership = false)
+        protected async Task<bool> CanAccessResource(T resource, string action, bool useResourceOwnership = false)
         {
             var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, action);
             if (accessLevel == SmartAccessLevel.None)
@@ -527,5 +527,6 @@ namespace DMRS.Api.Controllers
         }
     }
 }
+
 
 
