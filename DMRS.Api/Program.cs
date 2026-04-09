@@ -1,7 +1,11 @@
 ﻿using DMRS.Api.Application;
 using DMRS.Api.Application.Interfaces;
+using DMRS.Api.Application.ClinicalDecisionSupport.Interfaces;
+using DMRS.Api.Application.ClinicalDecisionSupport.Models;
+using DMRS.Api.Application.ClinicalDecisionSupport.Services;
 using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Infrastructure;
+using DMRS.Api.Infrastructure.ClinicalDecisionSupport;
 using DMRS.Api.Infrastructure.Persistence;
 using DMRS.Api.Infrastructure.Search.Administrative;
 using DMRS.Api.Infrastructure.Search.Clinical;
@@ -81,6 +85,22 @@ builder.Services.AddScoped<ServiceRequestIndexer>();
 builder.Services.AddScoped<BundleIndexer>();
 builder.Services.AddScoped<ProvenanceIndexer>();
 builder.Services.AddSingleton<IFhirValidatorService, FhirValidatorService>();
+
+builder.Services.Configure<KnowledgeCacheOptions>(builder.Configuration.GetSection("Cds:Knowledge"));
+builder.Services.Configure<RxNormOptions>(builder.Configuration.GetSection("Cds:Knowledge:RxNorm"));
+
+builder.Services.AddSingleton<ICdsServiceRegistry, CdsServiceRegistry>();
+builder.Services.AddScoped<ICdsHookService, CdsHookService>();
+builder.Services.AddScoped<ICdsContextBuilder, CdsContextBuilder>();
+builder.Services.AddScoped<IRuleEngine, RuleEngine>();
+builder.Services.AddScoped<IRuleFactory, RuleFactory>();
+builder.Services.AddScoped<IRuleExpressionEvaluator, SimpleJsonLogicEvaluator>();
+builder.Services.AddScoped<ICardTemplateRenderer, CardTemplateRenderer>();
+builder.Services.AddScoped<IRuleDefinitionRepository, EfRuleDefinitionRepository>();
+builder.Services.AddScoped<IRuleManagementService, RuleManagementService>();
+builder.Services.AddScoped<IKnowledgeCache, KnowledgeCache>();
+builder.Services.AddScoped<IClinicalKnowledgeService, ClinicalKnowledgeService>();
+builder.Services.AddHttpClient<IKnowledgeProvider, RxNormKnowledgeProvider>();
 
 builder.Services.AddSingleton<FhirJsonSerializer>(new FhirJsonSerializer());
 builder.Services.AddSingleton<FhirJsonDeserializer>(new FhirJsonDeserializer(new DeserializerSettings
