@@ -63,7 +63,7 @@ namespace DMRS.Api.Migrations
 
                     b.HasIndex("HookId", "IsActive");
 
-                    b.ToTable("CdsRuleDefinitions");
+                    b.ToTable("CdsRuleDefinitions", (string)null);
                 });
 
             modelBuilder.Entity("DMRS.Api.Domain.ClinicalDecisionSupport.DrugKnowledgeEntry", b =>
@@ -98,7 +98,7 @@ namespace DMRS.Api.Migrations
 
                     b.HasIndex("QueryKey", "KnowledgeType", "Source");
 
-                    b.ToTable("DrugKnowledgeEntries");
+                    b.ToTable("DrugKnowledgeEntries", (string)null);
                 });
 
             modelBuilder.Entity("DMRS.Api.Domain.FhirResource", b =>
@@ -125,7 +125,7 @@ namespace DMRS.Api.Migrations
 
                     b.HasKey("ResourceType", "Id");
 
-                    b.ToTable("FhirResources");
+                    b.ToTable("FhirResources", (string)null);
                 });
 
             modelBuilder.Entity("DMRS.Api.Domain.FhirResourceVersion", b =>
@@ -148,7 +148,7 @@ namespace DMRS.Api.Migrations
 
                     b.HasKey("ResourceType", "Id", "VersionId");
 
-                    b.ToTable("FhirResourceVersions");
+                    b.ToTable("FhirResourceVersions", (string)null);
                 });
 
             modelBuilder.Entity("DMRS.Api.Domain.ResourceIndex", b =>
@@ -179,7 +179,7 @@ namespace DMRS.Api.Migrations
 
                     b.HasIndex("ResourceType", "SearchParamCode", "Value");
 
-                    b.ToTable("ResourceIndices");
+                    b.ToTable("ResourceIndices", (string)null);
                 });
 #pragma warning restore 612, 618
         }
