@@ -67,3 +67,5 @@ obj/
 
 keycloak_data/
 .dotnet
+
+settings.local.json

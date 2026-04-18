@@ -88,6 +88,7 @@ builder.Services.AddSingleton<IFhirValidatorService, FhirValidatorService>();
 
 builder.Services.Configure<KnowledgeCacheOptions>(builder.Configuration.GetSection("Cds:Knowledge"));
 builder.Services.Configure<RxNormOptions>(builder.Configuration.GetSection("Cds:Knowledge:RxNorm"));
+builder.Services.Configure<MockMedicineApiOptions>(builder.Configuration.GetSection("Cds:Knowledge:MockMedicineApi"));
 
 builder.Services.AddSingleton<ICdsServiceRegistry, CdsServiceRegistry>();
 builder.Services.AddScoped<ICdsHookService, CdsHookService>();
@@ -100,7 +101,17 @@ builder.Services.AddScoped<IRuleDefinitionRepository, EfRuleDefinitionRepository
 builder.Services.AddScoped<IRuleManagementService, RuleManagementService>();
 builder.Services.AddScoped<IKnowledgeCache, KnowledgeCache>();
 builder.Services.AddScoped<IClinicalKnowledgeService, ClinicalKnowledgeService>();
-builder.Services.AddHttpClient<IKnowledgeProvider, RxNormKnowledgeProvider>();
+builder.Services.AddScoped<IMedicationRequestKnowledgeWarmup, MedicationRequestKnowledgeWarmup>();
+
+var knowledgeProvider = builder.Configuration["Cds:Knowledge:Provider"];
+if (string.Equals(knowledgeProvider, "RxNorm", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddHttpClient<IKnowledgeProvider, RxNormKnowledgeProvider>();
+}
+else
+{
+    builder.Services.AddHttpClient<IKnowledgeProvider, MockMedicineKnowledgeProvider>();
+}
 
 builder.Services.AddSingleton<FhirJsonSerializer>(new FhirJsonSerializer());
 builder.Services.AddSingleton<FhirJsonDeserializer>(new FhirJsonDeserializer(new DeserializerSettings
