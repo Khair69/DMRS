@@ -46,12 +46,25 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 
         private static string? ExtractMedicationCode(MedicationRequest medicationRequest)
         {
-            var coding = medicationRequest.Medication?.Concept?.Coding
+            var concept = medicationRequest.Medication?.Concept;
+            var coding = concept?.Coding
                 ?.FirstOrDefault(c =>
                     string.Equals(c.System, RxNormSystem, StringComparison.OrdinalIgnoreCase)
                     && !string.IsNullOrWhiteSpace(c.Code));
 
-            return coding?.Code;
+            if (!string.IsNullOrWhiteSpace(coding?.Code))
+            {
+                return coding.Code;
+            }
+
+            if (!string.IsNullOrWhiteSpace(concept?.Text))
+            {
+                return concept.Text.Trim();
+            }
+
+            return concept?.Coding
+                ?.Select(c => c.Display?.Trim())
+                .FirstOrDefault(display => !string.IsNullOrWhiteSpace(display));
         }
     }
 }

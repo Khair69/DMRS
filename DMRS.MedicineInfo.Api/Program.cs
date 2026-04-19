@@ -16,15 +16,30 @@ using (var scope = app.Services.CreateScope())
 }
 
 // --- THE ENDPOINT ---
-app.MapGet("/api/medications/{rxCui}", async (string rxCui, AppDbContext db) =>
+app.MapGet("/api/medications/{value}", async (string value, AppDbContext db) =>
 {
-    var medicine = await db.Medicines
-        .Include(m => m.Ingredients) // Ensure ingredients are loaded
-        .FirstOrDefaultAsync(m => m.RxCui == rxCui);
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        return Results.NotFound();
+    }
+
+    var trimmedValue = value.Trim();
+    var medicines = db.Medicines
+        .Include(m => m.Ingredients);
+
+    var medicine = trimmedValue.All(char.IsDigit)
+        ? await medicines.FirstOrDefaultAsync(m => m.RxCui == trimmedValue)
+        : await medicines
+            .Where(m =>
+                EF.Functions.ILike(m.Name, trimmedValue)
+                || EF.Functions.ILike(m.Name, $"%{trimmedValue}%"))
+            .OrderByDescending(m => EF.Functions.ILike(m.Name, trimmedValue))
+            .ThenBy(m => m.Name)
+            .FirstOrDefaultAsync();
 
     return medicine is not null ? Results.Ok(medicine) : Results.NotFound();
 });
 
-app.MapGet("/", () => "Welcome to the DMRS Medicine Info API! Use /api/medications/{rxCui} to get medicine details.");
+app.MapGet("/", () => "Welcome to the DMRS Medicine Info API! Use /api/medications/{value} to get medicine details by RxCUI or medicine name.");
 
 app.Run();
