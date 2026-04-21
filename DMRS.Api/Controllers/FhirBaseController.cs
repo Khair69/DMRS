@@ -11,6 +11,12 @@ namespace DMRS.Api.Controllers
     [ApiController]
     [Route("fhir/[controller]")]
     [Authorize(Policy = "FhirScope")]
+    [ProducesResponseType(typeof(OperationOutcome), 200)]
+    [ProducesResponseType(typeof(OperationOutcome), 201)]
+    [ProducesResponseType(typeof(OperationOutcome), 400)]
+    [ProducesResponseType(typeof(OperationOutcome), 403)]
+    [ProducesResponseType(typeof(OperationOutcome), 404)]
+    [ProducesResponseType(typeof(OperationOutcome), 500)]
     public abstract class FhirBaseController<T> : ControllerBase where T : Resource
     {
         protected readonly IFhirRepository _repository;

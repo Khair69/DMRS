@@ -1,8 +1,8 @@
 ﻿using DMRS.Api.Application;
-using DMRS.Api.Application.Interfaces;
 using DMRS.Api.Application.ClinicalDecisionSupport.Interfaces;
 using DMRS.Api.Application.ClinicalDecisionSupport.Models;
 using DMRS.Api.Application.ClinicalDecisionSupport.Services;
+using DMRS.Api.Application.Interfaces;
 using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Infrastructure;
 using DMRS.Api.Infrastructure.ClinicalDecisionSupport;
@@ -17,8 +17,10 @@ using Hl7.Fhir.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using Serilog;
 using System.IdentityModel.Tokens.Jwt;
+using System.Reflection;
 
 //to prevent mapping of standard claims to Microsoft-specific claim types
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -42,7 +44,19 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Digital Medical Records System (DMRS) API",
+        Version = "v1",
+        Description = "API for managing patient records, encounters, and clinical data."
+    });
+
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
+});
 
 builder.Services.AddOpenApi();
 
