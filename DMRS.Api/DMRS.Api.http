@@ -35,7 +35,48 @@ GET {{DMRS.Api_HostAddress}}/cds/rules/variables
 Authorization: Bearer {{BearerToken}}
 Accept: application/json
 
-### 8. Validate a valid CDS rule
+### 8. List supported rule templates
+GET {{DMRS.Api_HostAddress}}/cds/rules/templates
+Authorization: Bearer {{BearerToken}}
+Accept: application/json
+
+### 9. Compile a max-dose template into a raw rule definition
+POST {{DMRS.Api_HostAddress}}/cds/rules/templates/compile
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "templateId": "max-dose-exceeded",
+  "hookId": "medication-prescribe",
+  "name": "High acetaminophen daily dose from template",
+  "description": "Compiled from template.",
+  "priority": 1,
+  "isActive": true,
+  "indicator": "warning",
+  "sourceLabel": "DMRS CDS Template",
+  "sourceUrl": "http://localhost:5210/cds/medications/{{medication.rxCui}}",
+  "medicationRxCui": "161"
+}
+
+### 10. Create a persisted rule directly from a template
+POST {{DMRS.Api_HostAddress}}/cds/rules/templates
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "templateId": "allergy-conflict",
+  "hookId": "medication-prescribe",
+  "name": "Allergy conflict from template",
+  "description": "Persisted from template.",
+  "priority": 2,
+  "isActive": true,
+  "indicator": "hard-stop",
+  "sourceLabel": "DMRS CDS Template"
+}
+
+### 11. Validate a valid CDS rule
 POST {{DMRS.Api_HostAddress}}/cds/rules/validate
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
@@ -52,7 +93,7 @@ Accept: application/json
   "cardTemplateJson": "{\"summary\":\"Dose too high for {{medication.name}}\",\"detail\":\"Requested {{dose.requestedDailyMg}} mg/day exceeds max {{dose.maxDailyMg}} mg/day.\",\"indicator\":\"warning\",\"source\":{\"label\":\"DMRS CDS\",\"url\":\"http://localhost:5210/cds/medications/{{medication.rxCui}}\"}}"
 }
 
-### 9. Validate an invalid CDS rule
+### 12. Validate an invalid CDS rule
 POST {{DMRS.Api_HostAddress}}/cds/rules/validate
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
@@ -69,7 +110,7 @@ Accept: application/json
   "cardTemplateJson": "{\"summary\":\"Invalid rule\",\"indicator\":\"info\",\"source\":{\"label\":\"DMRS CDS\"}}"
 }
 
-### 10. Preview max-dose rule against derived medication context
+### 13. Preview max-dose rule against derived medication context
 POST {{DMRS.Api_HostAddress}}/cds/rules/preview
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
@@ -128,7 +169,7 @@ Accept: application/json
   "prefetch": null
 }
 
-### 11. Create the max-dose rule
+### 14. Create the max-dose rule
 POST {{DMRS.Api_HostAddress}}/cds/rules
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
@@ -145,17 +186,17 @@ Accept: application/json
   "cardTemplateJson": "{\"summary\":\"Dose too high for {{medication.name}}\",\"detail\":\"Requested {{dose.requestedDailyMg}} mg/day exceeds max {{dose.maxDailyMg}} mg/day.\",\"indicator\":\"warning\",\"source\":{\"label\":\"DMRS CDS\",\"url\":\"http://localhost:5210/cds/medications/{{medication.rxCui}}\"}}"
 }
 
-### 12. List stored CDS rules
+### 15. List stored CDS rules
 GET {{DMRS.Api_HostAddress}}/cds/rules
 Authorization: Bearer {{BearerToken}}
 Accept: application/json
 
-### 13. List available CDS services
+### 16. List available CDS services
 GET {{DMRS.Api_HostAddress}}/cds-services
 Authorization: Bearer {{BearerToken}}
 Accept: application/json
 
-### 14. Execute live CDS evaluation
+### 17. Execute live CDS evaluation
 POST {{DMRS.Api_HostAddress}}/cds-services/medication-prescribe
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
@@ -203,7 +244,7 @@ Accept: application/json
   }
 }
 
-### 15. Create test patient
+### 18. Create test patient
 POST {{DMRS.Api_HostAddress}}/fhir/Patient
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/fhir+json
@@ -221,7 +262,7 @@ Accept: application/fhir+json
   "gender": "male"
 }
 
-### 16. Create matching allergy for acetaminophen ingredient
+### 19. Create matching allergy for acetaminophen ingredient
 POST {{DMRS.Api_HostAddress}}/fhir/AllergyIntolerance
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/fhir+json
@@ -261,7 +302,7 @@ Accept: application/fhir+json
   }
 }
 
-### 17. Preview allergy conflict rule
+### 20. Preview allergy conflict rule
 POST {{DMRS.Api_HostAddress}}/cds/rules/preview
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/json
@@ -300,7 +341,7 @@ Accept: application/json
   "prefetch": null
 }
 
-### 18. Create medication request to verify warmup
+### 21. Create medication request to verify warmup
 POST {{DMRS.Api_HostAddress}}/fhir/MedicationRequest
 Authorization: Bearer {{BearerToken}}
 Content-Type: application/fhir+json
@@ -348,8 +389,7 @@ Accept: application/fhir+json
   ]
 }
 
-### 19. Confirm warmup populated knowledge for ibuprofen
+### 22. Confirm warmup populated knowledge for ibuprofen
 GET {{DMRS.Api_HostAddress}}/cds/medications/5640
 Authorization: Bearer {{BearerToken}}
 Accept: application/json
-

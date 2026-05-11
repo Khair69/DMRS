@@ -13,11 +13,16 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
     {
         private readonly IRuleManagementService _ruleManagement;
         private readonly ICdsVariableCatalog _variableCatalog;
+        private readonly IRuleTemplateService _ruleTemplateService;
 
-        public CdsRulesController(IRuleManagementService ruleManagement, ICdsVariableCatalog variableCatalog)
+        public CdsRulesController(
+            IRuleManagementService ruleManagement,
+            ICdsVariableCatalog variableCatalog,
+            IRuleTemplateService ruleTemplateService)
         {
             _ruleManagement = ruleManagement;
             _variableCatalog = variableCatalog;
+            _ruleTemplateService = ruleTemplateService;
         }
 
         [HttpGet]
@@ -95,6 +100,41 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
         public IActionResult Variables()
         {
             return Ok(_variableCatalog.ListVariables());
+        }
+
+        [HttpGet("templates")]
+        public IActionResult Templates()
+        {
+            return Ok(_ruleTemplateService.ListTemplates());
+        }
+
+        [HttpPost("templates/compile")]
+        public IActionResult CompileTemplate([FromBody] RuleTemplateRequest request)
+        {
+            try
+            {
+                var rule = _ruleTemplateService.Compile(request);
+                return Ok(rule);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("templates")]
+        public async Task<IActionResult> CreateFromTemplate([FromBody] RuleTemplateRequest request, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var compiled = _ruleTemplateService.Compile(request);
+                var rule = await _ruleManagement.CreateAsync(compiled, cancellationToken);
+                return CreatedAtAction(nameof(Get), new { id = rule.Id }, rule);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

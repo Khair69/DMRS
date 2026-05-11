@@ -139,14 +139,24 @@ The system now supports:
 - rule validation
 - rule preview
 - variable discovery
+- rule templates
 
 Main pieces:
 
 - [CdsRulesController.cs](/D:/Code/ASP/DMRS/DMRS.Api/Controllers/ClinicalDecisionSupport/CdsRulesController.cs)
 - [RuleDefinitionValidator.cs](/D:/Code/ASP/DMRS/DMRS.Api/Application/ClinicalDecisionSupport/Services/RuleDefinitionValidator.cs)
 - [CdsVariableCatalog.cs](/D:/Code/ASP/DMRS/DMRS.Api/Application/ClinicalDecisionSupport/Services/CdsVariableCatalog.cs)
+- [RuleTemplateService.cs](/D:/Code/ASP/DMRS/DMRS.Api/Application/ClinicalDecisionSupport/Services/RuleTemplateService.cs)
 
 This makes the rule layer safer and easier to test before activation.
+
+The template layer now provides starter rule types that compile into standard `CdsRuleDefinition` records:
+
+- `max-dose-exceeded`
+- `allergy-conflict`
+- `pregnancy-category-warning`
+- `controlled-medication-warning`
+- `indication-mismatch`
 
 ### D. Dynamic card templates
 
@@ -212,6 +222,9 @@ Current service:
 - `POST /cds/rules/validate`
 - `POST /cds/rules/preview`
 - `GET /cds/rules/variables`
+- `GET /cds/rules/templates`
+- `POST /cds/rules/templates/compile`
+- `POST /cds/rules/templates`
 
 ### Medicine knowledge endpoints
 
@@ -349,31 +362,51 @@ Recommended order:
 11. test allergy enrichment
 12. test `MedicationRequest` warmup
 
-## 14. What is still limited
+## 14. Template authoring path
+
+Rule templates are a new admin-facing layer on top of the raw rule engine.
+
+They do not create a second runtime. Instead:
+
+1. the client sends a `RuleTemplateRequest`
+2. the template service compiles that request into a normal `CdsRuleDefinition`
+3. the compiled rule can be previewed, validated, stored, and executed exactly like any hand-authored raw rule
+
+This keeps runtime behavior simple while making authoring easier.
+
+The current starter templates are:
+
+- max dose exceeded
+- allergy conflict
+- pregnancy category warning
+- controlled medication warning
+- indication mismatch
+
+## 15. What is still limited
 
 The system is much stronger than before, but it is still a first CDS platform version.
 
 Current limitations:
 
 - only one CDS service is registered: `medication-prescribe`
-- rule authoring is still raw JSON-based, not a full admin UI model
+- rule authoring is still template-plus-JSON-based, not a full admin UI model
 - dose derivation is currently simple and mg-focused
 - there is no advanced terminology normalization beyond the current inputs
 - there is no AI runtime decision layer yet
 - there is no dedicated audit/history model for rule previews and rule changes beyond normal persistence
 
-## 15. Recommended next implementation areas
+## 16. Recommended next implementation areas
 
 If you continue building CDS from here, the next logical steps are:
 
 - add an admin UI for rule authoring on top of the variable catalog and validation endpoints
-- introduce higher-level rule templates instead of requiring raw `ExpressionJson`
 - add more medication-aware safety checks such as pregnancy warnings and indication mismatch
+- expand the template catalog and allow richer per-template parameter validation
 - strengthen dose/unit normalization
 - add explicit audit logging for CDS rule lifecycle and preview usage
 - add AI only as assistive drafting and explanation after the deterministic rule layer is stable
 
-## 16. Practical mental model
+## 17. Practical mental model
 
 If you want one simple way to think about the system, use this:
 

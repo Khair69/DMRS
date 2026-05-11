@@ -4,8 +4,9 @@ This guide tests the CDS work in four layers:
 
 1. `database + startup`
 2. `medicine knowledge sync`
-3. `rule validation + preview`
-4. `live CDS execution`
+3. `template-driven rule authoring`
+4. `rule validation + preview`
+5. `live CDS execution`
 
 Use the ready-made requests in [DMRS.Api.http](/D:/Code/ASP/DMRS/DMRS.Api/DMRS.Api.http).
 For the full architecture and change summary, see [cds-system.md](/D:/Code/ASP/DMRS/DMRS.Api/docs/cds-system.md).
@@ -83,9 +84,25 @@ This proves:
 - sync service works
 - normalized search works
 
-### 3. Rule variables and validation
+### 3. Template-driven authoring
 
-Run requests `7` to `9`.
+Run requests `7` to `10`.
+
+Expected:
+
+- variables list still exposes the stable runtime fields
+- templates endpoint lists supported starter templates
+- compile endpoint returns a normal `CdsRuleDefinition`
+- create-from-template persists a rule without needing manual `ExpressionJson`
+
+This proves:
+
+- admins can start from supported medication templates
+- templates compile to the same runtime model used by the rule engine
+
+### 4. Rule variables and validation
+
+Run requests `11` and `12`.
 
 Expected:
 
@@ -103,9 +120,9 @@ This proves:
 - enriched context contract is published
 - rule validator is active
 
-### 4. Rule preview with dose calculation
+### 5. Rule preview with dose calculation
 
-Run request `10`.
+Run request `13`.
 
 Expected:
 
@@ -120,9 +137,9 @@ This proves:
 - dose derivation works
 - placeholder interpolation works
 
-### 5. Persist rule and run live CDS
+### 6. Persist rule and run live CDS
 
-Run requests `11` to `14`.
+Run requests `14` to `17`.
 
 Expected:
 
@@ -136,9 +153,9 @@ This proves:
 - persistent rule storage works
 - runtime hook evaluation works
 
-### 6. Allergy enrichment
+### 7. Allergy enrichment
 
-Run requests `15` to `17`.
+Run requests `18` to `20`.
 
 Expected:
 
@@ -152,9 +169,9 @@ This proves:
 - allergy resources are being read from local FHIR storage
 - context builder derives `safety.allergyConflict`
 
-### 7. MedicationRequest warmup
+### 8. MedicationRequest warmup
 
-Run requests `18` and `19`.
+Run requests `21` and `22`.
 
 Expected:
 
@@ -179,6 +196,7 @@ The CDS work is behaving correctly if all of these pass:
 
 - mock medicine source resolves medicines
 - DMRS stores and searches normalized medicine knowledge
+- supported rule templates compile into valid persisted CDS rules
 - rule validation accepts valid JSON logic and rejects unsupported operators
 - preview renders dynamic card text
 - live `medication-prescribe` execution returns cards

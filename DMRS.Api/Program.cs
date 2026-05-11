@@ -114,6 +114,7 @@ builder.Services.AddScoped<ICardTemplateRenderer, CardTemplateRenderer>();
 builder.Services.AddScoped<IRuleDefinitionRepository, EfRuleDefinitionRepository>();
 builder.Services.AddScoped<IRuleDefinitionValidator, RuleDefinitionValidator>();
 builder.Services.AddScoped<IRuleManagementService, RuleManagementService>();
+builder.Services.AddSingleton<IRuleTemplateService, RuleTemplateService>();
 builder.Services.AddSingleton<ICdsVariableCatalog, CdsVariableCatalog>();
 builder.Services.AddScoped<IKnowledgeCache, KnowledgeCache>();
 builder.Services.AddScoped<IMedicineKnowledgeService, MedicineKnowledgeService>();
