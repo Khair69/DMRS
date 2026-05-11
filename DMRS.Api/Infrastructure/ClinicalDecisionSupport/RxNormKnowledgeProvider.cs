@@ -18,6 +18,34 @@ namespace DMRS.Api.Infrastructure.ClinicalDecisionSupport
 
         public string SourceName => "RxNorm";
 
+        public async Task<MedicineKnowledge?> GetMedicationKnowledgeAsync(
+            string medicationCode,
+            CancellationToken cancellationToken)
+        {
+            var rxcui = await ResolveRxCuiAsync(medicationCode, cancellationToken);
+            if (string.IsNullOrWhiteSpace(rxcui))
+            {
+                return null;
+            }
+
+            var ingredients = await GetMedicationIngredientsAsync(rxcui, cancellationToken);
+            var now = DateTimeOffset.UtcNow;
+
+            return new MedicineKnowledge(
+                rxcui,
+                medicationCode,
+                null,
+                null,
+                null,
+                null,
+                null,
+                ingredients.Select(code => new MedicineIngredient(code, code)).ToArray(),
+                [],
+                SourceName,
+                now,
+                now.AddDays(30));
+        }
+
         public async Task<IReadOnlyList<string>> GetMedicationIngredientsAsync(
             string medicationCode,
             CancellationToken cancellationToken)

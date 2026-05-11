@@ -9,13 +9,16 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         private const string RxNormSystem = "http://www.nlm.nih.gov/research/umls/rxnorm";
 
         private readonly IClinicalKnowledgeService _clinicalKnowledgeService;
+        private readonly IMedicineKnowledgeService _medicineKnowledgeService;
         private readonly ILogger<MedicationRequestKnowledgeWarmup> _logger;
 
         public MedicationRequestKnowledgeWarmup(
             IClinicalKnowledgeService clinicalKnowledgeService,
+            IMedicineKnowledgeService medicineKnowledgeService,
             ILogger<MedicationRequestKnowledgeWarmup> logger)
         {
             _clinicalKnowledgeService = clinicalKnowledgeService;
+            _medicineKnowledgeService = medicineKnowledgeService;
             _logger = logger;
         }
 
@@ -31,6 +34,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 
             try
             {
+                await _medicineKnowledgeService.RefreshAsync(medicationCode, cancellationToken);
                 await _clinicalKnowledgeService.GetMaxDoseAsync(medicationCode, cancellationToken);
                 await _clinicalKnowledgeService.GetMedicationIngredientsAsync(medicationCode, cancellationToken);
             }

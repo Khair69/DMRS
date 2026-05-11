@@ -19,6 +19,39 @@ namespace DMRS.Api.Infrastructure.ClinicalDecisionSupport
 
         public string SourceName => "MockMedicineApi";
 
+        public async Task<MedicineKnowledge?> GetMedicationKnowledgeAsync(
+            string medicationCode,
+            CancellationToken cancellationToken)
+        {
+            var medicine = await GetMedicineAsync(medicationCode, cancellationToken);
+            if (medicine == null)
+            {
+                return null;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            var ingredients = (medicine.Ingredients ?? [])
+                .Where(ingredient => !string.IsNullOrWhiteSpace(ingredient.Code) || !string.IsNullOrWhiteSpace(ingredient.Name))
+                .Select(ingredient => new MedicineIngredient(
+                    ingredient.Code?.Trim() ?? string.Empty,
+                    ingredient.Name?.Trim() ?? string.Empty))
+                .ToArray();
+
+            return new MedicineKnowledge(
+                medicine.RxCui,
+                medicine.Name,
+                medicine.Dosing?.MaxDailyMg,
+                medicine.Dosing?.MaxSingleMg,
+                medicine.Dosing?.WarningThreshold,
+                medicine.Safety?.PregnancyCategory,
+                medicine.Safety?.IsControlled,
+                ingredients,
+                medicine.Indications?.Where(code => !string.IsNullOrWhiteSpace(code)).ToArray() ?? [],
+                SourceName,
+                now,
+                now.AddDays(30));
+        }
+
         public async Task<IReadOnlyList<string>> GetMedicationIngredientsAsync(
             string medicationCode,
             CancellationToken cancellationToken)
@@ -78,18 +111,30 @@ namespace DMRS.Api.Infrastructure.ClinicalDecisionSupport
         private sealed class MockMedicineDto
         {
             public string RxCui { get; set; } = string.Empty;
+            public string Name { get; set; } = string.Empty;
             public MockDosingDto Dosing { get; set; } = new();
+            public MockSafetyDto Safety { get; set; } = new();
+            public List<string> Indications { get; set; } = [];
             public List<MockIngredientDto> Ingredients { get; set; } = [];
         }
 
         private sealed class MockDosingDto
         {
             public decimal MaxDailyMg { get; set; }
+            public decimal? MaxSingleMg { get; set; }
+            public decimal? WarningThreshold { get; set; }
+        }
+
+        private sealed class MockSafetyDto
+        {
+            public string? PregnancyCategory { get; set; }
+            public bool? IsControlled { get; set; }
         }
 
         private sealed class MockIngredientDto
         {
             public string Code { get; set; } = string.Empty;
+            public string Name { get; set; } = string.Empty;
         }
     }
 }

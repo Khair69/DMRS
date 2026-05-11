@@ -11,6 +11,7 @@ namespace DMRS.Api.Infrastructure.Persistence
         public DbSet<ResourceIndex> ResourceIndices { get; set; }
         public DbSet<CdsRuleDefinition> CdsRuleDefinitions { get; set; }
         public DbSet<DrugKnowledgeEntry> DrugKnowledgeEntries { get; set; }
+        public DbSet<MedicineKnowledgeRecord> MedicineKnowledgeRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -54,6 +55,18 @@ namespace DMRS.Api.Infrastructure.Persistence
                 entity.Property(e => e.Source).IsRequired();
                 entity.Property(e => e.PayloadJson).HasColumnType("jsonb");
                 entity.HasIndex(e => new { e.QueryKey, e.KnowledgeType, e.Source });
+            });
+
+            modelBuilder.Entity<MedicineKnowledgeRecord>(entity =>
+            {
+                entity.HasKey(e => e.RxCui);
+                entity.Property(e => e.RxCui).ValueGeneratedNever();
+                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.IngredientCodesJson).HasColumnType("jsonb");
+                entity.Property(e => e.IngredientNamesJson).HasColumnType("jsonb");
+                entity.Property(e => e.IndicationCodesJson).HasColumnType("jsonb");
+                entity.Property(e => e.Source).IsRequired();
+                entity.HasIndex(e => e.Name);
             });
         }
     }

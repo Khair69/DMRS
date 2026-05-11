@@ -1,0 +1,186 @@
+# CDS Testing Guide
+
+This guide tests the CDS work in four layers:
+
+1. `database + startup`
+2. `medicine knowledge sync`
+3. `rule validation + preview`
+4. `live CDS execution`
+
+Use the ready-made requests in [DMRS.Api.http](/D:/Code/ASP/DMRS/DMRS.Api/DMRS.Api.http).
+For the full architecture and change summary, see [cds-system.md](/D:/Code/ASP/DMRS/DMRS.Api/docs/cds-system.md).
+
+## Prerequisites
+
+- PostgreSQL running for `DMRS.Api`
+- Keycloak token already available
+- Token scopes broad enough for the new CDS controllers
+- `DMRS.MedicineInfo.Api` running on `http://localhost:5041`
+- `DMRS.Api` running on `http://localhost:5210`
+
+Important auth note:
+
+- The CDS authorization policy checks scopes against the controller name, not only the route.
+- If CDS calls return `403`, add scopes like:
+  - `user/cdsmedicineknowledge.read`
+  - `user/cdsmedicineknowledge.write`
+  - `user/cdsrules.read`
+  - `user/cdsrules.write`
+  - `user/cdshooks.write`
+- For FHIR setup requests, also make sure your token covers:
+  - `user/patient.write`
+  - `user/allergyintolerance.write`
+  - `user/medicationrequest.write`
+
+## Startup
+
+Run the migration first:
+
+```powershell
+dotnet ef database update --project D:\Code\ASP\DMRS\DMRS.Api\DMRS.Api.csproj --startup-project D:\Code\ASP\DMRS\DMRS.Api\DMRS.Api.csproj
+```
+
+Start the mock medicine API:
+
+```powershell
+dotnet run --project D:\Code\ASP\DMRS\DMRS.MedicineInfo.Api\DMRS.MedicineInfo.Api.csproj
+```
+
+Start the main API:
+
+```powershell
+dotnet run --project D:\Code\ASP\DMRS\DMRS.Api\DMRS.Api.csproj
+```
+
+## Step-by-Step Checks
+
+### 1. Mock medicine source
+
+Run requests `1` and `2`.
+
+Expected:
+
+- `200 OK`
+- medicine payload includes `rxCui`, `name`, `dosing`, `safety`, `ingredients`, `indications`
+
+If this fails, stop. The CDS medicine sync depends on it.
+
+### 2. Local medicine knowledge sync
+
+Run requests `3` to `6`.
+
+Expected:
+
+- `refresh` stores a normalized medicine record in DMRS
+- `GET /cds/medications/161` returns Acetaminophen
+- search by `q=acetaminophen` returns Acetaminophen
+- search by ingredient `UNII-L960UP28W1` returns Acetaminophen and Percocet
+
+This proves:
+
+- migration applied
+- mock provider works
+- sync service works
+- normalized search works
+
+### 3. Rule variables and validation
+
+Run requests `7` to `9`.
+
+Expected:
+
+- variables list contains:
+  - `medication.rxCui`
+  - `medication.ingredients`
+  - `dose.requestedDailyMg`
+  - `dose.maxDailyMg`
+  - `safety.allergyConflict`
+- valid rule returns `isValid = true`
+- invalid rule returns `isValid = false`
+
+This proves:
+
+- enriched context contract is published
+- rule validator is active
+
+### 4. Rule preview with dose calculation
+
+Run request `10`.
+
+Expected:
+
+- one card returned
+- summary includes `Acetaminophen (Tylenol)`
+- detail shows `4500` requested mg/day and `4000` max mg/day
+
+This proves:
+
+- rule preview works
+- medication lookup works during preview
+- dose derivation works
+- placeholder interpolation works
+
+### 5. Persist rule and run live CDS
+
+Run requests `11` to `14`.
+
+Expected:
+
+- rule creation returns `201`
+- rule listing shows the rule
+- services list includes `medication-prescribe`
+- live CDS execution returns cards
+
+This proves:
+
+- persistent rule storage works
+- runtime hook evaluation works
+
+### 6. Allergy enrichment
+
+Run requests `15` to `17`.
+
+Expected:
+
+- patient creation succeeds
+- allergy creation succeeds
+- allergy rule preview returns one card
+- detail contains `UNII-L960UP28W1`
+
+This proves:
+
+- allergy resources are being read from local FHIR storage
+- context builder derives `safety.allergyConflict`
+
+### 7. MedicationRequest warmup
+
+Run requests `18` and `19`.
+
+Expected:
+
+- MedicationRequest create succeeds
+- `GET /cds/medications/5640` returns Ibuprofen even if you did not manually refresh it first
+
+This proves:
+
+- MedicationRequest write path triggers medicine knowledge warmup
+
+## Failure Guide
+
+- `401 Unauthorized`: bad or missing token
+- `403 Forbidden`: token missing CDS controller scopes
+- `500` on `/cds/medications/...`: migration missing or mock medicine API down
+- preview returns `cards: []`: expression did not match derived context
+- allergy test returns no match: allergy code does not exactly match the medicine ingredient code
+
+## Pass Criteria
+
+The CDS work is behaving correctly if all of these pass:
+
+- mock medicine source resolves medicines
+- DMRS stores and searches normalized medicine knowledge
+- rule validation accepts valid JSON logic and rejects unsupported operators
+- preview renders dynamic card text
+- live `medication-prescribe` execution returns cards
+- allergy matching uses local FHIR allergy data
+- MedicationRequest writes warm the medicine knowledge store

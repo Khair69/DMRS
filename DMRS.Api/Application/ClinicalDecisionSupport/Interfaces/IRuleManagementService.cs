@@ -1,3 +1,4 @@
+using DMRS.Api.Application.ClinicalDecisionSupport.Models;
 using DMRS.Api.Domain.ClinicalDecisionSupport;
 
 namespace DMRS.Api.Application.ClinicalDecisionSupport.Interfaces
@@ -9,5 +10,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Interfaces
         Task<IReadOnlyList<CdsRuleDefinition>> ListAsync(CancellationToken cancellationToken);
         Task<CdsRuleDefinition?> UpdateAsync(Guid id, CdsRuleDefinition update, CancellationToken cancellationToken);
         Task<bool> ActivateAsync(Guid id, bool isActive, CancellationToken cancellationToken);
+        RuleValidationResult Validate(CdsRuleDefinition rule);
+        Task<RulePreviewResponse> PreviewAsync(RulePreviewRequest request, CancellationToken cancellationToken);
     }
 }

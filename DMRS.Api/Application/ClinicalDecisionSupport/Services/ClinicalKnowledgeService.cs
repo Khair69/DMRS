@@ -11,12 +11,22 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 
         private readonly IKnowledgeProvider _provider;
         private readonly IKnowledgeCache _cache;
+        private readonly IMedicineKnowledgeService _medicineKnowledgeService;
 
-        public ClinicalKnowledgeService(IKnowledgeProvider provider, IKnowledgeCache cache)
+        public ClinicalKnowledgeService(
+            IKnowledgeProvider provider,
+            IKnowledgeCache cache,
+            IMedicineKnowledgeService medicineKnowledgeService)
         {
             _provider = provider;
             _cache = cache;
+            _medicineKnowledgeService = medicineKnowledgeService;
         }
+
+        public Task<MedicineKnowledge?> GetMedicationKnowledgeAsync(
+            string medicationCode,
+            CancellationToken cancellationToken)
+            => _medicineKnowledgeService.GetAsync(medicationCode, cancellationToken);
 
         public async Task<IReadOnlyList<string>> GetMedicationIngredientsAsync(
             string medicationCode,

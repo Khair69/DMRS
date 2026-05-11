@@ -1,6 +1,355 @@
 @DMRS.Api_HostAddress = http://localhost:5210
+@MedicineInfo_HostAddress = http://localhost:5041
+@BearerToken = REPLACE_WITH_VALID_TOKEN
 
-GET {{DMRS.Api_HostAddress}}/weatherforecast/
+### 1. Verify mock medicine API by RxCUI
+GET {{MedicineInfo_HostAddress}}/api/medications/161
 Accept: application/json
 
-###
+### 2. Verify mock medicine API by name
+GET {{MedicineInfo_HostAddress}}/api/medications/Acetaminophen
+Accept: application/json
+
+### 3. Refresh local normalized medicine knowledge
+POST {{DMRS.Api_HostAddress}}/cds/medications/161/refresh
+Authorization: Bearer {{BearerToken}}
+Accept: application/json
+
+### 4. Read normalized medicine knowledge
+GET {{DMRS.Api_HostAddress}}/cds/medications/161
+Authorization: Bearer {{BearerToken}}
+Accept: application/json
+
+### 5. Search normalized medicine knowledge by name
+GET {{DMRS.Api_HostAddress}}/cds/medications?q=acetaminophen
+Authorization: Bearer {{BearerToken}}
+Accept: application/json
+
+### 6. Search normalized medicine knowledge by ingredient code
+GET {{DMRS.Api_HostAddress}}/cds/medications?ingredient=UNII-L960UP28W1
+Authorization: Bearer {{BearerToken}}
+Accept: application/json
+
+### 7. List CDS rule variables
+GET {{DMRS.Api_HostAddress}}/cds/rules/variables
+Authorization: Bearer {{BearerToken}}
+Accept: application/json
+
+### 8. Validate a valid CDS rule
+POST {{DMRS.Api_HostAddress}}/cds/rules/validate
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": "00000000-0000-0000-0000-000000000001",
+  "hookId": "medication-prescribe",
+  "name": "High acetaminophen daily dose",
+  "description": "Warn when requested daily dose exceeds max daily dose.",
+  "priority": 1,
+  "isActive": true,
+  "expressionJson": "{\"and\":[{\">\":[{\"var\":\"dose.requestedDailyMg\"},{\"var\":\"dose.maxDailyMg\"}]},{\"==\":[{\"var\":\"medication.rxCui\"},\"161\"]}]}",
+  "cardTemplateJson": "{\"summary\":\"Dose too high for {{medication.name}}\",\"detail\":\"Requested {{dose.requestedDailyMg}} mg/day exceeds max {{dose.maxDailyMg}} mg/day.\",\"indicator\":\"warning\",\"source\":{\"label\":\"DMRS CDS\",\"url\":\"http://localhost:5210/cds/medications/{{medication.rxCui}}\"}}"
+}
+
+### 9. Validate an invalid CDS rule
+POST {{DMRS.Api_HostAddress}}/cds/rules/validate
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": "00000000-0000-0000-0000-000000000099",
+  "hookId": "medication-prescribe",
+  "name": "Invalid operator test",
+  "description": "Should fail validation.",
+  "priority": 99,
+  "isActive": true,
+  "expressionJson": "{\"contains\":[{\"var\":\"medication.ingredients\"},\"UNII-L960UP28W1\"]}",
+  "cardTemplateJson": "{\"summary\":\"Invalid rule\",\"indicator\":\"info\",\"source\":{\"label\":\"DMRS CDS\"}}"
+}
+
+### 10. Preview max-dose rule against derived medication context
+POST {{DMRS.Api_HostAddress}}/cds/rules/preview
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "hook": "medication-prescribe",
+  "rule": {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "hookId": "medication-prescribe",
+    "name": "High acetaminophen daily dose",
+    "description": "Warn when requested daily dose exceeds max daily dose.",
+    "priority": 1,
+    "isActive": true,
+    "expressionJson": "{\"and\":[{\">\":[{\"var\":\"dose.requestedDailyMg\"},{\"var\":\"dose.maxDailyMg\"}]},{\"==\":[{\"var\":\"medication.rxCui\"},\"161\"]}]}",
+    "cardTemplateJson": "{\"summary\":\"Dose too high for {{medication.name}}\",\"detail\":\"Requested {{dose.requestedDailyMg}} mg/day exceeds max {{dose.maxDailyMg}} mg/day.\",\"indicator\":\"warning\",\"source\":{\"label\":\"DMRS CDS\",\"url\":\"http://localhost:5210/cds/medications/{{medication.rxCui}}\"}}"
+  },
+  "context": {
+    "patientId": "cds-test-patient",
+    "medicationRequest": {
+      "resourceType": "MedicationRequest",
+      "medication": {
+        "concept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "161",
+              "display": "Acetaminophen (Tylenol)"
+            }
+          ],
+          "text": "Acetaminophen (Tylenol)"
+        }
+      },
+      "dosageInstruction": [
+        {
+          "doseAndRate": [
+            {
+              "doseQuantity": {
+                "value": 1500,
+                "unit": "mg",
+                "code": "mg"
+              }
+            }
+          ],
+          "timing": {
+            "repeat": {
+              "frequency": 3,
+              "period": 1,
+              "periodUnit": "d"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "prefetch": null
+}
+
+### 11. Create the max-dose rule
+POST {{DMRS.Api_HostAddress}}/cds/rules
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "id": "11111111-1111-1111-1111-111111111111",
+  "hookId": "medication-prescribe",
+  "name": "High acetaminophen daily dose",
+  "description": "Warn when requested daily dose exceeds max daily dose.",
+  "priority": 1,
+  "isActive": true,
+  "expressionJson": "{\"and\":[{\">\":[{\"var\":\"dose.requestedDailyMg\"},{\"var\":\"dose.maxDailyMg\"}]},{\"==\":[{\"var\":\"medication.rxCui\"},\"161\"]}]}",
+  "cardTemplateJson": "{\"summary\":\"Dose too high for {{medication.name}}\",\"detail\":\"Requested {{dose.requestedDailyMg}} mg/day exceeds max {{dose.maxDailyMg}} mg/day.\",\"indicator\":\"warning\",\"source\":{\"label\":\"DMRS CDS\",\"url\":\"http://localhost:5210/cds/medications/{{medication.rxCui}}\"}}"
+}
+
+### 12. List stored CDS rules
+GET {{DMRS.Api_HostAddress}}/cds/rules
+Authorization: Bearer {{BearerToken}}
+Accept: application/json
+
+### 13. List available CDS services
+GET {{DMRS.Api_HostAddress}}/cds-services
+Authorization: Bearer {{BearerToken}}
+Accept: application/json
+
+### 14. Execute live CDS evaluation
+POST {{DMRS.Api_HostAddress}}/cds-services/medication-prescribe
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "hookInstance": "manual-test-1",
+  "context": {
+    "patientId": "cds-test-patient",
+    "medicationRequest": {
+      "resourceType": "MedicationRequest",
+      "medication": {
+        "concept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "161",
+              "display": "Acetaminophen (Tylenol)"
+            }
+          ],
+          "text": "Acetaminophen (Tylenol)"
+        }
+      },
+      "dosageInstruction": [
+        {
+          "doseAndRate": [
+            {
+              "doseQuantity": {
+                "value": 1500,
+                "unit": "mg",
+                "code": "mg"
+              }
+            }
+          ],
+          "timing": {
+            "repeat": {
+              "frequency": 3,
+              "period": 1,
+              "periodUnit": "d"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+### 15. Create test patient
+POST {{DMRS.Api_HostAddress}}/fhir/Patient
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+{
+  "resourceType": "Patient",
+  "id": "cds-test-patient",
+  "name": [
+    {
+      "family": "Test",
+      "given": ["CDS"]
+    }
+  ],
+  "gender": "male"
+}
+
+### 16. Create matching allergy for acetaminophen ingredient
+POST {{DMRS.Api_HostAddress}}/fhir/AllergyIntolerance
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+{
+  "resourceType": "AllergyIntolerance",
+  "id": "cds-test-allergy",
+  "clinicalStatus": {
+    "coding": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
+        "code": "active"
+      }
+    ]
+  },
+  "verificationStatus": {
+    "coding": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification",
+        "code": "confirmed"
+      }
+    ]
+  },
+  "patient": {
+    "reference": "Patient/cds-test-patient"
+  },
+  "code": {
+    "coding": [
+      {
+        "system": "http://example.org/unii",
+        "code": "UNII-L960UP28W1",
+        "display": "Acetaminophen"
+      }
+    ],
+    "text": "Acetaminophen"
+  }
+}
+
+### 17. Preview allergy conflict rule
+POST {{DMRS.Api_HostAddress}}/cds/rules/preview
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "hook": "medication-prescribe",
+  "rule": {
+    "id": "00000000-0000-0000-0000-000000000002",
+    "hookId": "medication-prescribe",
+    "name": "Allergy conflict",
+    "description": "Warn when patient allergy matches medication ingredient.",
+    "priority": 2,
+    "isActive": true,
+    "expressionJson": "{\"==\":[{\"var\":\"safety.allergyConflict\"},true]}",
+    "cardTemplateJson": "{\"summary\":\"Allergy conflict for {{medication.name}}\",\"detail\":\"Matched allergy ingredients: {{allergies.matches}}\",\"indicator\":\"hard-stop\",\"source\":{\"label\":\"DMRS CDS\"}}"
+  },
+  "context": {
+    "patientId": "cds-test-patient",
+    "medicationRequest": {
+      "resourceType": "MedicationRequest",
+      "medication": {
+        "concept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "161",
+              "display": "Acetaminophen (Tylenol)"
+            }
+          ],
+          "text": "Acetaminophen (Tylenol)"
+        }
+      }
+    }
+  },
+  "prefetch": null
+}
+
+### 18. Create medication request to verify warmup
+POST {{DMRS.Api_HostAddress}}/fhir/MedicationRequest
+Authorization: Bearer {{BearerToken}}
+Content-Type: application/fhir+json
+Accept: application/fhir+json
+
+{
+  "resourceType": "MedicationRequest",
+  "id": "cds-test-medreq-1",
+  "status": "active",
+  "intent": "order",
+  "subject": {
+    "reference": "Patient/cds-test-patient"
+  },
+  "medication": {
+    "concept": {
+      "coding": [
+        {
+          "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+          "code": "5640",
+          "display": "Ibuprofen (Advil)"
+        }
+      ],
+      "text": "Ibuprofen (Advil)"
+    }
+  },
+  "dosageInstruction": [
+    {
+      "doseAndRate": [
+        {
+          "doseQuantity": {
+            "value": 400,
+            "unit": "mg",
+            "code": "mg"
+          }
+        }
+      ],
+      "timing": {
+        "repeat": {
+          "frequency": 3,
+          "period": 1,
+          "periodUnit": "d"
+        }
+      }
+    }
+  ]
+}
+
+### 19. Confirm warmup populated knowledge for ibuprofen
+GET {{DMRS.Api_HostAddress}}/cds/medications/5640
+Authorization: Bearer {{BearerToken}}
+Accept: application/json
+

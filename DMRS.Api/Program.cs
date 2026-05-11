@@ -112,8 +112,11 @@ builder.Services.AddScoped<IRuleFactory, RuleFactory>();
 builder.Services.AddScoped<IRuleExpressionEvaluator, SimpleJsonLogicEvaluator>();
 builder.Services.AddScoped<ICardTemplateRenderer, CardTemplateRenderer>();
 builder.Services.AddScoped<IRuleDefinitionRepository, EfRuleDefinitionRepository>();
+builder.Services.AddScoped<IRuleDefinitionValidator, RuleDefinitionValidator>();
 builder.Services.AddScoped<IRuleManagementService, RuleManagementService>();
+builder.Services.AddSingleton<ICdsVariableCatalog, CdsVariableCatalog>();
 builder.Services.AddScoped<IKnowledgeCache, KnowledgeCache>();
+builder.Services.AddScoped<IMedicineKnowledgeService, MedicineKnowledgeService>();
 builder.Services.AddScoped<IClinicalKnowledgeService, ClinicalKnowledgeService>();
 builder.Services.AddScoped<IMedicationRequestKnowledgeWarmup, MedicationRequestKnowledgeWarmup>();
 
