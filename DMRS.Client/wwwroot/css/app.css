@@ -113,3 +113,34 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+.cds-admin-card {
+    border-radius: 1rem;
+}
+
+.cds-admin-code {
+    margin-bottom: 0;
+    padding: 1rem;
+    border-radius: 0.85rem;
+    background: linear-gradient(180deg, #0f172a, #162033);
+    color: #d8e3ff;
+    font-size: 0.82rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.cds-preview-card {
+    background: linear-gradient(180deg, #fff9e9, #fffef8);
+}
+
+.cds-scroll-panel {
+    max-height: 28rem;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.cds-scroll-panel-sm {
+    max-height: 16rem;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
