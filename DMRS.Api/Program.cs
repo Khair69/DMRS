@@ -100,7 +100,6 @@ builder.Services.AddScoped<BundleIndexer>();
 builder.Services.AddScoped<ProvenanceIndexer>();
 builder.Services.AddSingleton<IFhirValidatorService, FhirValidatorService>();
 
-builder.Services.Configure<KnowledgeCacheOptions>(builder.Configuration.GetSection("Cds:Knowledge"));
 builder.Services.Configure<RxNormOptions>(builder.Configuration.GetSection("Cds:Knowledge:RxNorm"));
 builder.Services.Configure<MockMedicineApiOptions>(builder.Configuration.GetSection("Cds:Knowledge:MockMedicineApi"));
 
@@ -116,7 +115,6 @@ builder.Services.AddScoped<IRuleDefinitionValidator, RuleDefinitionValidator>();
 builder.Services.AddScoped<IRuleManagementService, RuleManagementService>();
 builder.Services.AddSingleton<IRuleTemplateService, RuleTemplateService>();
 builder.Services.AddSingleton<ICdsVariableCatalog, CdsVariableCatalog>();
-builder.Services.AddScoped<IKnowledgeCache, KnowledgeCache>();
 builder.Services.AddScoped<IMedicineKnowledgeService, MedicineKnowledgeService>();
 builder.Services.AddScoped<IClinicalKnowledgeService, ClinicalKnowledgeService>();
 builder.Services.AddScoped<IMedicationRequestKnowledgeWarmup, MedicationRequestKnowledgeWarmup>();

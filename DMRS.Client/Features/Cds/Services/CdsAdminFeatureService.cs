@@ -28,6 +28,15 @@ public sealed class CdsAdminFeatureService
     public async Task<CdsRuleSummary?> CreateFromTemplateAsync(CdsRuleTemplateRequestModel request)
         => await _fhirApiService.PostApiJsonAsync<CdsRuleTemplateRequestModel, CdsRuleSummary>("cds/rules/templates", request);
 
+    public async Task<CdsRuleSummary?> CreateRuleAsync(CdsRuleSummary rule)
+        => await _fhirApiService.PostApiJsonAsync<CdsRuleSummary, CdsRuleSummary>("cds/rules", rule);
+
+    public async Task<CdsRuleSummary?> UpdateRuleAsync(CdsRuleSummary rule)
+        => await _fhirApiService.PutApiJsonAsync<CdsRuleSummary, CdsRuleSummary>($"cds/rules/{rule.Id}", rule);
+
+    public async Task SetRuleActiveAsync(Guid id, bool isActive)
+        => await _fhirApiService.PatchApiAsync($"cds/rules/{id}/{(isActive ? "activate" : "deactivate")}");
+
     public async Task<CdsRuleValidationResultModel?> ValidateRuleAsync(CdsRuleSummary rule)
         => await _fhirApiService.PostApiJsonAsync<CdsRuleSummary, CdsRuleValidationResultModel>("cds/rules/validate", rule);
 

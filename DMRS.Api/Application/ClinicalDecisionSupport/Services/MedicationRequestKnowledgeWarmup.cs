@@ -42,7 +42,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             {
                 _logger.LogWarning(
                     ex,
-                    "Failed to warm drug knowledge cache for MedicationRequest {MedicationRequestId} using medication code {MedicationCode}",
+                    "Failed to warm medicine knowledge for MedicationRequest {MedicationRequestId} using medication code {MedicationCode}",
                     medicationRequest.Id,
                     medicationCode);
             }

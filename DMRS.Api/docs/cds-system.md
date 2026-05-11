@@ -1,6 +1,6 @@
 # CDS System Guide
 
-This document explains the CDS system in `DMRS.Api` as it exists now, including the original rule engine, the mock medicine integration, the newer medicine knowledge layer, the enriched context flow, the admin/testing endpoints, and how to verify the whole stack without getting lost.
+This document explains the CDS system in `DMRS.Api` as it exists now, including the rule engine, the mock medicine integration, the normalized medicine knowledge layer, the enriched context flow, the admin/testing endpoints, and how to verify the whole stack without getting lost.
 
 Use this together with:
 
@@ -33,7 +33,7 @@ This is the main system. It contains:
 - FHIR resources
 - CDS endpoints
 - CDS rule storage
-- local medicine knowledge persistence
+- local normalized medicine knowledge persistence
 - context enrichment
 - authorization
 
@@ -76,7 +76,6 @@ Before the recent changes, the system already had:
 - a rule database table
 - a JSON-logic-style evaluator
 - a card renderer
-- a generic knowledge cache
 - a provider abstraction for medicine facts
 
 That earlier foundation is still in place. The recent work extends it rather than replacing it.
@@ -87,7 +86,7 @@ The recent implementation added four important areas.
 
 ### A. Local normalized medicine knowledge
 
-Instead of only caching generic JSON blobs, `DMRS.Api` now stores normalized medicine records in its own database table.
+`DMRS.Api` now stores normalized medicine records in its own database table and uses that table as the CDS runtime source of truth.
 
 Main pieces:
 
@@ -104,10 +103,23 @@ This gives DMRS a local store for:
 - `WarningThresholdMg`
 - `PregnancyCategory`
 - `IsControlled`
-- ingredients
-- indications
+- ingredient codes and names
+- indication codes
 - source metadata
 - fetch and expiry timestamps
+
+### Why there is one table now
+
+Earlier CDS work used a generic cache table called `DrugKnowledgeEntries`. It stored key-value payloads such as ingredients or max dose as JSON blobs.
+
+That design was useful for the first prototype, but it became a bad fit once CDS needed:
+
+- searchable medicine records
+- normalized fields for admin rule authoring
+- stable context enrichment
+- direct runtime access to ingredients, dose limits, and safety flags
+
+The newer `MedicineKnowledgeRecords` table replaces that cache design for CDS. It is now the canonical medicine store used by the CDS runtime and admin APIs. The old `DrugKnowledgeEntries` table is being removed from the runtime and dropped from the schema.
 
 ### B. Richer medication context
 
@@ -182,7 +194,7 @@ The medicine knowledge path now works like this:
 7. the result is normalized and stored in `DMRS.Api`
 8. later lookups use the local normalized record until expiry
 
-This is important because it means the mock medicine API is now an upstream source, while DMRS keeps its own CDS-friendly medicine table locally.
+This is important because it means the mock medicine API is an upstream source, while DMRS keeps its own CDS-friendly medicine table locally.
 
 ## 7. The warmup behavior on MedicationRequest writes
 

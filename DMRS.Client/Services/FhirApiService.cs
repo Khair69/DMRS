@@ -153,6 +153,32 @@ public class FhirApiService
         return await response.Content.ReadFromJsonAsync<TResponse>();
     }
 
+    public async Task<TResponse?> PutApiJsonAsync<TRequest, TResponse>(string path, TRequest payload)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Put, path);
+        request.Headers.Accept.Clear();
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        request.Content = JsonContent.Create(payload);
+
+        using var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<TResponse>();
+    }
+
+    public async System.Threading.Tasks.Task PatchApiAsync(string path)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Patch, path)
+        {
+            Content = new StringContent(string.Empty, Encoding.UTF8, "application/json")
+        };
+        request.Headers.Accept.Clear();
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+    }
+
     private IReadOnlyList<T> DeserializeResourceList<T>(string json) where T : Resource
     {
         using var document = JsonDocument.Parse(json);

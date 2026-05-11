@@ -9,7 +9,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
         <h1 class="mb-1">CDS Admin</h1>
-        <p class="text-body-secondary mb-0">Browse medicine knowledge, inspect CDS variables, and build medication rules from templates.</p>
+        <p class="text-body-secondary mb-0">Author, inspect, test, and manage medication CDS rules from one admin console.</p>
     </div>
     <button class="btn btn-outline-primary" @onclick="LoadAllAsync" disabled="@isLoading">
         @(isLoading ? "Refreshing..." : "Refresh Console")
@@ -22,11 +22,11 @@
 }
 
 <div class="row g-4">
-    <div class="col-12 col-xl-5">
+    <div class="col-12 col-xl-4">
         <div class="card shadow-sm border-0 cds-admin-card">
             <div class="card-header bg-white border-0 pb-0">
                 <h2 class="h5 mb-1">Template Builder</h2>
-                <p class="text-body-secondary mb-0">Compile and save common CDS rules without hand-writing JSON logic.</p>
+                <p class="text-body-secondary mb-0">Start from a supported medication rule template and load it into the editor.</p>
             </div>
             <div class="card-body">
                 <EditForm Model="templateModel" OnSubmit="CompileTemplateAsync">
@@ -40,17 +40,17 @@
                         </InputSelect>
                     </div>
                     <div class="row g-3">
-                        <div class="col-md-8">
+                        <div class="col-12">
                             <label class="form-label">Rule Name</label>
                             <InputText @bind-Value="templateModel.Name" class="form-control" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Priority</label>
-                            <InputNumber @bind-Value="templateModel.Priority" class="form-control" />
                         </div>
                         <div class="col-12">
                             <label class="form-label">Description</label>
                             <InputTextArea @bind-Value="templateModel.Description" class="form-control" rows="2" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Priority</label>
+                            <InputNumber @bind-Value="templateModel.Priority" class="form-control" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Indicator</label>
@@ -60,27 +60,27 @@
                                 <option value="hard-stop">hard-stop</option>
                             </InputSelect>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label class="form-label">Source Label</label>
                             <InputText @bind-Value="templateModel.SourceLabel" class="form-control" />
                         </div>
                         @if (NeedsMedicationRxCui)
                         {
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label class="form-label">Medication RxCUI</label>
                                 <InputText @bind-Value="templateModel.MedicationRxCui" class="form-control" />
                             </div>
                         }
                         @if (NeedsPregnancyCategory)
                         {
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label class="form-label">Pregnancy Category</label>
                                 <InputText @bind-Value="templateModel.PregnancyCategory" class="form-control" />
                             </div>
                         }
                         @if (NeedsIndicationCode)
                         {
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label class="form-label">Indication Code</label>
                                 <InputText @bind-Value="templateModel.IndicationCode" class="form-control" />
                             </div>
@@ -88,8 +88,7 @@
                     </div>
                     <div class="d-flex gap-2 mt-4">
                         <button class="btn btn-primary" type="submit" disabled="@isCompiling">Compile</button>
-                        <button class="btn btn-outline-success" type="button" @onclick="PreviewCompiledRuleAsync" disabled="@(!HasCompiledRule || isPreviewing)">Preview</button>
-                        <button class="btn btn-success" type="button" @onclick="SaveTemplateRuleAsync" disabled="@(!HasCompiledRule || isSaving)">Save Rule</button>
+                        <button class="btn btn-outline-success" type="button" @onclick="CreateFromTemplateAsync" disabled="@isSaving">Save From Template</button>
                     </div>
                 </EditForm>
 
@@ -107,262 +106,337 @@
 
         <div class="card shadow-sm border-0 cds-admin-card mt-4">
             <div class="card-header bg-white border-0 pb-0">
-                <h2 class="h5 mb-1">Compiled Rule</h2>
-                <p class="text-body-secondary mb-0">Inspect the generated raw rule definition before saving it.</p>
+                <h2 class="h5 mb-1">Variables and Templates</h2>
+                <p class="text-body-secondary mb-0">Reference the supported CDS inputs and starter templates.</p>
             </div>
             <div class="card-body">
-                @if (compiledRule is null)
+                <div class="mb-4">
+                    <div class="fw-semibold mb-2">Templates</div>
+                    <div class="cds-scroll-panel-sm">
+                        @foreach (var template in templates)
+                        {
+                            <div class="border rounded-3 p-2 mb-2">
+                                <div class="fw-semibold">@template.Title</div>
+                                <div class="small text-body-secondary">@template.Description</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div>
+                    <div class="fw-semibold mb-2">Variables</div>
+                    <div class="cds-scroll-panel-sm">
+                        @foreach (var variable in variables)
+                        {
+                            <div class="border rounded-3 p-2 mb-2">
+                                <div><code>@variable.Path</code></div>
+                                <div class="small text-body-secondary">@variable.Type | @variable.Description</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 cds-admin-card mt-4">
+            <div class="card-header bg-white border-0 pb-0">
+                <h2 class="h5 mb-1">Medicine Knowledge</h2>
+                <p class="text-body-secondary mb-0">Browse the normalized medicine knowledge now available to CDS.</p>
+            </div>
+            <div class="card-body">
+                <EditForm Model="this" OnSubmit="SearchMedicinesAsync">
+                    <div class="input-group mb-3">
+                        <InputText @bind-Value="medicineSearch" class="form-control" placeholder="Search by name or RxCUI" />
+                        <button class="btn btn-outline-primary" type="submit" disabled="@isSearchingMedicines">Search</button>
+                    </div>
+                </EditForm>
+
+                @if (medicineResults.Count == 0)
                 {
-                    <div class="alert alert-secondary mb-0">Compile a template to inspect the generated rule.</div>
+                    <div class="alert alert-secondary mb-0">No medicine results loaded.</div>
                 }
                 else
                 {
-                    <dl class="row small mb-3">
-                        <dt class="col-sm-4">Hook</dt>
-                        <dd class="col-sm-8">@compiledRule.HookId</dd>
-                        <dt class="col-sm-4">Name</dt>
-                        <dd class="col-sm-8">@compiledRule.Name</dd>
-                        <dt class="col-sm-4">Priority</dt>
-                        <dd class="col-sm-8">@compiledRule.Priority</dd>
-                        <dt class="col-sm-4">Active</dt>
-                        <dd class="col-sm-8">@compiledRule.IsActive</dd>
-                    </dl>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Expression JSON</label>
-                        <pre class="cds-admin-code">@FormatJson(compiledRule.ExpressionJson)</pre>
-                    </div>
-                    <div>
-                        <label class="form-label fw-semibold">Card Template JSON</label>
-                        <pre class="cds-admin-code">@FormatJson(compiledRule.CardTemplateJson)</pre>
+                    <div class="cds-scroll-panel">
+                        @foreach (var medicine in medicineResults)
+                        {
+                            <div class="border rounded-3 p-3 mb-3">
+                                <div class="d-flex justify-content-between gap-3">
+                                    <div>
+                                        <div class="fw-semibold">@medicine.Name</div>
+                                        <div class="small text-body-secondary">RxCUI: @medicine.RxCui</div>
+                                    </div>
+                                    @if (medicine.IsControlled == true)
+                                    {
+                                        <span class="badge text-bg-warning">Controlled</span>
+                                    }
+                                </div>
+                                <div class="small mt-2">
+                                    Max daily: @DisplayDose(medicine.MaxDailyMg) | Pregnancy: @(medicine.PregnancyCategory ?? "n/a")
+                                </div>
+                                <div class="small text-body-secondary mt-1">
+                                    Ingredients: @string.Join(", ", medicine.Ingredients.Select(i => i.Name))
+                                </div>
+                            </div>
+                        }
                     </div>
                 }
             </div>
         </div>
     </div>
 
-    <div class="col-12 col-xl-7">
-        <div class="row g-4">
-            <div class="col-12">
-                <div class="card shadow-sm border-0 cds-admin-card">
-                    <div class="card-header bg-white border-0 pb-0">
-                        <h2 class="h5 mb-1">Preview Cards</h2>
-                        <p class="text-body-secondary mb-0">Uses a sample medication-prescribe payload to preview the compiled rule result.</p>
+    <div class="col-12 col-xl-8">
+        <div class="card shadow-sm border-0 cds-admin-card mb-4">
+            <div class="card-header bg-white border-0 pb-0">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <h2 class="h5 mb-1">Rule Workspace</h2>
+                        <p class="text-body-secondary mb-0">Edit raw CDS rules, validate them, preview them, and save changes.</p>
                     </div>
-                    <div class="card-body">
-                        @if (previewResponse is null)
-                        {
-                            <div class="alert alert-secondary mb-0">Compile a rule and select preview to see generated CDS cards.</div>
-                        }
-                        else if (!previewResponse.Validation.IsValid)
-                        {
-                            <div class="alert alert-danger mb-0">
-                                <div class="fw-semibold mb-2">Preview validation failed</div>
-                                @foreach (var error in previewResponse.Validation.Errors)
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="StartNewRule">New Raw Rule</button>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (editableRule is null)
+                {
+                    <div class="alert alert-secondary mb-0">Select a stored rule or compile a template to start editing.</div>
+                }
+                else
+                {
+                    <EditForm Model="editableRule" OnSubmit="SaveEditableRuleAsync">
+                        <div class="row g-3">
+                            <div class="col-md-7">
+                                <label class="form-label">Rule Name</label>
+                                <InputText @bind-Value="editableRule.Name" class="form-control" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Hook</label>
+                                <InputText @bind-Value="editableRule.HookId" class="form-control" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Priority</label>
+                                <InputNumber @bind-Value="editableRule.Priority" class="form-control" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Description</label>
+                                <InputTextArea @bind-Value="editableRule.Description" class="form-control" rows="2" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Expression JSON</label>
+                                <InputTextArea @bind-Value="editableRule.ExpressionJson" class="form-control font-monospace" rows="8" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Card Template JSON</label>
+                                <InputTextArea @bind-Value="editableRule.CardTemplateJson" class="form-control font-monospace" rows="8" />
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <button class="btn btn-primary" type="submit" disabled="@isSaving">Save Rule</button>
+                            <button class="btn btn-outline-primary" type="button" @onclick="ValidateEditableRuleAsync" disabled="@isValidating">Validate</button>
+                            <button class="btn btn-outline-success" type="button" @onclick="PreviewEditableRuleAsync" disabled="@isPreviewing">Preview</button>
+                            <button class="btn btn-outline-warning" type="button" @onclick="ToggleEditableRuleAsync" disabled="@(!CanToggleEditableRule || isToggling)">
+                                @(editableRule.IsActive ? "Deactivate" : "Activate")
+                            </button>
+                        </div>
+                    </EditForm>
+
+                    @if (validationResult is not null)
+                    {
+                        <div class="alert @(validationResult.IsValid ? "alert-success" : "alert-danger") mt-3 mb-0">
+                            @if (validationResult.IsValid)
+                            {
+                                <div>Rule validation passed.</div>
+                            }
+                            else
+                            {
+                                @foreach (var error in validationResult.Errors)
                                 {
                                     <div>@error</div>
                                 }
-                            </div>
-                        }
-                        else if (previewResponse.Cards.Count == 0)
-                        {
-                            <div class="alert alert-warning mb-0">The preview ran successfully, but this sample context did not trigger any cards.</div>
-                        }
-                        else
-                        {
-                            <div class="row g-3">
-                                @foreach (var card in previewResponse.Cards)
-                                {
-                                    <div class="col-12">
-                                        <div class="border rounded-3 p-3 cds-preview-card">
-                                            <div class="d-flex justify-content-between gap-3">
-                                                <div>
-                                                    <div class="fw-semibold">@card.Summary</div>
-                                                    @if (!string.IsNullOrWhiteSpace(card.Detail))
-                                                    {
-                                                        <div class="text-body-secondary mt-1">@card.Detail</div>
-                                                    }
-                                                </div>
-                                                <span class="badge text-bg-light border">@card.Indicator</span>
-                                            </div>
-                                            <div class="small text-body-secondary mt-2">
-                                                Source: @card.Source.Label
-                                                @if (!string.IsNullOrWhiteSpace(card.Source.Url))
-                                                {
-                                                    <span> | </span><a href="@card.Source.Url" target="_blank">link</a>
-                                                }
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        }
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 cds-admin-card mb-4">
+            <div class="card-header bg-white border-0 pb-0">
+                <h2 class="h5 mb-1">Preview Payload</h2>
+                <p class="text-body-secondary mb-0">Edit the sample hook payload directly before previewing a rule.</p>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Preview Context JSON</label>
+                        <InputTextArea @bind-Value="previewContextJson" class="form-control font-monospace" rows="12" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Preview Prefetch JSON</label>
+                        <InputTextArea @bind-Value="previewPrefetchJson" class="form-control font-monospace" rows="5" />
                     </div>
                 </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-outline-secondary" type="button" @onclick="ResetPreviewPayload">Reset Sample Payload</button>
+                    <button class="btn btn-outline-success" type="button" @onclick="PreviewEditableRuleAsync" disabled="@(editableRule is null || isPreviewing)">Preview Current Rule</button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(previewError))
+                {
+                    <div class="alert alert-danger mt-3 mb-0">@previewError</div>
+                }
             </div>
+        </div>
 
-            <div class="col-12 col-lg-6">
-                <div class="card shadow-sm border-0 cds-admin-card h-100">
-                    <div class="card-header bg-white border-0 pb-0">
-                        <h2 class="h5 mb-1">Medicine Knowledge</h2>
-                        <p class="text-body-secondary mb-0">Browse the normalized medicine knowledge now available to CDS.</p>
-                    </div>
-                    <div class="card-body">
-                        <EditForm Model="this" OnSubmit="SearchMedicinesAsync">
-                            <div class="input-group mb-3">
-                                <InputText @bind-Value="medicineSearch" class="form-control" placeholder="Search by name or RxCUI" />
-                                <button class="btn btn-outline-primary" type="submit" disabled="@isSearchingMedicines">Search</button>
-                            </div>
-                        </EditForm>
-
-                        @if (medicineResults.Count == 0)
+        <div class="card shadow-sm border-0 cds-admin-card mb-4">
+            <div class="card-header bg-white border-0 pb-0">
+                <h2 class="h5 mb-1">Preview Cards</h2>
+                <p class="text-body-secondary mb-0">The result of previewing the current rule against the current sample payload.</p>
+            </div>
+            <div class="card-body">
+                @if (previewResponse is null)
+                {
+                    <div class="alert alert-secondary mb-0">Preview a rule to see resulting CDS cards.</div>
+                }
+                else if (!previewResponse.Validation.IsValid)
+                {
+                    <div class="alert alert-danger mb-0">
+                        <div class="fw-semibold mb-2">Preview validation failed</div>
+                        @foreach (var error in previewResponse.Validation.Errors)
                         {
-                            <div class="alert alert-secondary mb-0">No medicine results loaded.</div>
+                            <div>@error</div>
                         }
-                        else
+                    </div>
+                }
+                else if (previewResponse.Cards.Count == 0)
+                {
+                    <div class="alert alert-warning mb-0">The preview ran successfully, but the current payload did not trigger any cards.</div>
+                }
+                else
+                {
+                    <div class="row g-3">
+                        @foreach (var card in previewResponse.Cards)
                         {
-                            <div class="cds-scroll-panel">
-                                @foreach (var medicine in medicineResults)
-                                {
-                                    <div class="border rounded-3 p-3 mb-3">
-                                        <div class="d-flex justify-content-between gap-3">
-                                            <div>
-                                                <div class="fw-semibold">@medicine.Name</div>
-                                                <div class="small text-body-secondary">RxCUI: @medicine.RxCui</div>
-                                            </div>
-                                            @if (medicine.IsControlled == true)
+                            <div class="col-12">
+                                <div class="border rounded-3 p-3 cds-preview-card">
+                                    <div class="d-flex justify-content-between gap-3">
+                                        <div>
+                                            <div class="fw-semibold">@card.Summary</div>
+                                            @if (!string.IsNullOrWhiteSpace(card.Detail))
                                             {
-                                                <span class="badge text-bg-warning">Controlled</span>
+                                                <div class="text-body-secondary mt-1">@card.Detail</div>
                                             }
                                         </div>
-                                        <div class="small mt-2">
-                                            Max daily: @DisplayDose(medicine.MaxDailyMg) | Pregnancy: @(medicine.PregnancyCategory ?? "n/a")
-                                        </div>
-                                        <div class="small text-body-secondary mt-1">
-                                            Ingredients: @string.Join(", ", medicine.Ingredients.Select(i => i.Name))
-                                        </div>
+                                        <span class="badge text-bg-light border">@card.Indicator</span>
                                     </div>
-                                }
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-lg-6">
-                <div class="card shadow-sm border-0 cds-admin-card h-100">
-                    <div class="card-header bg-white border-0 pb-0">
-                        <h2 class="h5 mb-1">Variables and Templates</h2>
-                        <p class="text-body-secondary mb-0">Reference the supported CDS inputs before authoring rules.</p>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-4">
-                            <div class="fw-semibold mb-2">Templates</div>
-                            <div class="cds-scroll-panel-sm">
-                                @foreach (var template in templates)
-                                {
-                                    <div class="border rounded-3 p-2 mb-2">
-                                        <div class="fw-semibold">@template.Title</div>
-                                        <div class="small text-body-secondary">@template.Description</div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                        <div>
-                            <div class="fw-semibold mb-2">Variables</div>
-                            <div class="cds-scroll-panel-sm">
-                                @foreach (var variable in variables)
-                                {
-                                    <div class="border rounded-3 p-2 mb-2">
-                                        <div><code>@variable.Path</code></div>
-                                        <div class="small text-body-secondary">@variable.Type | @variable.Description</div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12">
-                <div class="card shadow-sm border-0 cds-admin-card">
-                    <div class="card-header bg-white border-0 pb-0">
-                        <h2 class="h5 mb-1">Stored CDS Rules</h2>
-                        <p class="text-body-secondary mb-0">Inspect the rules already persisted in the CDS engine.</p>
-                    </div>
-                    <div class="card-body">
-                        @if (rules.Count == 0)
-                        {
-                            <div class="alert alert-secondary mb-0">No CDS rules found.</div>
-                        }
-                        else
-                        {
-                            <div class="table-responsive">
-                                <table class="table align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Hook</th>
-                                            <th>Priority</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var rule in rules)
+                                    <div class="small text-body-secondary mt-2">
+                                        Source: @card.Source.Label
+                                        @if (!string.IsNullOrWhiteSpace(card.Source.Url))
                                         {
-                                            <tr>
-                                                <td>
-                                                    <div class="fw-semibold">@rule.Name</div>
-                                                    @if (!string.IsNullOrWhiteSpace(rule.Description))
-                                                    {
-                                                        <div class="small text-body-secondary">@rule.Description</div>
-                                                    }
-                                                </td>
-                                                <td><code>@rule.HookId</code></td>
-                                                <td>@rule.Priority</td>
-                                                <td>
-                                                    <span class="badge @(rule.IsActive ? "text-bg-success" : "text-bg-secondary")">
-                                                        @(rule.IsActive ? "Active" : "Inactive")
-                                                    </span>
-                                                </td>
-                                            </tr>
+                                            <span> | </span><a href="@card.Source.Url" target="_blank">link</a>
                                         }
-                                    </tbody>
-                                </table>
+                                    </div>
+                                </div>
                             </div>
                         }
                     </div>
-                </div>
+                }
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 cds-admin-card">
+            <div class="card-header bg-white border-0 pb-0">
+                <h2 class="h5 mb-1">Stored CDS Rules</h2>
+                <p class="text-body-secondary mb-0">Select a rule to edit it or toggle its active state.</p>
+            </div>
+            <div class="card-body">
+                @if (rules.Count == 0)
+                {
+                    <div class="alert alert-secondary mb-0">No CDS rules found.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Hook</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var rule in rules)
+                                {
+                                    <tr class="@(editableRule?.Id == rule.Id ? "table-primary" : null)">
+                                        <td>
+                                            <div class="fw-semibold">@rule.Name</div>
+                                            @if (!string.IsNullOrWhiteSpace(rule.Description))
+                                            {
+                                                <div class="small text-body-secondary">@rule.Description</div>
+                                            }
+                                        </td>
+                                        <td><code>@rule.HookId</code></td>
+                                        <td>@rule.Priority</td>
+                                        <td>
+                                            <span class="badge @(rule.IsActive ? "text-bg-success" : "text-bg-secondary")">
+                                                @(rule.IsActive ? "Active" : "Inactive")
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-flex justify-content-end gap-2">
+                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditRule(rule)">Edit</button>
+                                                <button class="btn btn-sm @(rule.IsActive ? "btn-outline-warning" : "btn-outline-success")"
+                                                        @onclick="() => ToggleStoredRuleAsync(rule)">
+                                                    @(rule.IsActive ? "Deactivate" : "Activate")
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
 
 @code {
+    private const string DefaultPreviewPrefetchJson = "null";
+
     private bool isLoading;
     private bool isCompiling;
-    private bool isPreviewing;
     private bool isSaving;
+    private bool isPreviewing;
+    private bool isValidating;
+    private bool isToggling;
     private bool isSearchingMedicines;
     private string? loadError;
     private string? builderError;
     private string? builderSuccess;
+    private string? previewError;
     private string medicineSearch = "acetaminophen";
+    private string previewContextJson = string.Empty;
+    private string previewPrefetchJson = DefaultPreviewPrefetchJson;
     private IReadOnlyList<CdsRuleSummary> rules = [];
     private IReadOnlyList<CdsVariableDefinitionModel> variables = [];
     private IReadOnlyList<CdsRuleTemplateDefinitionModel> templates = [];
     private IReadOnlyList<CdsMedicineKnowledgeModel> medicineResults = [];
     private CdsRuleTemplateRequestModel templateModel = new();
-    private CdsRuleSummary? compiledRule;
+    private CdsRuleSummary? editableRule;
+    private CdsRuleValidationResultModel? validationResult;
     private CdsRulePreviewResponseModel? previewResponse;
 
-    private bool HasCompiledRule => compiledRule is not null;
     private bool NeedsMedicationRxCui => string.Equals(templateModel.TemplateId, "max-dose-exceeded", StringComparison.OrdinalIgnoreCase);
     private bool NeedsPregnancyCategory => string.Equals(templateModel.TemplateId, "pregnancy-category-warning", StringComparison.OrdinalIgnoreCase);
     private bool NeedsIndicationCode => string.Equals(templateModel.TemplateId, "indication-mismatch", StringComparison.OrdinalIgnoreCase);
+    private bool CanToggleEditableRule => editableRule is not null && editableRule.Id != Guid.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+        ResetPreviewPayload();
         await LoadAllAsync();
     }
 
@@ -417,8 +491,6 @@
     {
         builderError = null;
         builderSuccess = null;
-        compiledRule = null;
-        previewResponse = null;
         return Task.CompletedTask;
     }
 
@@ -430,8 +502,12 @@
 
         try
         {
-            compiledRule = await CdsService.CompileTemplateAsync(templateModel);
-            previewResponse = null;
+            var compiled = await CdsService.CompileTemplateAsync(templateModel);
+            if (compiled is not null)
+            {
+                EditRule(compiled);
+                builderSuccess = $"Compiled template '{templateModel.TemplateId}' into the rule workspace.";
+            }
         }
         catch (Exception ex)
         {
@@ -443,36 +519,7 @@
         }
     }
 
-    private async Task PreviewCompiledRuleAsync()
-    {
-        if (compiledRule is null)
-        {
-            return;
-        }
-
-        isPreviewing = true;
-        builderError = null;
-
-        try
-        {
-            previewResponse = await CdsService.PreviewRuleAsync(new CdsRulePreviewRequestModel
-            {
-                Hook = "medication-prescribe",
-                Rule = compiledRule,
-                Context = BuildSamplePreviewContext(templateModel)
-            });
-        }
-        catch (Exception ex)
-        {
-            builderError = $"Failed to preview compiled rule: {ex.Message}";
-        }
-        finally
-        {
-            isPreviewing = false;
-        }
-    }
-
-    private async Task SaveTemplateRuleAsync()
+    private async Task CreateFromTemplateAsync()
     {
         isSaving = true;
         builderError = null;
@@ -481,11 +528,12 @@
         try
         {
             var saved = await CdsService.CreateFromTemplateAsync(templateModel);
-            builderSuccess = saved is null
-                ? "Template request completed but returned no rule."
-                : $"Saved CDS rule '{saved.Name}' with id {saved.Id}.";
-
-            rules = await CdsService.ListRulesAsync();
+            if (saved is not null)
+            {
+                builderSuccess = $"Saved CDS rule '{saved.Name}' with id {saved.Id}.";
+                rules = await CdsService.ListRulesAsync();
+                EditRule(saved);
+            }
         }
         catch (Exception ex)
         {
@@ -497,9 +545,197 @@
         }
     }
 
-    private static object BuildSamplePreviewContext(CdsRuleTemplateRequestModel template)
+    private void EditRule(CdsRuleSummary rule)
     {
-        var rxCui = string.IsNullOrWhiteSpace(template.MedicationRxCui) ? "161" : template.MedicationRxCui.Trim();
+        editableRule = CloneRule(rule);
+        validationResult = null;
+        previewResponse = null;
+        previewError = null;
+    }
+
+    private void StartNewRule()
+    {
+        editableRule = new CdsRuleSummary
+        {
+            HookId = "medication-prescribe",
+            Name = "New CDS Rule",
+            Priority = 1,
+            IsActive = true,
+            ExpressionJson = "{\n  \"==\": [\n    { \"var\": \"safety.isControlled\" },\n    true\n  ]\n}",
+            CardTemplateJson = "{\n  \"summary\": \"Controlled medication selected: {{medication.name}}\",\n  \"detail\": \"This medication is flagged as controlled.\",\n  \"indicator\": \"warning\",\n  \"source\": {\n    \"label\": \"DMRS CDS\"\n  }\n}"
+        };
+        validationResult = null;
+        previewResponse = null;
+        previewError = null;
+    }
+
+    private async Task SaveEditableRuleAsync()
+    {
+        if (editableRule is null)
+        {
+            return;
+        }
+
+        isSaving = true;
+        builderError = null;
+        builderSuccess = null;
+
+        try
+        {
+            if (editableRule.Id == Guid.Empty)
+            {
+                var created = await CdsService.CreateRuleAsync(editableRule);
+                if (created is not null)
+                {
+                    editableRule = CloneRule(created);
+                    builderSuccess = $"Created CDS rule '{created.Name}'.";
+                    rules = await CdsService.ListRulesAsync();
+                }
+                return;
+            }
+
+            var updated = await CdsService.UpdateRuleAsync(editableRule);
+            if (updated is not null)
+            {
+                editableRule = CloneRule(updated);
+                builderSuccess = $"Updated CDS rule '{updated.Name}'.";
+                rules = await CdsService.ListRulesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            builderError = $"Failed to save rule: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task ValidateEditableRuleAsync()
+    {
+        if (editableRule is null)
+        {
+            return;
+        }
+
+        isValidating = true;
+        builderError = null;
+
+        try
+        {
+            validationResult = await CdsService.ValidateRuleAsync(editableRule);
+        }
+        catch (Exception ex)
+        {
+            builderError = $"Failed to validate rule: {ex.Message}";
+        }
+        finally
+        {
+            isValidating = false;
+        }
+    }
+
+    private async Task PreviewEditableRuleAsync()
+    {
+        if (editableRule is null)
+        {
+            return;
+        }
+
+        isPreviewing = true;
+        previewError = null;
+
+        try
+        {
+            var context = JsonSerializer.Deserialize<JsonElement>(previewContextJson);
+            JsonElement? prefetch = null;
+
+            if (!string.IsNullOrWhiteSpace(previewPrefetchJson) && !string.Equals(previewPrefetchJson.Trim(), "null", StringComparison.OrdinalIgnoreCase))
+            {
+                prefetch = JsonSerializer.Deserialize<JsonElement>(previewPrefetchJson);
+            }
+
+            previewResponse = await CdsService.PreviewRuleAsync(new CdsRulePreviewRequestModel
+            {
+                Hook = editableRule.HookId,
+                Rule = editableRule,
+                Context = context,
+                Prefetch = prefetch
+            });
+        }
+        catch (Exception ex)
+        {
+            previewError = $"Failed to preview rule: {ex.Message}";
+        }
+        finally
+        {
+            isPreviewing = false;
+        }
+    }
+
+    private async Task ToggleEditableRuleAsync()
+    {
+        if (editableRule is null || editableRule.Id == Guid.Empty)
+        {
+            return;
+        }
+
+        isToggling = true;
+        builderError = null;
+
+        try
+        {
+            await CdsService.SetRuleActiveAsync(editableRule.Id, !editableRule.IsActive);
+            editableRule.IsActive = !editableRule.IsActive;
+            rules = await CdsService.ListRulesAsync();
+        }
+        catch (Exception ex)
+        {
+            builderError = $"Failed to toggle rule status: {ex.Message}";
+        }
+        finally
+        {
+            isToggling = false;
+        }
+    }
+
+    private async Task ToggleStoredRuleAsync(CdsRuleSummary rule)
+    {
+        isToggling = true;
+        builderError = null;
+
+        try
+        {
+            await CdsService.SetRuleActiveAsync(rule.Id, !rule.IsActive);
+            rules = await CdsService.ListRulesAsync();
+
+            if (editableRule?.Id == rule.Id)
+            {
+                editableRule.IsActive = !rule.IsActive;
+            }
+        }
+        catch (Exception ex)
+        {
+            builderError = $"Failed to toggle rule status: {ex.Message}";
+        }
+        finally
+        {
+            isToggling = false;
+        }
+    }
+
+    private void ResetPreviewPayload()
+    {
+        previewContextJson = JsonSerializer.Serialize(
+            BuildDefaultPreviewContext(templateModel.MedicationRxCui),
+            new JsonSerializerOptions { WriteIndented = true });
+        previewPrefetchJson = DefaultPreviewPrefetchJson;
+    }
+
+    private static object BuildDefaultPreviewContext(string? medicationRxCui)
+    {
+        var rxCui = string.IsNullOrWhiteSpace(medicationRxCui) ? "161" : medicationRxCui.Trim();
         var display = rxCui == "5640" ? "Ibuprofen (Advil)" : "Acetaminophen (Tylenol)";
 
         return new
@@ -555,11 +791,18 @@
         };
     }
 
-    private static string FormatJson(string json)
-    {
-        using var document = JsonDocument.Parse(json);
-        return JsonSerializer.Serialize(document.RootElement, new JsonSerializerOptions { WriteIndented = true });
-    }
+    private static CdsRuleSummary CloneRule(CdsRuleSummary rule)
+        => new()
+        {
+            Id = rule.Id,
+            HookId = rule.HookId,
+            Name = rule.Name,
+            Description = rule.Description,
+            Priority = rule.Priority,
+            IsActive = rule.IsActive,
+            ExpressionJson = rule.ExpressionJson,
+            CardTemplateJson = rule.CardTemplateJson
+        };
 
     private static string DisplayDose(decimal? dose) => dose is null ? "n/a" : $"{dose:0.##} mg";
 }

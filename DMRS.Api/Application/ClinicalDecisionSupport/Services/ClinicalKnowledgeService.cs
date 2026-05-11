@@ -1,4 +1,3 @@
-using System.Text.Json;
 using DMRS.Api.Application.ClinicalDecisionSupport.Interfaces;
 using DMRS.Api.Application.ClinicalDecisionSupport.Models;
 
@@ -6,20 +5,10 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 {
     public sealed class ClinicalKnowledgeService : IClinicalKnowledgeService
     {
-        private const string IngredientsType = "ingredients";
-        private const string MaxDoseType = "max-dose";
-
-        private readonly IKnowledgeProvider _provider;
-        private readonly IKnowledgeCache _cache;
         private readonly IMedicineKnowledgeService _medicineKnowledgeService;
 
-        public ClinicalKnowledgeService(
-            IKnowledgeProvider provider,
-            IKnowledgeCache cache,
-            IMedicineKnowledgeService medicineKnowledgeService)
+        public ClinicalKnowledgeService(IMedicineKnowledgeService medicineKnowledgeService)
         {
-            _provider = provider;
-            _cache = cache;
             _medicineKnowledgeService = medicineKnowledgeService;
         }
 
@@ -32,37 +21,34 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             string medicationCode,
             CancellationToken cancellationToken)
         {
-            var entry = await _cache.GetOrAddAsync(
-                medicationCode,
-                IngredientsType,
-                _provider.SourceName,
-                async ct =>
-                {
-                    var ingredients = await _provider.GetMedicationIngredientsAsync(medicationCode, ct);
-                    return JsonSerializer.Serialize(ingredients);
-                },
-                cancellationToken);
+            var knowledge = await _medicineKnowledgeService.GetAsync(medicationCode, cancellationToken);
+            if (knowledge == null)
+            {
+                return [];
+            }
 
-            var list = JsonSerializer.Deserialize<List<string>>(entry.PayloadJson) ?? [];
-            return list;
+            return knowledge.Ingredients
+                .Select(ingredient => ingredient.Code)
+                .Where(code => !string.IsNullOrWhiteSpace(code))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
         }
 
         public async Task<MaxDoseResult?> GetMaxDoseAsync(
             string medicationCode,
             CancellationToken cancellationToken)
         {
-            var entry = await _cache.GetOrAddAsync(
-                medicationCode,
-                MaxDoseType,
-                _provider.SourceName,
-                async ct =>
-                {
-                    var maxDose = await _provider.GetMaxDoseAsync(medicationCode, ct);
-                    return JsonSerializer.Serialize(maxDose);
-                },
-                cancellationToken);
+            var knowledge = await _medicineKnowledgeService.GetAsync(medicationCode, cancellationToken);
+            if (knowledge?.MaxDailyMg == null)
+            {
+                return null;
+            }
 
-            return JsonSerializer.Deserialize<MaxDoseResult?>(entry.PayloadJson);
+            return new MaxDoseResult(
+                knowledge.MaxDailyMg.Value,
+                "mg",
+                "daily",
+                $"{knowledge.Source}:{knowledge.RxCui}");
         }
 
         public async Task<bool> HasAllergyContraindicationAsync(

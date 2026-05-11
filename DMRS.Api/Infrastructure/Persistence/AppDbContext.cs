@@ -10,7 +10,6 @@ namespace DMRS.Api.Infrastructure.Persistence
         public DbSet<FhirResourceVersion> FhirResourceVersions { get; set; }
         public DbSet<ResourceIndex> ResourceIndices { get; set; }
         public DbSet<CdsRuleDefinition> CdsRuleDefinitions { get; set; }
-        public DbSet<DrugKnowledgeEntry> DrugKnowledgeEntries { get; set; }
         public DbSet<MedicineKnowledgeRecord> MedicineKnowledgeRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -45,16 +44,6 @@ namespace DMRS.Api.Infrastructure.Persistence
                 entity.Property(e => e.ExpressionJson).HasColumnType("jsonb");
                 entity.Property(e => e.CardTemplateJson).HasColumnType("jsonb");
                 entity.HasIndex(e => new { e.HookId, e.IsActive });
-            });
-
-            modelBuilder.Entity<DrugKnowledgeEntry>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.QueryKey).IsRequired();
-                entity.Property(e => e.KnowledgeType).IsRequired();
-                entity.Property(e => e.Source).IsRequired();
-                entity.Property(e => e.PayloadJson).HasColumnType("jsonb");
-                entity.HasIndex(e => new { e.QueryKey, e.KnowledgeType, e.Source });
             });
 
             modelBuilder.Entity<MedicineKnowledgeRecord>(entity =>
