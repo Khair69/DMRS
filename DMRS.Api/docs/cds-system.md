@@ -127,9 +127,14 @@ The CDS context is no longer just the raw incoming hook JSON.
 
 The context builder now derives stable fields for rules:
 
+- `patient.id`
+- `patient.gender`
+- `patient.birthDate`
+- `patient.ageYears`
 - `medication.rxCui`
 - `medication.name`
 - `medication.ingredients`
+- `medication.ingredientNames`
 - `medication.indications`
 - `dose.requestedSingleMg`
 - `dose.requestedDailyMg`
@@ -141,6 +146,13 @@ The context builder now derives stable fields for rules:
 - `safety.allergyConflict`
 - `allergies.codes`
 - `allergies.matches`
+- `conditions.codes`
+- `conditions.texts`
+- `therapy.activeMedicationRxCuis`
+- `therapy.activeMedicationNames`
+- `therapy.activeIngredientCodes`
+- `therapy.duplicateIngredientMatches`
+- `therapy.duplicateIngredientConflict`
 
 This is the main feature that makes rules easier to author. Rules no longer need to inspect raw FHIR JSON directly for common medication use cases.
 
@@ -416,6 +428,7 @@ The current starter templates are:
 - pregnancy category warning
 - controlled medication warning
 - indication mismatch
+- duplicate ingredient conflict
 
 ## 15. What is still limited
 

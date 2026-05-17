@@ -110,11 +110,13 @@ Run requests `11` and `12`.
 Expected:
 
 - variables list contains:
+  - `patient.ageYears`
   - `medication.rxCui`
   - `medication.ingredients`
   - `dose.requestedDailyMg`
   - `dose.maxDailyMg`
   - `safety.allergyConflict`
+  - `therapy.duplicateIngredientConflict`
 - valid rule returns `isValid = true`
 - invalid rule returns `isValid = false`
 

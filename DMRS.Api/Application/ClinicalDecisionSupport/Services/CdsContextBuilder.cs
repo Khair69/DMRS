@@ -10,6 +10,19 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
     {
         private const string RxNormSystem = "http://www.nlm.nih.gov/research/umls/rxnorm";
 
+        private static readonly HashSet<string> ActiveMedicationStatuses = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "active",
+            "on-hold"
+        };
+
+        private static readonly HashSet<string> ActiveConditionClinicalStatuses = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "active",
+            "recurrence",
+            "relapse"
+        };
+
         private readonly IClinicalKnowledgeService _clinicalKnowledgeService;
         private readonly IFhirRepository _fhirRepository;
 
@@ -54,8 +67,12 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             CancellationToken cancellationToken)
         {
             var medicationInput = ExtractMedicationInput(request.Context, request.Prefetch);
+            await EnrichPatientContextAsync(data, patientId);
+            data["conditions"] = await BuildConditionContextAsync(patientId);
+
             if (medicationInput == null)
             {
+                data["therapy"] = CreateEmptyTherapyContext();
                 return;
             }
 
@@ -85,6 +102,11 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 ["rxCui"] = knowledge?.RxCui ?? medicationInput.RxCui,
                 ["name"] = knowledge?.Name ?? medicationInput.Name,
                 ["ingredients"] = ingredientCodes,
+                ["ingredientNames"] = knowledge?.Ingredients
+                    .Select(ingredient => ingredient.Name)
+                    .Where(name => !string.IsNullOrWhiteSpace(name))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray() ?? [],
                 ["indications"] = knowledge?.Indications ?? []
             };
 
@@ -109,7 +131,170 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 ["codes"] = allergyCodes,
                 ["matches"] = matches
             };
+
+            data["therapy"] = await BuildActiveTherapyContextAsync(
+                patientId,
+                medicationInput,
+                ingredientCodes,
+                cancellationToken);
         }
+
+        private async System.Threading.Tasks.Task EnrichPatientContextAsync(
+            IDictionary<string, object?> data,
+            string? patientId)
+        {
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                data["patient"] = new Dictionary<string, object?>();
+                return;
+            }
+
+            var normalizedPatientId = patientId.StartsWith("Patient/", StringComparison.OrdinalIgnoreCase)
+                ? patientId["Patient/".Length..]
+                : patientId;
+
+            var patient = await _fhirRepository.GetAsync<Patient>(normalizedPatientId);
+            if (patient == null)
+            {
+                data["patient"] = new Dictionary<string, object?>();
+                return;
+            }
+
+            data["patient"] = new Dictionary<string, object?>
+            {
+                ["id"] = normalizedPatientId,
+                ["gender"] = patient.Gender?.ToString().ToLowerInvariant(),
+                ["birthDate"] = patient.BirthDate,
+                ["ageYears"] = CalculateAgeYears(patient.BirthDate)
+            };
+        }
+
+        private async System.Threading.Tasks.Task<Dictionary<string, object?>> BuildConditionContextAsync(string? patientId)
+        {
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                return new Dictionary<string, object?>
+                {
+                    ["codes"] = Array.Empty<string>(),
+                    ["texts"] = Array.Empty<string>()
+                };
+            }
+
+            var patientRef = NormalizePatientReference(patientId);
+            var conditions = await _fhirRepository.SearchAsync<Condition>(new Dictionary<string, string>
+            {
+                ["patient"] = patientRef
+            });
+
+            var activeConditions = conditions
+                .Where(IsActiveCondition)
+                .ToArray();
+
+            return new Dictionary<string, object?>
+            {
+                ["codes"] = activeConditions
+                    .SelectMany(condition => condition.Code?.Coding?.Select(coding => coding.Code) ?? [])
+                    .Where(code => !string.IsNullOrWhiteSpace(code))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray()!,
+                ["texts"] = activeConditions
+                    .Select(condition => condition.Code?.Text)
+                    .Where(text => !string.IsNullOrWhiteSpace(text))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray()!
+            };
+        }
+
+        private async System.Threading.Tasks.Task<Dictionary<string, object?>> BuildActiveTherapyContextAsync(
+            string? patientId,
+            MedicationInput currentMedication,
+            IReadOnlyList<string> currentIngredientCodes,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                return CreateEmptyTherapyContext();
+            }
+
+            var patientRef = NormalizePatientReference(patientId);
+            var medicationRequests = await _fhirRepository.SearchAsync<MedicationRequest>(new Dictionary<string, string>
+            {
+                ["patient"] = patientRef
+            });
+
+            var activeMedicationRequests = medicationRequests
+                .Where(IsActiveMedicationRequest)
+                .ToArray();
+
+            var activeRxCuis = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var activeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var activeIngredientCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var medicationRequest in activeMedicationRequests)
+            {
+                if (IsSameMedicationRequest(medicationRequest, currentMedication))
+                {
+                    continue;
+                }
+
+                var medicationCode = ExtractMedicationCode(medicationRequest);
+                if (string.IsNullOrWhiteSpace(medicationCode))
+                {
+                    continue;
+                }
+
+                var knowledge = await _clinicalKnowledgeService.GetMedicationKnowledgeAsync(medicationCode, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(knowledge?.RxCui))
+                {
+                    activeRxCuis.Add(knowledge.RxCui);
+                }
+                else if (medicationCode.All(char.IsDigit))
+                {
+                    activeRxCuis.Add(medicationCode);
+                }
+
+                if (!string.IsNullOrWhiteSpace(knowledge?.Name))
+                {
+                    activeNames.Add(knowledge.Name);
+                }
+                else if (!string.IsNullOrWhiteSpace(medicationRequest.Medication?.Concept?.Text))
+                {
+                    activeNames.Add(medicationRequest.Medication.Concept.Text.Trim());
+                }
+
+                foreach (var ingredientCode in knowledge?.Ingredients.Select(ingredient => ingredient.Code) ?? [])
+                {
+                    if (!string.IsNullOrWhiteSpace(ingredientCode))
+                    {
+                        activeIngredientCodes.Add(ingredientCode);
+                    }
+                }
+            }
+
+            var duplicateIngredientMatches = currentIngredientCodes
+                .Where(code => activeIngredientCodes.Contains(code))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            return new Dictionary<string, object?>
+            {
+                ["activeMedicationRxCuis"] = activeRxCuis.ToArray(),
+                ["activeMedicationNames"] = activeNames.ToArray(),
+                ["activeIngredientCodes"] = activeIngredientCodes.ToArray(),
+                ["duplicateIngredientMatches"] = duplicateIngredientMatches,
+                ["duplicateIngredientConflict"] = duplicateIngredientMatches.Length > 0
+            };
+        }
+
+        private static Dictionary<string, object?> CreateEmptyTherapyContext()
+            => new()
+            {
+                ["activeMedicationRxCuis"] = Array.Empty<string>(),
+                ["activeMedicationNames"] = Array.Empty<string>(),
+                ["activeIngredientCodes"] = Array.Empty<string>(),
+                ["duplicateIngredientMatches"] = Array.Empty<string>(),
+                ["duplicateIngredientConflict"] = false
+            };
 
         private async System.Threading.Tasks.Task<IReadOnlyList<string>> GetPatientAllergyCodesAsync(string? patientId, CancellationToken cancellationToken)
         {
@@ -118,13 +303,9 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 return [];
             }
 
-            var patientRef = patientId.StartsWith("Patient/", StringComparison.OrdinalIgnoreCase)
-                ? patientId
-                : $"Patient/{patientId}";
-
             var allergies = await _fhirRepository.SearchAsync<AllergyIntolerance>(new Dictionary<string, string>
             {
-                ["patient"] = patientRef
+                ["patient"] = NormalizePatientReference(patientId)
             });
 
             return allergies
@@ -216,6 +397,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 
         private static MedicationInput BuildMedicationInputFromMedicationRequest(JsonElement medicationRequest)
         {
+            var requestId = GetStringPropertyCaseInsensitive(medicationRequest, "id")?.Trim();
             string? rxCui = null;
             string? name = null;
             decimal? requestedSingleMg = null;
@@ -245,7 +427,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 }
             }
 
-            return new MedicationInput(rxCui, name, requestedSingleMg, requestedDailyMg);
+            return new MedicationInput(requestId, rxCui, name, requestedSingleMg, requestedDailyMg);
         }
 
         private static MedicationInput BuildMedicationInputFromMedicationElement(JsonElement medication)
@@ -253,7 +435,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             string? rxCui = null;
             string? name = null;
             ExtractMedicationIdentity(medication, ref rxCui, ref name);
-            return new MedicationInput(rxCui, name, null, null);
+            return new MedicationInput(null, rxCui, name, null, null);
         }
 
         private static void ExtractMedicationIdentity(JsonElement source, ref string? rxCui, ref string? name)
@@ -389,6 +571,81 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             return null;
         }
 
+        private static string NormalizePatientReference(string patientId)
+            => patientId.StartsWith("Patient/", StringComparison.OrdinalIgnoreCase)
+                ? patientId
+                : $"Patient/{patientId}";
+
+        private static int? CalculateAgeYears(string? birthDate)
+        {
+            if (string.IsNullOrWhiteSpace(birthDate) || !DateOnly.TryParse(birthDate, out var birthDateValue))
+            {
+                return null;
+            }
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var age = today.Year - birthDateValue.Year;
+            if (today < birthDateValue.AddYears(age))
+            {
+                age--;
+            }
+
+            return age < 0 ? null : age;
+        }
+
+        private static bool IsActiveCondition(Condition condition)
+        {
+            var clinicalCodes = condition.ClinicalStatus?.Coding?
+                .Select(coding => coding.Code)
+                .Where(code => !string.IsNullOrWhiteSpace(code))
+                .ToArray() ?? [];
+
+            if (clinicalCodes.Length == 0)
+            {
+                return true;
+            }
+
+            return clinicalCodes.Any(code => ActiveConditionClinicalStatuses.Contains(code!));
+        }
+
+        private static bool IsActiveMedicationRequest(MedicationRequest medicationRequest)
+        {
+            var status = medicationRequest.Status?.ToString();
+            return !string.IsNullOrWhiteSpace(status) && ActiveMedicationStatuses.Contains(status);
+        }
+
+        private static bool IsSameMedicationRequest(MedicationRequest medicationRequest, MedicationInput currentMedication)
+        {
+            if (!string.IsNullOrWhiteSpace(currentMedication.RequestId)
+                && string.Equals(medicationRequest.Id, currentMedication.RequestId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var medicationCode = ExtractMedicationCode(medicationRequest);
+            return !string.IsNullOrWhiteSpace(currentMedication.RxCui)
+                && !string.IsNullOrWhiteSpace(medicationCode)
+                && string.Equals(currentMedication.RxCui, medicationCode, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string? ExtractMedicationCode(MedicationRequest medicationRequest)
+        {
+            var concept = medicationRequest.Medication?.Concept;
+            var coding = concept?.Coding?
+                .FirstOrDefault(entry =>
+                    string.Equals(entry.System, RxNormSystem, StringComparison.OrdinalIgnoreCase)
+                    && !string.IsNullOrWhiteSpace(entry.Code));
+
+            if (!string.IsNullOrWhiteSpace(coding?.Code))
+            {
+                return coding.Code.Trim();
+            }
+
+            return !string.IsNullOrWhiteSpace(concept?.Text)
+                ? concept.Text.Trim()
+                : null;
+        }
+
         private static bool TryGetPropertyCaseInsensitive(JsonElement element, string name, out JsonElement value)
         {
             if (element.ValueKind == JsonValueKind.Object)
@@ -426,6 +683,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         }
 
         private sealed record MedicationInput(
+            string? RequestId,
             string? RxCui,
             string? Name,
             decimal? RequestedSingleMg,

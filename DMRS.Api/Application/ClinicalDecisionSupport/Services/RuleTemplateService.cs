@@ -12,6 +12,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         private const string PregnancyWarningTemplate = "pregnancy-category-warning";
         private const string ControlledMedicationTemplate = "controlled-medication-warning";
         private const string IndicationMismatchTemplate = "indication-mismatch";
+        private const string DuplicateIngredientConflictTemplate = "duplicate-ingredient-conflict";
 
         private static readonly IReadOnlyList<RuleTemplateDefinition> Templates =
         [
@@ -52,6 +53,13 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 [
                     new RuleTemplateParameterDefinition("indicationCode", "string", true, "Expected indication code, such as ICD-10."),
                     new RuleTemplateParameterDefinition("name", "string", true, "Human-readable rule name.")
+                ]),
+            new(
+                DuplicateIngredientConflictTemplate,
+                "Duplicate Ingredient Conflict",
+                "Warn when the in-flight medication shares ingredients with other active patient medications.",
+                [
+                    new RuleTemplateParameterDefinition("name", "string", true, "Human-readable rule name.")
                 ])
         ];
 
@@ -78,6 +86,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 PregnancyWarningTemplate => BuildPregnancyWarningTemplate(request),
                 ControlledMedicationTemplate => BuildControlledMedicationTemplate(request),
                 IndicationMismatchTemplate => BuildIndicationMismatchTemplate(request),
+                DuplicateIngredientConflictTemplate => BuildDuplicateIngredientConflictTemplate(request),
                 _ => throw new ArgumentException($"Unsupported template '{request.TemplateId}'.", nameof(request))
             };
 
@@ -213,6 +222,23 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                     request,
                     "Indication mismatch for {{medication.name}}",
                     $"Indication {indicationCode} is not listed for this medication."));
+        }
+
+        private static (object expression, object card) BuildDuplicateIngredientConflictTemplate(RuleTemplateRequest request)
+        {
+            return (
+                new Dictionary<string, object?>
+                {
+                    ["=="] = new object[]
+                    {
+                        Var("therapy.duplicateIngredientConflict"),
+                        true
+                    }
+                },
+                BuildCard(
+                    request,
+                    "Duplicate ingredient conflict for {{medication.name}}",
+                    "Shared ingredients with other active medications: {{therapy.duplicateIngredientMatches}}"));
         }
 
         private static Dictionary<string, object?> BuildCard(
