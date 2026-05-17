@@ -10,6 +10,7 @@ namespace DMRS.Api.Infrastructure.Persistence
         public DbSet<FhirResourceVersion> FhirResourceVersions { get; set; }
         public DbSet<ResourceIndex> ResourceIndices { get; set; }
         public DbSet<CdsRuleDefinition> CdsRuleDefinitions { get; set; }
+        public DbSet<CdsRuleVersion> CdsRuleVersions { get; set; }
         public DbSet<MedicineKnowledgeRecord> MedicineKnowledgeRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -41,9 +42,31 @@ namespace DMRS.Api.Infrastructure.Persistence
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.HookId).IsRequired();
                 entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.Status).HasConversion<string>();
                 entity.Property(e => e.ExpressionJson).HasColumnType("jsonb");
                 entity.Property(e => e.CardTemplateJson).HasColumnType("jsonb");
-                entity.HasIndex(e => new { e.HookId, e.IsActive });
+                entity.HasIndex(e => new { e.HookId, e.Status, e.IsActive });
+
+                entity.HasOne<CdsRuleVersion>()
+                    .WithMany()
+                    .HasForeignKey(e => e.PublishedVersionId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<CdsRuleVersion>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.HookId).IsRequired();
+                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.ExpressionJson).HasColumnType("jsonb");
+                entity.Property(e => e.CardTemplateJson).HasColumnType("jsonb");
+                entity.HasIndex(e => new { e.RuleDefinitionId, e.VersionNumber }).IsUnique();
+                entity.HasIndex(e => e.HookId);
+
+                entity.HasOne<CdsRuleDefinition>()
+                    .WithMany()
+                    .HasForeignKey(e => e.RuleDefinitionId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<MedicineKnowledgeRecord>(entity =>

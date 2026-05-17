@@ -37,6 +37,18 @@ public sealed class CdsAdminFeatureService
     public async Task SetRuleActiveAsync(Guid id, bool isActive)
         => await _fhirApiService.PatchApiAsync($"cds/rules/{id}/{(isActive ? "activate" : "deactivate")}");
 
+    public async Task<CdsRuleSummary?> PublishRuleAsync(Guid id)
+        => await _fhirApiService.PostApiJsonAsync<object, CdsRuleSummary>($"cds/rules/{id}/publish", new { });
+
+    public async Task ArchiveRuleAsync(Guid id)
+        => await _fhirApiService.PatchApiAsync($"cds/rules/{id}/archive");
+
+    public async Task<CdsRuleSummary?> CloneRuleAsync(Guid id)
+        => await _fhirApiService.PostApiJsonAsync<object, CdsRuleSummary>($"cds/rules/{id}/clone", new { });
+
+    public async Task<IReadOnlyList<CdsRuleVersionModel>> ListRuleVersionsAsync(Guid id)
+        => await _fhirApiService.GetApiJsonAsync<List<CdsRuleVersionModel>>($"cds/rules/{id}/versions") ?? [];
+
     public async Task<CdsRuleValidationResultModel?> ValidateRuleAsync(CdsRuleSummary rule)
         => await _fhirApiService.PostApiJsonAsync<CdsRuleSummary, CdsRuleValidationResultModel>("cds/rules/validate", rule);
 

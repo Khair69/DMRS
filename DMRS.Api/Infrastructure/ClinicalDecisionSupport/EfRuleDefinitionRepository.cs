@@ -18,9 +18,35 @@ namespace DMRS.Api.Infrastructure.ClinicalDecisionSupport
             string hookId,
             CancellationToken cancellationToken)
         {
-            return await _dbContext.CdsRuleDefinitions
-                .Where(r => r.HookId == hookId && r.IsActive)
-                .OrderBy(r => r.Priority)
+            return await (
+                from rule in _dbContext.CdsRuleDefinitions.AsNoTracking()
+                join version in _dbContext.CdsRuleVersions.AsNoTracking()
+                    on rule.PublishedVersionId equals version.Id
+                where version.HookId == hookId
+                    && rule.Status == CdsRuleStatus.Published
+                    && rule.IsActive
+                orderby version.Priority
+                select new CdsRuleDefinition
+                {
+                    Id = rule.Id,
+                    HookId = version.HookId,
+                    Name = version.Name,
+                    Description = version.Description,
+                    Priority = version.Priority,
+                    IsActive = rule.IsActive,
+                    Status = rule.Status,
+                    HasUnpublishedChanges = rule.HasUnpublishedChanges,
+                    PublishedVersionId = rule.PublishedVersionId,
+                    PublishedVersionNumber = rule.PublishedVersionNumber,
+                    PublishedAt = rule.PublishedAt,
+                    CreatedBy = rule.CreatedBy,
+                    UpdatedBy = rule.UpdatedBy,
+                    PublishedBy = rule.PublishedBy,
+                    ExpressionJson = version.ExpressionJson,
+                    CardTemplateJson = version.CardTemplateJson,
+                    CreatedAt = rule.CreatedAt,
+                    UpdatedAt = rule.UpdatedAt
+                })
                 .ToListAsync(cancellationToken);
         }
 
@@ -29,6 +55,15 @@ namespace DMRS.Api.Infrastructure.ClinicalDecisionSupport
             return await _dbContext.CdsRuleDefinitions
                 .OrderBy(r => r.HookId)
                 .ThenBy(r => r.Priority)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<CdsRuleVersion>> ListVersionsAsync(Guid ruleId, CancellationToken cancellationToken)
+        {
+            return await _dbContext.CdsRuleVersions
+                .AsNoTracking()
+                .Where(v => v.RuleDefinitionId == ruleId)
+                .OrderByDescending(v => v.VersionNumber)
                 .ToListAsync(cancellationToken);
         }
 
@@ -46,6 +81,13 @@ namespace DMRS.Api.Infrastructure.ClinicalDecisionSupport
 
         public async Task UpdateAsync(CdsRuleDefinition rule, CancellationToken cancellationToken)
         {
+            _dbContext.CdsRuleDefinitions.Update(rule);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task PublishAsync(CdsRuleDefinition rule, CdsRuleVersion version, CancellationToken cancellationToken)
+        {
+            _dbContext.CdsRuleVersions.Add(version);
             _dbContext.CdsRuleDefinitions.Update(rule);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }

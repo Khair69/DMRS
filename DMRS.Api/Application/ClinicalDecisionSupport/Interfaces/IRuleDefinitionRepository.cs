@@ -6,8 +6,10 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Interfaces
     {
         Task<IReadOnlyList<CdsRuleDefinition>> GetActiveByHookAsync(string hookId, CancellationToken cancellationToken);
         Task<IReadOnlyList<CdsRuleDefinition>> ListAsync(CancellationToken cancellationToken);
+        Task<IReadOnlyList<CdsRuleVersion>> ListVersionsAsync(Guid ruleId, CancellationToken cancellationToken);
         Task<CdsRuleDefinition?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
         Task AddAsync(CdsRuleDefinition rule, CancellationToken cancellationToken);
         Task UpdateAsync(CdsRuleDefinition rule, CancellationToken cancellationToken);
+        Task PublishAsync(CdsRuleDefinition rule, CdsRuleVersion version, CancellationToken cancellationToken);
     }
 }

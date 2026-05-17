@@ -39,6 +39,19 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
             return rule == null ? NotFound() : Ok(rule);
         }
 
+        [HttpGet("{id:guid}/versions")]
+        public async Task<IActionResult> Versions(Guid id, CancellationToken cancellationToken)
+        {
+            var rule = await _ruleManagement.GetAsync(id, cancellationToken);
+            if (rule == null)
+            {
+                return NotFound();
+            }
+
+            var versions = await _ruleManagement.ListVersionsAsync(id, cancellationToken);
+            return Ok(versions);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CdsRuleDefinition request, CancellationToken cancellationToken)
         {
@@ -79,6 +92,34 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
         {
             var updated = await _ruleManagement.ActivateAsync(id, false, cancellationToken);
             return updated ? NoContent() : NotFound();
+        }
+
+        [HttpPost("{id:guid}/publish")]
+        public async Task<IActionResult> Publish(Guid id, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var updated = await _ruleManagement.PublishAsync(id, cancellationToken);
+                return updated == null ? NotFound() : Ok(updated);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPatch("{id:guid}/archive")]
+        public async Task<IActionResult> Archive(Guid id, CancellationToken cancellationToken)
+        {
+            var updated = await _ruleManagement.ArchiveAsync(id, cancellationToken);
+            return updated ? NoContent() : NotFound();
+        }
+
+        [HttpPost("{id:guid}/clone")]
+        public async Task<IActionResult> Clone(Guid id, CancellationToken cancellationToken)
+        {
+            var rule = await _ruleManagement.CloneAsync(id, cancellationToken);
+            return rule == null ? NotFound() : CreatedAtAction(nameof(Get), new { id = rule.Id }, rule);
         }
 
         [HttpPost("validate")]

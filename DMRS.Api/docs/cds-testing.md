@@ -1,12 +1,13 @@
 # CDS Testing Guide
 
-This guide tests the CDS work in four layers:
+This guide tests the CDS work in six layers:
 
 1. `database + startup`
 2. `medicine knowledge sync`
 3. `template-driven rule authoring`
-4. `rule validation + preview`
-5. `live CDS execution`
+4. `draft/publish rule lifecycle`
+5. `rule validation + preview`
+6. `live CDS execution`
 
 Use the ready-made requests in [DMRS.Api.http](/D:/Code/ASP/DMRS/DMRS.Api/DMRS.Api.http).
 For the full architecture and change summary, see [cds-system.md](/D:/Code/ASP/DMRS/DMRS.Api/docs/cds-system.md).
@@ -102,6 +103,8 @@ This proves:
 
 ### 4. Rule variables and validation
 
+Before this step, save a rule as a draft and publish it once.
+
 Run requests `11` and `12`.
 
 Expected:
@@ -143,14 +146,17 @@ Run requests `14` to `17`.
 
 Expected:
 
-- rule creation returns `201`
-- rule listing shows the rule
+- draft rule creation returns `201`
+- publishing creates a live version snapshot
+- rule listing shows draft/published state and version metadata
 - services list includes `medication-prescribe`
 - live CDS execution returns cards
 
 This proves:
 
-- persistent rule storage works
+- persistent draft storage works
+- publish lifecycle works
+- immutable version history works
 - runtime hook evaluation works
 
 ### 7. Allergy enrichment

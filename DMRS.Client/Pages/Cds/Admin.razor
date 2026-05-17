@@ -190,7 +190,7 @@
                 <div class="d-flex justify-content-between align-items-start gap-3">
                     <div>
                         <h2 class="h5 mb-1">Rule Workspace</h2>
-                        <p class="text-body-secondary mb-0">Edit raw CDS rules, validate them, preview them, and save changes.</p>
+                        <p class="text-body-secondary mb-0">Edit draft rules, validate them, preview them, and publish only when ready.</p>
                     </div>
                     <button class="btn btn-outline-secondary btn-sm" @onclick="StartNewRule">New Raw Rule</button>
                 </div>
@@ -202,6 +202,25 @@
                 }
                 else
                 {
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="badge text-bg-light border">Status: @editableRule.Status</span>
+                        @if (editableRule.PublishedVersionNumber is not null)
+                        {
+                            <span class="badge text-bg-light border">Published v@editableRule.PublishedVersionNumber</span>
+                        }
+                        @if (editableRule.HasUnpublishedChanges)
+                        {
+                            <span class="badge text-bg-warning">Draft Changes Pending</span>
+                        }
+                        @if (editableRule.IsActive)
+                        {
+                            <span class="badge text-bg-success">Live</span>
+                        }
+                        else if (editableRule.PublishedVersionId is not null && editableRule.Status == "Published")
+                        {
+                            <span class="badge text-bg-secondary">Published but Off</span>
+                        }
+                    </div>
                     <EditForm Model="editableRule" OnSubmit="SaveEditableRuleAsync">
                         <div class="row g-3">
                             <div class="col-md-7">
@@ -230,12 +249,15 @@
                             </div>
                         </div>
                         <div class="d-flex flex-wrap gap-2 mt-4">
-                            <button class="btn btn-primary" type="submit" disabled="@isSaving">Save Rule</button>
+                            <button class="btn btn-primary" type="submit" disabled="@isSaving">Save Draft</button>
+                            <button class="btn btn-outline-dark" type="button" @onclick="PublishEditableRuleAsync" disabled="@(!CanPublishEditableRule || isPublishing)">Publish</button>
                             <button class="btn btn-outline-primary" type="button" @onclick="ValidateEditableRuleAsync" disabled="@isValidating">Validate</button>
                             <button class="btn btn-outline-success" type="button" @onclick="PreviewEditableRuleAsync" disabled="@isPreviewing">Preview</button>
                             <button class="btn btn-outline-warning" type="button" @onclick="ToggleEditableRuleAsync" disabled="@(!CanToggleEditableRule || isToggling)">
                                 @(editableRule.IsActive ? "Deactivate" : "Activate")
                             </button>
+                            <button class="btn btn-outline-secondary" type="button" @onclick="CloneEditableRuleAsync" disabled="@(!CanCloneEditableRule || isCloning)">Clone</button>
+                            <button class="btn btn-outline-danger" type="button" @onclick="ArchiveEditableRuleAsync" disabled="@(!CanArchiveEditableRule || isArchiving)">Archive</button>
                         </div>
                     </EditForm>
 
@@ -342,10 +364,53 @@
             </div>
         </div>
 
+        <div class="card shadow-sm border-0 cds-admin-card mb-4">
+            <div class="card-header bg-white border-0 pb-0">
+                <h2 class="h5 mb-1">Version History</h2>
+                <p class="text-body-secondary mb-0">Published snapshots stay immutable and are what live CDS actually evaluates.</p>
+            </div>
+            <div class="card-body">
+                @if (editableRule is null || editableRule.Id == Guid.Empty)
+                {
+                    <div class="alert alert-secondary mb-0">Save a rule first to start building version history.</div>
+                }
+                else if (selectedRuleVersions.Count == 0)
+                {
+                    <div class="alert alert-secondary mb-0">This rule has not been published yet.</div>
+                }
+                else
+                {
+                    <div class="cds-scroll-panel-sm">
+                        @foreach (var version in selectedRuleVersions)
+                        {
+                            <div class="border rounded-3 p-3 mb-3">
+                                <div class="d-flex justify-content-between gap-3">
+                                    <div>
+                                        <div class="fw-semibold">Version @version.VersionNumber</div>
+                                        <div class="small text-body-secondary">@version.Name</div>
+                                    </div>
+                                    @if (editableRule.PublishedVersionId == version.Id)
+                                    {
+                                        <span class="badge text-bg-success">Current Live Snapshot</span>
+                                    }
+                                </div>
+                                <div class="small text-body-secondary mt-2">
+                                    Published @(version.PublishedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")) by @(version.PublishedBy ?? "system")
+                                </div>
+                                <div class="small text-body-secondary mt-1">
+                                    Hook: <code>@version.HookId</code> | Priority: @version.Priority
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
         <div class="card shadow-sm border-0 cds-admin-card">
             <div class="card-header bg-white border-0 pb-0">
                 <h2 class="h5 mb-1">Stored CDS Rules</h2>
-                <p class="text-body-secondary mb-0">Select a rule to edit it or toggle its active state.</p>
+                <p class="text-body-secondary mb-0">Select a rule to edit its draft, publish it, clone it, or toggle its live state.</p>
             </div>
             <div class="card-body">
                 @if (rules.Count == 0)
@@ -362,6 +427,7 @@
                                     <th>Hook</th>
                                     <th>Priority</th>
                                     <th>Status</th>
+                                    <th>Version</th>
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
@@ -379,14 +445,29 @@
                                         <td><code>@rule.HookId</code></td>
                                         <td>@rule.Priority</td>
                                         <td>
-                                            <span class="badge @(rule.IsActive ? "text-bg-success" : "text-bg-secondary")">
-                                                @(rule.IsActive ? "Active" : "Inactive")
-                                            </span>
+                                            <div class="d-flex flex-wrap gap-1 justify-content-start">
+                                                <span class="badge @(rule.Status == "Archived" ? "text-bg-dark" : "text-bg-light border")">@rule.Status</span>
+                                                @if (rule.IsActive)
+                                                {
+                                                    <span class="badge text-bg-success">Live</span>
+                                                }
+                                                else if (rule.PublishedVersionId is not null && rule.Status == "Published")
+                                                {
+                                                    <span class="badge text-bg-secondary">Off</span>
+                                                }
+                                                @if (rule.HasUnpublishedChanges)
+                                                {
+                                                    <span class="badge text-bg-warning">Draft</span>
+                                                }
+                                            </div>
                                         </td>
+                                        <td>@(rule.PublishedVersionNumber is null ? "-" : $"v{rule.PublishedVersionNumber}")</td>
                                         <td class="text-end">
                                             <div class="d-flex justify-content-end gap-2">
-                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditRule(rule)">Edit</button>
+                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditRuleAsync(rule)">Edit</button>
+                                                <button class="btn btn-sm btn-outline-dark" @onclick="() => PublishStoredRuleAsync(rule)" disabled="@(rule.Status == "Archived")">Publish</button>
                                                 <button class="btn btn-sm @(rule.IsActive ? "btn-outline-warning" : "btn-outline-success")"
+                                                        disabled="@(rule.PublishedVersionId is null || rule.Status != "Published")"
                                                         @onclick="() => ToggleStoredRuleAsync(rule)">
                                                     @(rule.IsActive ? "Deactivate" : "Activate")
                                                 </button>
@@ -412,6 +493,9 @@
     private bool isPreviewing;
     private bool isValidating;
     private bool isToggling;
+    private bool isPublishing;
+    private bool isArchiving;
+    private bool isCloning;
     private bool isSearchingMedicines;
     private string? loadError;
     private string? builderError;
@@ -424,6 +508,7 @@
     private IReadOnlyList<CdsVariableDefinitionModel> variables = [];
     private IReadOnlyList<CdsRuleTemplateDefinitionModel> templates = [];
     private IReadOnlyList<CdsMedicineKnowledgeModel> medicineResults = [];
+    private IReadOnlyList<CdsRuleVersionModel> selectedRuleVersions = [];
     private CdsRuleTemplateRequestModel templateModel = new();
     private CdsRuleSummary? editableRule;
     private CdsRuleValidationResultModel? validationResult;
@@ -432,7 +517,10 @@
     private bool NeedsMedicationRxCui => string.Equals(templateModel.TemplateId, "max-dose-exceeded", StringComparison.OrdinalIgnoreCase);
     private bool NeedsPregnancyCategory => string.Equals(templateModel.TemplateId, "pregnancy-category-warning", StringComparison.OrdinalIgnoreCase);
     private bool NeedsIndicationCode => string.Equals(templateModel.TemplateId, "indication-mismatch", StringComparison.OrdinalIgnoreCase);
-    private bool CanToggleEditableRule => editableRule is not null && editableRule.Id != Guid.Empty;
+    private bool CanToggleEditableRule => editableRule is not null && editableRule.PublishedVersionId != null && editableRule.Status == "Published";
+    private bool CanPublishEditableRule => editableRule is not null && editableRule.Id != Guid.Empty && editableRule.Status != "Archived";
+    private bool CanArchiveEditableRule => editableRule is not null && editableRule.Id != Guid.Empty && editableRule.Status != "Archived";
+    private bool CanCloneEditableRule => editableRule is not null && editableRule.Id != Guid.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -462,6 +550,7 @@
             if (templates.Count > 0 && string.IsNullOrWhiteSpace(templateModel.TemplateId))
             {
                 templateModel.TemplateId = templates[0].TemplateId;
+                templateModel.IsActive = false;
             }
         }
         catch (Exception ex)
@@ -505,7 +594,7 @@
             var compiled = await CdsService.CompileTemplateAsync(templateModel);
             if (compiled is not null)
             {
-                EditRule(compiled);
+                await EditRuleAsync(compiled);
                 builderSuccess = $"Compiled template '{templateModel.TemplateId}' into the rule workspace.";
             }
         }
@@ -530,9 +619,9 @@
             var saved = await CdsService.CreateFromTemplateAsync(templateModel);
             if (saved is not null)
             {
-                builderSuccess = $"Saved CDS rule '{saved.Name}' with id {saved.Id}.";
+                builderSuccess = $"Saved CDS draft '{saved.Name}' with id {saved.Id}.";
                 rules = await CdsService.ListRulesAsync();
-                EditRule(saved);
+                await EditRuleAsync(saved);
             }
         }
         catch (Exception ex)
@@ -545,12 +634,15 @@
         }
     }
 
-    private void EditRule(CdsRuleSummary rule)
+    private async Task EditRuleAsync(CdsRuleSummary rule)
     {
         editableRule = CloneRule(rule);
         validationResult = null;
         previewResponse = null;
         previewError = null;
+        selectedRuleVersions = rule.Id == Guid.Empty
+            ? []
+            : await CdsService.ListRuleVersionsAsync(rule.Id);
     }
 
     private void StartNewRule()
@@ -560,13 +652,16 @@
             HookId = "medication-prescribe",
             Name = "New CDS Rule",
             Priority = 1,
-            IsActive = true,
+            IsActive = false,
+            Status = "Draft",
+            HasUnpublishedChanges = true,
             ExpressionJson = "{\n  \"==\": [\n    { \"var\": \"safety.isControlled\" },\n    true\n  ]\n}",
             CardTemplateJson = "{\n  \"summary\": \"Controlled medication selected: {{medication.name}}\",\n  \"detail\": \"This medication is flagged as controlled.\",\n  \"indicator\": \"warning\",\n  \"source\": {\n    \"label\": \"DMRS CDS\"\n  }\n}"
         };
         validationResult = null;
         previewResponse = null;
         previewError = null;
+        selectedRuleVersions = [];
     }
 
     private async Task SaveEditableRuleAsync()
@@ -588,8 +683,9 @@
                 if (created is not null)
                 {
                     editableRule = CloneRule(created);
-                    builderSuccess = $"Created CDS rule '{created.Name}'.";
+                    builderSuccess = $"Created CDS draft '{created.Name}'.";
                     rules = await CdsService.ListRulesAsync();
+                    selectedRuleVersions = [];
                 }
                 return;
             }
@@ -598,7 +694,7 @@
             if (updated is not null)
             {
                 editableRule = CloneRule(updated);
-                builderSuccess = $"Updated CDS rule '{updated.Name}'.";
+                builderSuccess = $"Saved draft changes for '{updated.Name}'.";
                 rules = await CdsService.ListRulesAsync();
             }
         }
@@ -676,7 +772,13 @@
 
     private async Task ToggleEditableRuleAsync()
     {
-        if (editableRule is null || editableRule.Id == Guid.Empty)
+        if (!CanToggleEditableRule)
+        {
+            return;
+        }
+
+        var currentRule = editableRule;
+        if (currentRule is null)
         {
             return;
         }
@@ -686,8 +788,8 @@
 
         try
         {
-            await CdsService.SetRuleActiveAsync(editableRule.Id, !editableRule.IsActive);
-            editableRule.IsActive = !editableRule.IsActive;
+            await CdsService.SetRuleActiveAsync(currentRule.Id, !currentRule.IsActive);
+            currentRule.IsActive = !currentRule.IsActive;
             rules = await CdsService.ListRulesAsync();
         }
         catch (Exception ex)
@@ -702,6 +804,11 @@
 
     private async Task ToggleStoredRuleAsync(CdsRuleSummary rule)
     {
+        if (rule.PublishedVersionId is null || rule.Status != "Published")
+        {
+            return;
+        }
+
         isToggling = true;
         builderError = null;
 
@@ -722,6 +829,127 @@
         finally
         {
             isToggling = false;
+        }
+    }
+
+    private async Task PublishEditableRuleAsync()
+    {
+        if (!CanPublishEditableRule)
+        {
+            return;
+        }
+
+        isPublishing = true;
+        builderError = null;
+        builderSuccess = null;
+
+        try
+        {
+            var published = await CdsService.PublishRuleAsync(editableRule!.Id);
+            if (published is not null)
+            {
+                editableRule = CloneRule(published);
+                selectedRuleVersions = await CdsService.ListRuleVersionsAsync(published.Id);
+                rules = await CdsService.ListRulesAsync();
+                builderSuccess = $"Published rule '{published.Name}' as version {published.PublishedVersionNumber}.";
+            }
+        }
+        catch (Exception ex)
+        {
+            builderError = $"Failed to publish rule: {ex.Message}";
+        }
+        finally
+        {
+            isPublishing = false;
+        }
+    }
+
+    private async Task PublishStoredRuleAsync(CdsRuleSummary rule)
+    {
+        isPublishing = true;
+        builderError = null;
+
+        try
+        {
+            var published = await CdsService.PublishRuleAsync(rule.Id);
+            rules = await CdsService.ListRulesAsync();
+
+            if (published is not null && editableRule?.Id == rule.Id)
+            {
+                editableRule = CloneRule(published);
+                selectedRuleVersions = await CdsService.ListRuleVersionsAsync(rule.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            builderError = $"Failed to publish rule: {ex.Message}";
+        }
+        finally
+        {
+            isPublishing = false;
+        }
+    }
+
+    private async Task ArchiveEditableRuleAsync()
+    {
+        if (!CanArchiveEditableRule)
+        {
+            return;
+        }
+
+        isArchiving = true;
+        builderError = null;
+        builderSuccess = null;
+
+        try
+        {
+            await CdsService.ArchiveRuleAsync(editableRule!.Id);
+            rules = await CdsService.ListRulesAsync();
+            var archived = rules.FirstOrDefault(r => r.Id == editableRule.Id);
+            if (archived is not null)
+            {
+                editableRule = CloneRule(archived);
+            }
+            builderSuccess = "Archived the current rule.";
+        }
+        catch (Exception ex)
+        {
+            builderError = $"Failed to archive rule: {ex.Message}";
+        }
+        finally
+        {
+            isArchiving = false;
+        }
+    }
+
+    private async Task CloneEditableRuleAsync()
+    {
+        if (!CanCloneEditableRule)
+        {
+            return;
+        }
+
+        isCloning = true;
+        builderError = null;
+        builderSuccess = null;
+
+        try
+        {
+            var cloned = await CdsService.CloneRuleAsync(editableRule!.Id);
+            if (cloned is not null)
+            {
+                rules = await CdsService.ListRulesAsync();
+                await EditRuleAsync(cloned);
+                builderSuccess = $"Cloned rule into draft '{cloned.Name}'.";
+            }
+        }
+        catch (Exception ex)
+        {
+            builderError = $"Failed to clone rule: {ex.Message}";
+        }
+        finally
+        {
+            isCloning = false;
         }
     }
 
@@ -800,8 +1028,18 @@
             Description = rule.Description,
             Priority = rule.Priority,
             IsActive = rule.IsActive,
+            Status = rule.Status,
+            HasUnpublishedChanges = rule.HasUnpublishedChanges,
+            PublishedVersionId = rule.PublishedVersionId,
+            PublishedVersionNumber = rule.PublishedVersionNumber,
+            PublishedAt = rule.PublishedAt,
+            CreatedBy = rule.CreatedBy,
+            UpdatedBy = rule.UpdatedBy,
+            PublishedBy = rule.PublishedBy,
             ExpressionJson = rule.ExpressionJson,
-            CardTemplateJson = rule.CardTemplateJson
+            CardTemplateJson = rule.CardTemplateJson,
+            CreatedAt = rule.CreatedAt,
+            UpdatedAt = rule.UpdatedAt
         };
 
     private static string DisplayDose(decimal? dose) => dose is null ? "n/a" : $"{dose:0.##} mg";

@@ -1,6 +1,6 @@
 # CDS System Guide
 
-This document explains the CDS system in `DMRS.Api` as it exists now, including the rule engine, the mock medicine integration, the normalized medicine knowledge layer, the enriched context flow, the admin/testing endpoints, and how to verify the whole stack without getting lost.
+This document explains the CDS system in `DMRS.Api` as it exists now, including the rule engine, the mock medicine integration, the normalized medicine knowledge layer, the draft/publish rule lifecycle, the enriched context flow, the admin/testing endpoints, and how to verify the whole stack without getting lost.
 
 Use this together with:
 
@@ -54,7 +54,7 @@ The main CDS runtime path for a medication decision is:
 5. During context building, medication facts may be loaded from normalized local medicine knowledge
 6. Allergy data may be pulled from stored `AllergyIntolerance` FHIR resources
 7. Dose values may be derived from the incoming `MedicationRequest`
-8. Rules are created from stored `CdsRuleDefinition` records
+8. The runtime loads published rule snapshots, not in-progress drafts
 9. Rules are evaluated using the JSON logic evaluator
 10. Matching rules render cards through the template renderer
 11. The API returns a `cards` response
@@ -148,6 +148,9 @@ This is the main feature that makes rules easier to author. Rules no longer need
 
 The system now supports:
 
+- draft rule editing
+- explicit publish/archive lifecycle
+- immutable published rule versions
 - rule validation
 - rule preview
 - variable discovery
@@ -161,6 +164,15 @@ Main pieces:
 - [RuleTemplateService.cs](/D:/Code/ASP/DMRS/DMRS.Api/Application/ClinicalDecisionSupport/Services/RuleTemplateService.cs)
 
 This makes the rule layer safer and easier to test before activation.
+
+`CdsRuleDefinition` is now the editable draft/admin record. Publishing creates an immutable `CdsRuleVersion` snapshot, and the live CDS runtime reads that published snapshot instead of the mutable draft row.
+
+This gives you a safer lifecycle:
+
+- admins can save draft changes without changing live CDS
+- every publish creates version history
+- a published rule can be deactivated without losing its last live snapshot
+- archived rules stay out of runtime execution without deleting history
 
 The template layer now provides starter rule types that compile into standard `CdsRuleDefinition` records:
 
@@ -227,10 +239,14 @@ Current service:
 
 - `GET /cds/rules`
 - `GET /cds/rules/{id}`
+- `GET /cds/rules/{id}/versions`
 - `POST /cds/rules`
 - `PUT /cds/rules/{id}`
+- `POST /cds/rules/{id}/publish`
+- `POST /cds/rules/{id}/clone`
 - `PATCH /cds/rules/{id}/activate`
 - `PATCH /cds/rules/{id}/deactivate`
+- `PATCH /cds/rules/{id}/archive`
 - `POST /cds/rules/validate`
 - `POST /cds/rules/preview`
 - `GET /cds/rules/variables`
@@ -255,8 +271,14 @@ Key fields:
 - `Description`
 - `Priority`
 - `IsActive`
+- `Status`
+- `HasUnpublishedChanges`
+- `PublishedVersionId`
+- `PublishedVersionNumber`
 - `ExpressionJson`
 - `CardTemplateJson`
+
+Published history is stored separately in `CdsRuleVersion`.
 
 ### `ExpressionJson`
 
@@ -367,12 +389,13 @@ Recommended order:
 4. verify mock medicine source
 5. verify `/cds/medications`
 6. verify `/cds/rules/variables`
-7. verify rule validation
-8. verify rule preview
-9. persist a rule
-10. execute live `medication-prescribe`
-11. test allergy enrichment
-12. test `MedicationRequest` warmup
+7. save a draft rule
+8. publish it and inspect version history
+9. verify rule validation
+10. verify rule preview
+11. execute live `medication-prescribe`
+12. test allergy enrichment
+13. test `MedicationRequest` warmup
 
 ## 14. Template authoring path
 
@@ -401,11 +424,11 @@ The system is much stronger than before, but it is still a first CDS platform ve
 Current limitations:
 
 - only one CDS service is registered: `medication-prescribe`
-- rule authoring is still template-plus-JSON-based, not a full admin UI model
+- rule authoring is still template-plus-JSON-based, not a fully typed clinical rule builder
 - dose derivation is currently simple and mg-focused
 - there is no advanced terminology normalization beyond the current inputs
 - there is no AI runtime decision layer yet
-- there is no dedicated audit/history model for rule previews and rule changes beyond normal persistence
+- change tracking is still basic metadata plus published versions, not a full audit/reporting subsystem
 
 ## 16. Recommended next implementation areas
 
