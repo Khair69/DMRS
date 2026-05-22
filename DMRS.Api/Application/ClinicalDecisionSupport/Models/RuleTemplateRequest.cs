@@ -14,5 +14,6 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Models
         public string? MedicationRxCui { get; set; }
         public string? PregnancyCategory { get; set; }
         public string? IndicationCode { get; set; }
+        public float? HighUtilizationProbabilityThreshold { get; set; }
     }
 }

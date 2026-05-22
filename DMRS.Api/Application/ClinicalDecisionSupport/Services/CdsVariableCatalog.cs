@@ -36,6 +36,13 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             new("therapy.activeIngredientCodes", "array<string>", "Ingredient codes across other active patient medications."),
             new("therapy.duplicateIngredientMatches", "array<string>", "Ingredient codes shared by the in-flight medication and other active medications."),
             new("therapy.duplicateIngredientConflict", "boolean", "Whether the in-flight medication shares ingredients with other active medications."),
+            new("ai.highUtilizationRisk", "boolean", "AI-predicted frequent-flyer / high-utilization risk based on patient age and gender."),
+            new("ai.highUtilizationProbability", "number", "AI model probability for high-utilization risk when available."),
+            new("ai.highUtilizationModel", "string", "Model artifact name used for the AI prediction."),
+            new("ai.highUtilizationEvaluatedAt", "string", "Timestamp when the AI prediction was generated."),
+            new("ai.highUtilizationFeaturesComplete", "boolean", "Whether the required AI features were available for inference."),
+            new("ai.highUtilizationAge", "number", "Age feature passed into the AI predictor."),
+            new("ai.highUtilizationGender", "number", "Gender feature passed into the AI predictor. Female=1, Male=0."),
             new("context", "object", "Raw hook context payload."),
             new("prefetch", "object", "Raw hook prefetch payload.")
         ];

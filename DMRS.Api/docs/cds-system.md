@@ -22,6 +22,8 @@ Its job is to:
 
 The current system is not AI-driven yet. It is a deterministic rule engine with a medicine knowledge pipeline that prepares the system for future AI-assisted authoring or recommendation features.
 
+It now also supports a narrow AI assistive signal: a high-utilization risk predictor based on patient age and gender. This prediction is exposed as context for rules, but the final CDS behavior still remains deterministic and rule-driven.
+
 ## 2. Projects involved
 
 There are two important projects in this flow.
@@ -153,6 +155,11 @@ The context builder now derives stable fields for rules:
 - `therapy.activeIngredientCodes`
 - `therapy.duplicateIngredientMatches`
 - `therapy.duplicateIngredientConflict`
+- `ai.highUtilizationRisk`
+- `ai.highUtilizationProbability`
+- `ai.highUtilizationModel`
+- `ai.highUtilizationEvaluatedAt`
+- `ai.highUtilizationFeaturesComplete`
 
 This is the main feature that makes rules easier to author. Rules no longer need to inspect raw FHIR JSON directly for common medication use cases.
 
@@ -429,6 +436,23 @@ The current starter templates are:
 - controlled medication warning
 - indication mismatch
 - duplicate ingredient conflict
+- high utilization risk warning
+
+## 15. AI assistive risk signal
+
+The CDS layer now integrates a local ONNX model:
+
+- model file: `DMRS.Api/Ai/high_risk_predictor.onnx`
+- input features: patient age and gender
+- output use: frequent-flyer / high-utilization risk signal
+
+This model is not allowed to fire cards by itself. Instead:
+
+- the ONNX service evaluates the patient
+- the result is added to `ai.*` variables in CDS context
+- normal deterministic rules or templates decide whether to show a card
+
+This keeps the AI layer inspectable, previewable, and subordinate to rule governance.
 
 ## 15. What is still limited
 

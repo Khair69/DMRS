@@ -102,6 +102,7 @@ builder.Services.AddSingleton<IFhirValidatorService, FhirValidatorService>();
 
 builder.Services.Configure<RxNormOptions>(builder.Configuration.GetSection("Cds:Knowledge:RxNorm"));
 builder.Services.Configure<MockMedicineApiOptions>(builder.Configuration.GetSection("Cds:Knowledge:MockMedicineApi"));
+builder.Services.Configure<AiRiskPredictorOptions>(builder.Configuration.GetSection("Cds:Ai:HighUtilizationRisk"));
 
 builder.Services.AddSingleton<ICdsServiceRegistry, CdsServiceRegistry>();
 builder.Services.AddScoped<ICdsHookService, CdsHookService>();
@@ -118,6 +119,7 @@ builder.Services.AddSingleton<ICdsVariableCatalog, CdsVariableCatalog>();
 builder.Services.AddScoped<IMedicineKnowledgeService, MedicineKnowledgeService>();
 builder.Services.AddScoped<IClinicalKnowledgeService, ClinicalKnowledgeService>();
 builder.Services.AddScoped<IMedicationRequestKnowledgeWarmup, MedicationRequestKnowledgeWarmup>();
+builder.Services.AddScoped<IHighUtilizationRiskService, HighUtilizationRiskService>();
 
 var knowledgeProvider = builder.Configuration["Cds:Knowledge:Provider"];
 if (string.Equals(knowledgeProvider, "RxNorm", StringComparison.OrdinalIgnoreCase))

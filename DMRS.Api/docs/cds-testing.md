@@ -1,6 +1,6 @@
 # CDS Testing Guide
 
-This guide tests the CDS work in six layers:
+This guide tests the CDS work in seven layers:
 
 1. `database + startup`
 2. `medicine knowledge sync`
@@ -8,6 +8,7 @@ This guide tests the CDS work in six layers:
 4. `draft/publish rule lifecycle`
 5. `rule validation + preview`
 6. `live CDS execution`
+7. `ai high-utilization risk signal`
 
 Use the ready-made requests in [DMRS.Api.http](/D:/Code/ASP/DMRS/DMRS.Api/DMRS.Api.http).
 For the full architecture and change summary, see [cds-system.md](/D:/Code/ASP/DMRS/DMRS.Api/docs/cds-system.md).
@@ -117,6 +118,7 @@ Expected:
   - `dose.maxDailyMg`
   - `safety.allergyConflict`
   - `therapy.duplicateIngredientConflict`
+  - `ai.highUtilizationRisk`
 - valid rule returns `isValid = true`
 - invalid rule returns `isValid = false`
 
@@ -160,6 +162,23 @@ This proves:
 - publish lifecycle works
 - immutable version history works
 - runtime hook evaluation works
+
+### 9. AI high-utilization risk signal
+
+Test the direct AI endpoint and then use the `high-utilization-risk-warning` template in preview.
+
+Expected:
+
+- `GET /cds/risk/high-utilization/{patientId}` returns the patient features, model name, and risk result
+- the variable catalog includes `ai.highUtilizationRisk` and `ai.highUtilizationProbability`
+- the AI-based template compiles into a normal deterministic rule
+- preview can use the AI-enriched context to decide whether to emit a CDS card
+
+This proves:
+
+- the ONNX model is loading
+- patient feature extraction is working
+- AI output is available to rules without bypassing rule governance
 
 ### 7. Allergy enrichment
 

@@ -25,13 +25,16 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 
         private readonly IClinicalKnowledgeService _clinicalKnowledgeService;
         private readonly IFhirRepository _fhirRepository;
+        private readonly IHighUtilizationRiskService _highUtilizationRiskService;
 
         public CdsContextBuilder(
             IClinicalKnowledgeService clinicalKnowledgeService,
-            IFhirRepository fhirRepository)
+            IFhirRepository fhirRepository,
+            IHighUtilizationRiskService highUtilizationRiskService)
         {
             _clinicalKnowledgeService = clinicalKnowledgeService;
             _fhirRepository = fhirRepository;
+            _highUtilizationRiskService = highUtilizationRiskService;
         }
 
         public async System.Threading.Tasks.Task<CdsContext> BuildAsync(CdsHookRequest request, CancellationToken cancellationToken)
@@ -69,6 +72,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             var medicationInput = ExtractMedicationInput(request.Context, request.Prefetch);
             await EnrichPatientContextAsync(data, patientId);
             data["conditions"] = await BuildConditionContextAsync(patientId);
+            data["ai"] = await BuildAiContextAsync(patientId, cancellationToken);
 
             if (medicationInput == null)
             {
@@ -294,6 +298,45 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 ["activeIngredientCodes"] = Array.Empty<string>(),
                 ["duplicateIngredientMatches"] = Array.Empty<string>(),
                 ["duplicateIngredientConflict"] = false
+            };
+
+        private async System.Threading.Tasks.Task<Dictionary<string, object?>> BuildAiContextAsync(
+            string? patientId,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                return CreateEmptyAiContext();
+            }
+
+            var assessment = await _highUtilizationRiskService.AssessPatientAsync(patientId, cancellationToken);
+            if (assessment == null)
+            {
+                return CreateEmptyAiContext();
+            }
+
+            return new Dictionary<string, object?>
+            {
+                ["highUtilizationRisk"] = assessment.IsHighRisk,
+                ["highUtilizationProbability"] = assessment.Probability,
+                ["highUtilizationModel"] = assessment.ModelName,
+                ["highUtilizationEvaluatedAt"] = assessment.EvaluatedAt,
+                ["highUtilizationFeaturesComplete"] = assessment.FeaturesComplete,
+                ["highUtilizationAge"] = assessment.Age,
+                ["highUtilizationGender"] = assessment.Gender
+            };
+        }
+
+        private static Dictionary<string, object?> CreateEmptyAiContext()
+            => new()
+            {
+                ["highUtilizationRisk"] = false,
+                ["highUtilizationProbability"] = null,
+                ["highUtilizationModel"] = null,
+                ["highUtilizationEvaluatedAt"] = null,
+                ["highUtilizationFeaturesComplete"] = false,
+                ["highUtilizationAge"] = null,
+                ["highUtilizationGender"] = null
             };
 
         private async System.Threading.Tasks.Task<IReadOnlyList<string>> GetPatientAllergyCodesAsync(string? patientId, CancellationToken cancellationToken)

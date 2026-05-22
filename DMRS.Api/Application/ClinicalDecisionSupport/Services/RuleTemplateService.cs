@@ -13,6 +13,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         private const string ControlledMedicationTemplate = "controlled-medication-warning";
         private const string IndicationMismatchTemplate = "indication-mismatch";
         private const string DuplicateIngredientConflictTemplate = "duplicate-ingredient-conflict";
+        private const string HighUtilizationRiskTemplate = "high-utilization-risk-warning";
 
         private static readonly IReadOnlyList<RuleTemplateDefinition> Templates =
         [
@@ -60,6 +61,14 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 "Warn when the in-flight medication shares ingredients with other active patient medications.",
                 [
                     new RuleTemplateParameterDefinition("name", "string", true, "Human-readable rule name.")
+                ]),
+            new(
+                HighUtilizationRiskTemplate,
+                "High Utilization Risk",
+                "Warn when the AI model predicts that the patient is likely to become a frequent flyer / high-utilization patient.",
+                [
+                    new RuleTemplateParameterDefinition("name", "string", true, "Human-readable rule name."),
+                    new RuleTemplateParameterDefinition("highUtilizationProbabilityThreshold", "number", false, "Optional minimum AI probability required to trigger the warning.")
                 ])
         ];
 
@@ -87,6 +96,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 ControlledMedicationTemplate => BuildControlledMedicationTemplate(request),
                 IndicationMismatchTemplate => BuildIndicationMismatchTemplate(request),
                 DuplicateIngredientConflictTemplate => BuildDuplicateIngredientConflictTemplate(request),
+                HighUtilizationRiskTemplate => BuildHighUtilizationRiskTemplate(request),
                 _ => throw new ArgumentException($"Unsupported template '{request.TemplateId}'.", nameof(request))
             };
 
@@ -239,6 +249,44 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                     request,
                     "Duplicate ingredient conflict for {{medication.name}}",
                     "Shared ingredients with other active medications: {{therapy.duplicateIngredientMatches}}"));
+        }
+
+        private static (object expression, object card) BuildHighUtilizationRiskTemplate(RuleTemplateRequest request)
+        {
+            object expression = new Dictionary<string, object?>
+            {
+                ["=="] = new object[]
+                {
+                    Var("ai.highUtilizationRisk"),
+                    true
+                }
+            };
+
+            if (request.HighUtilizationProbabilityThreshold.HasValue)
+            {
+                expression = new Dictionary<string, object?>
+                {
+                    ["and"] = new object[]
+                    {
+                        expression,
+                        new Dictionary<string, object?>
+                        {
+                            [">="] = new object[]
+                            {
+                                Var("ai.highUtilizationProbability"),
+                                request.HighUtilizationProbabilityThreshold.Value
+                            }
+                        }
+                    }
+                };
+            }
+
+            return (
+                expression,
+                BuildCard(
+                    request,
+                    "High utilization risk for patient {{patient.id}}",
+                    "AI model {{ai.highUtilizationModel}} predicts frequent-flyer risk with probability {{ai.highUtilizationProbability}}."));
         }
 
         private static Dictionary<string, object?> BuildCard(
