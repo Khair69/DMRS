@@ -71,7 +71,7 @@ public class FhirApiService
             { searchParam, value }
         };
 
-        var queryString = QueryHelpers.AddQueryString($"fhir/{resourceType}", query);
+        var queryString = QueryHelpers.AddQueryString($"fhir/{resourceType}", query.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value));
 
         var response = await _httpClient.GetAsync(queryString);
         if (response.StatusCode == HttpStatusCode.NotFound)
@@ -88,7 +88,37 @@ public class FhirApiService
 
         return bundle.Entry
             .Where(e => e.Resource is T)
-            .Select(e => (T)e.Resource)
+            .Select(e => e.Resource)
+            .OfType<T>()
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<T>> SearchResourcesAsync<T>(Dictionary<string, string>? queryParams = null) where T : Resource
+    {
+        var resourceType = typeof(T).Name;
+        var path = $"fhir/{resourceType}";
+
+        if (queryParams is { Count: > 0 })
+        {
+            path = QueryHelpers.AddQueryString(path, queryParams.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value));
+        }
+
+        var response = await _httpClient.GetAsync(path);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return [];
+
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        var bundle = _deserializer.Deserialize<Bundle>(json);
+
+        if (bundle?.Entry == null || bundle.Entry.Count == 0)
+            return [];
+
+        return bundle.Entry
+            .Where(e => e.Resource is T)
+            .Select(e => e.Resource)
+            .OfType<T>()
             .ToList();
     }
 
@@ -111,7 +141,8 @@ public class FhirApiService
 
         return bundle.Entry
             .Where(e => e.Resource is T)
-            .Select(e => (T)e.Resource)
+            .Select(e => e.Resource)
+            .OfType<T>()
             .ToList();
     }
 

@@ -1,0 +1,107 @@
+@page "/ai-insights"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Dashboard.Models
+@inject DMRS.Client.Features.Dashboard.Services.DashboardFeatureService DashboardService
+
+<PageTitle>AI Insights</PageTitle>
+
+<div class="workspace-hero workspace-hero--ai">
+    <div>
+        <span class="workspace-eyebrow">Predictive Layer</span>
+        <h1>AI Insights</h1>
+        <p>Review the current high-utilization watchlist produced by the ONNX risk model and use it to prioritize follow-up.</p>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="dmrs-loading-shell">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-12 col-xl-8">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">High-Utilization Watchlist</div>
+                        <div class="dmrs-panel__subtitle">Patients with the strongest current AI risk signal.</div>
+                    </div>
+                </div>
+                <div class="dmrs-list">
+                    @if (snapshot.HighRiskPatients.Count == 0)
+                    {
+                        <div class="dmrs-empty-state">No assessable patients are available yet. Import demo patients with birth date and gender to light this up.</div>
+                    }
+                    else
+                    {
+                        @foreach (var patient in snapshot.HighRiskPatients)
+                        {
+                            <a class="dmrs-list-item" href="@patient.Href">
+                                <div>
+                                    <div class="dmrs-list-item__title">@patient.DisplayName</div>
+                                    <div class="dmrs-list-item__subtitle">@patient.Summary</div>
+                                </div>
+                                <span class="dmrs-pill @(patient.IsHighRisk ? "dmrs-pill--danger" : "dmrs-pill--neutral")">
+                                    @(patient.IsHighRisk ? "High Risk" : "Monitor")
+                                </span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-xl-4">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">How It Works</div>
+                        <div class="dmrs-panel__subtitle">Current model contract</div>
+                    </div>
+                </div>
+                <div class="dmrs-stack">
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Inputs</div>
+                        <p>Age and gender from the patient resource.</p>
+                    </div>
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Prediction</div>
+                        <p>Frequent-flyer / high-utilization risk as a proxy for readmission-style attention needs.</p>
+                    </div>
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Use</div>
+                        <p>Highlight patients who may deserve proactive follow-up, closer review, or earlier intervention.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private DashboardSnapshotModel snapshot = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            snapshot = await DashboardService.GetSnapshotAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load AI insights: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

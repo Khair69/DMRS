@@ -1,16 +1,19 @@
-﻿@page "/patients/{Id}"
+@page "/patients/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
+@inject DMRS.Client.Features.Patients.Services.PatientChartFeatureService PatientChartService
 @inject IConfiguration Configuration
 @inject NavigationManager NavigationManager
+@using DMRS.Client.Features.Dashboard.Models
+@using DMRS.Client.Features.Patients.Models
 
 <PageTitle>Patient Details</PageTitle>
 
-<h1>Patient Details</h1>
-
 @if (isBusy)
 {
-    <div class="spinner-border" role="status"></div>
+    <div class="dmrs-loading-shell">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
 }
 else if (!string.IsNullOrWhiteSpace(errorMessage))
 {
@@ -18,49 +21,278 @@ else if (!string.IsNullOrWhiteSpace(errorMessage))
 }
 else
 {
-    <PatientDetailsView Patient="patient" />
-
-    <div class="card mt-3">
-        <div class="card-header">Patient Account</div>
-        <div class="card-body">
-            @if (isLinkedToAccount)
+    <div class="workspace-hero workspace-hero--patient">
+        <div>
+            <span class="workspace-eyebrow">Patient Chart</span>
+            <h1>@DisplayPatientName</h1>
+            <p>@DisplayPatientDemographics</p>
+        </div>
+        <div class="workspace-hero__actions">
+            @if (riskAssessment is not null)
             {
-                <div class="alert alert-success mb-0">This patient is already linked to a user account.</div>
+                <span class="dmrs-pill @(riskAssessment.IsHighRisk ? "dmrs-pill--danger" : "dmrs-pill--neutral")">
+                    @(riskAssessment.IsHighRisk ? "AI: High Utilization Risk" : "AI: Standard Risk")
+                </span>
             }
-            else
-            {
-                if (!string.IsNullOrWhiteSpace(inviteError))
-                {
-                    <div class="alert alert-danger">@inviteError</div>
-                }
+            <a class="btn btn-light" href="@($"/patients/{Id}/edit")">Edit Patient</a>
+            <a class="btn btn-outline-light" href="@($"/patients/{Id}/history")">History</a>
+        </div>
+    </div>
 
-                if (inviteResult is not null)
-                {
-                    <div class="alert alert-success">Invitation generated for Patient/@inviteResult.PatientId.</div>
-                }
+    <div class="row g-4">
+        <div class="col-12 col-xl-8">
+            <div class="dmrs-metrics-grid dmrs-metrics-grid--compact">
+                <div class="dmrs-metric-card metric-ocean">
+                    <div class="dmrs-metric-card__label">Allergies</div>
+                    <div class="dmrs-metric-card__value">@allergyCount</div>
+                    <div class="dmrs-metric-card__helper">Known allergy and intolerance records</div>
+                </div>
+                <div class="dmrs-metric-card metric-emerald">
+                    <div class="dmrs-metric-card__label">Conditions</div>
+                    <div class="dmrs-metric-card__value">@conditionCount</div>
+                    <div class="dmrs-metric-card__helper">Tracked problem list items</div>
+                </div>
+                <div class="dmrs-metric-card metric-gold">
+                    <div class="dmrs-metric-card__label">Medications</div>
+                    <div class="dmrs-metric-card__value">@medicationCount</div>
+                    <div class="dmrs-metric-card__helper">Medication requests on file</div>
+                </div>
+                <div class="dmrs-metric-card metric-ink">
+                    <div class="dmrs-metric-card__label">Encounters</div>
+                    <div class="dmrs-metric-card__value">@encounterCount</div>
+                    <div class="dmrs-metric-card__helper">Documented visits and care moments</div>
+                </div>
+            </div>
 
-                if (!string.IsNullOrWhiteSpace(existingInviteCode))
-                {
-                    <p class="mb-2"><strong>Invite code</strong>: <code>@existingInviteCode</code></p>
-                }
+            <div class="dmrs-panel mt-4">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Current Clinical Snapshot</div>
+                        <div class="dmrs-panel__subtitle">The most relevant data attached to this patient record.</div>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12 col-lg-6">
+                        <div class="dmrs-subpanel">
+                            <div class="dmrs-subpanel__title">Active Conditions</div>
+                            @if (chart?.Conditions.Count > 0)
+                            {
+                                @foreach (var condition in chart.Conditions)
+                                {
+                                    <div class="dmrs-mini-row">
+                                        <div class="dmrs-mini-row__title">@GetConditionLabel(condition)</div>
+                                        <div class="dmrs-mini-row__meta">@condition.ClinicalStatus?.Text</div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">No conditions recorded.</div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <div class="dmrs-subpanel">
+                            <div class="dmrs-subpanel__title">Allergies</div>
+                            @if (chart?.Allergies.Count > 0)
+                            {
+                                @foreach (var allergy in chart.Allergies)
+                                {
+                                    <div class="dmrs-mini-row">
+                                        <div class="dmrs-mini-row__title">@GetAllergyLabel(allergy)</div>
+                                        <div class="dmrs-mini-row__meta">@allergy.Criticality</div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">No allergy records found.</div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <div class="dmrs-subpanel">
+                            <div class="dmrs-subpanel__title">Observations</div>
+                            @if (chart?.Observations.Count > 0)
+                            {
+                                @foreach (var observation in chart.Observations)
+                                {
+                                    <div class="dmrs-mini-row">
+                                        <div class="dmrs-mini-row__title">@GetObservationLabel(observation)</div>
+                                        <div class="dmrs-mini-row__meta">@observation.Status</div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">No observations recorded.</div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <div class="dmrs-subpanel">
+                            <div class="dmrs-subpanel__title">Medication Requests</div>
+                            @if (chart?.MedicationRequests.Count > 0)
+                            {
+                                @foreach (var medication in chart.MedicationRequests)
+                                {
+                                    <div class="dmrs-mini-row">
+                                        <div class="dmrs-mini-row__title">@GetMedicationLabel(medication)</div>
+                                        <div class="dmrs-mini-row__meta">@medication.Status | @medication.Intent</div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">No medication requests found.</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                var claimLink = inviteResult?.ClaimLink ?? BuildClaimLink(existingInviteCode);
-                var registrationLink = inviteResult?.RegistrationLink ?? BuildRegistrationLink(existingInviteCode);
+            <div class="dmrs-panel mt-4">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Patient Activity</div>
+                        <div class="dmrs-panel__subtitle">Recent and upcoming care events linked to this chart.</div>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12 col-lg-6">
+                        <div class="dmrs-subpanel">
+                            <div class="dmrs-subpanel__title">Encounters</div>
+                            @if (chart?.Encounters.Count > 0)
+                            {
+                                @foreach (var encounter in chart.Encounters)
+                                {
+                                    <a class="dmrs-mini-row dmrs-mini-row--link" href="@($"/encounters/{encounter.Id}")">
+                                        <div class="dmrs-mini-row__title">@GetEncounterLabel(encounter)</div>
+                                        <div class="dmrs-mini-row__meta">@encounter.Status</div>
+                                    </a>
+                                }
+                            }
+                            else
+                            {
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">No encounters recorded.</div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <div class="dmrs-subpanel">
+                            <div class="dmrs-subpanel__title">Appointments</div>
+                            @if (chart?.Appointments.Count > 0)
+                            {
+                                @foreach (var appointment in chart.Appointments)
+                                {
+                                    <a class="dmrs-mini-row dmrs-mini-row--link" href="@($"/appointments/{appointment.Id}")">
+                                        <div class="dmrs-mini-row__title">@GetAppointmentLabel(appointment)</div>
+                                        <div class="dmrs-mini-row__meta">@GetAppointmentDate(appointment)</div>
+                                    </a>
+                                }
+                            }
+                            else
+                            {
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">No appointments found.</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                if (!string.IsNullOrWhiteSpace(registrationLink))
-                {
-                    <p class="mb-2"><strong>Self-registration (auto-claim)</strong>: <a href="@registrationLink" target="_blank">@registrationLink</a></p>
-                }
+        <div class="col-12 col-xl-4">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">AI and CDS Briefing</div>
+                        <div class="dmrs-panel__subtitle">The smart layer attached to this patient chart.</div>
+                    </div>
+                </div>
+                <div class="dmrs-stack">
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">High-Utilization Risk</div>
+                        @if (riskAssessment is null)
+                        {
+                            <p>No risk assessment is available for this patient yet.</p>
+                        }
+                        else if (!riskAssessment.FeaturesComplete)
+                        {
+                            <p>The model could not fully assess risk because birth date or gender is missing.</p>
+                        }
+                        else
+                        {
+                            <p>
+                                This patient is currently marked as
+                                <strong>@(riskAssessment.IsHighRisk ? "high risk" : "standard risk")</strong>
+                                for high utilization.
+                            </p>
+                            <p class="mb-0">Probability: @(riskAssessment.Probability.HasValue ? $"{riskAssessment.Probability:P0}" : "n/a")</p>
+                        }
+                    </div>
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Recommended Demo Moves</div>
+                        <p class="mb-2">Use this chart as the starting point for your demo:</p>
+                        <ul class="mb-0">
+                            <li>Open medication requests and show CDS warnings.</li>
+                            <li>Use the AI risk label to explain proactive care prioritization.</li>
+                            <li>Walk through allergies, conditions, and encounters from one page.</li>
+                        </ul>
+                    </div>
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Quick Links</div>
+                        <div class="d-grid gap-2">
+                            <a class="btn btn-outline-primary" href="/medication-requests">Medication Requests</a>
+                            <a class="btn btn-outline-primary" href="/ai-insights">AI Insights</a>
+                            <a class="btn btn-outline-primary" href="/cds/admin">CDS Admin</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                if (!string.IsNullOrWhiteSpace(claimLink))
-                {
-                    <p class="mb-0"><strong>Manual claim fallback</strong>: <a href="@claimLink" target="_blank">@claimLink</a></p>
-                }
+            <div class="card mt-4">
+                <div class="card-header">Patient Account</div>
+                <div class="card-body">
+                    @if (isLinkedToAccount)
+                    {
+                        <div class="alert alert-success mb-0">This patient is already linked to a user account.</div>
+                    }
+                    else
+                    {
+                        if (!string.IsNullOrWhiteSpace(inviteError))
+                        {
+                            <div class="alert alert-danger">@inviteError</div>
+                        }
 
-                <button class="btn btn-outline-primary mt-3" disabled="@isGeneratingInvite" @onclick="GenerateInvite">
-                    @(string.IsNullOrWhiteSpace(existingInviteCode) ? "Generate Invite Link" : "Regenerate Invite Link")
-                </button>
-            }
+                        if (inviteResult is not null)
+                        {
+                            <div class="alert alert-success">Invitation generated for Patient/@inviteResult.PatientId.</div>
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(existingInviteCode))
+                        {
+                            <p class="mb-2"><strong>Invite code</strong>: <code>@existingInviteCode</code></p>
+                        }
+
+                        var claimLink = inviteResult?.ClaimLink ?? BuildClaimLink(existingInviteCode);
+                        var registrationLink = inviteResult?.RegistrationLink ?? BuildRegistrationLink(existingInviteCode);
+
+                        if (!string.IsNullOrWhiteSpace(registrationLink))
+                        {
+                            <p class="mb-2"><strong>Self-registration (auto-claim)</strong>: <a href="@registrationLink" target="_blank">@registrationLink</a></p>
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(claimLink))
+                        {
+                            <p class="mb-0"><strong>Manual claim fallback</strong>: <a href="@claimLink" target="_blank">@claimLink</a></p>
+                        }
+
+                        <button class="btn btn-outline-primary mt-3" disabled="@isGeneratingInvite" @onclick="GenerateInvite">
+                            @(string.IsNullOrWhiteSpace(existingInviteCode) ? "Generate Invite Link" : "Regenerate Invite Link")
+                        </button>
+                    }
+                </div>
+            </div>
         </div>
     </div>
 }
@@ -70,6 +302,8 @@ else
     public string Id { get; set; } = string.Empty;
 
     private Hl7.Fhir.Model.Patient? patient;
+    private PatientChartSnapshotModel? chart;
+    private HighUtilizationRiskAssessmentModel? riskAssessment;
     private bool isBusy;
     private string? errorMessage;
     private bool isLinkedToAccount;
@@ -77,6 +311,27 @@ else
     private bool isGeneratingInvite;
     private string? inviteError;
     private DMRS.Client.Features.Patients.Services.PatientInviteResult? inviteResult;
+    private int allergyCount;
+    private int conditionCount;
+    private int medicationCount;
+    private int encounterCount;
+
+    private string DisplayPatientName
+    {
+        get
+        {
+            var name = patient?.Name.FirstOrDefault();
+            var parts = new[] { name?.Given?.FirstOrDefault(), name?.Family }
+                .Where(part => !string.IsNullOrWhiteSpace(part));
+            var display = string.Join(" ", parts);
+            return string.IsNullOrWhiteSpace(display) ? $"Patient {patient?.Id}" : display;
+        }
+    }
+
+    private string DisplayPatientDemographics
+        => patient is null
+            ? string.Empty
+            : $"{patient.Gender} | Born {patient.BirthDate ?? "unknown"} | Managing org {patient.ManagingOrganization?.Reference ?? "not set"}";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -87,7 +342,10 @@ else
 
         try
         {
-            patient = await PatientService.GetAsync(Id);
+            chart = await PatientChartService.GetSnapshotAsync(Id);
+            patient = chart?.Patient;
+            riskAssessment = chart?.Risk;
+
             if (patient is null)
             {
                 errorMessage = $"Patient {Id} not found.";
@@ -96,6 +354,10 @@ else
             {
                 isLinkedToAccount = IsLinkedToAccount(patient);
                 existingInviteCode = GetInviteCode(patient);
+                allergyCount = chart?.Allergies.Count ?? 0;
+                conditionCount = chart?.Conditions.Count ?? 0;
+                medicationCount = chart?.MedicationRequests.Count ?? 0;
+                encounterCount = chart?.Encounters.Count ?? 0;
             }
         }
         catch (Exception ex)
@@ -193,4 +455,51 @@ else
     }
 
     private const string InviteCodeIdentifierSystem = "https://dmrs.local/invites/patient";
+
+    private static string GetConditionLabel(Hl7.Fhir.Model.Condition condition)
+        => condition.Code?.Text
+            ?? condition.Code?.Coding.FirstOrDefault()?.Display
+            ?? condition.Code?.Coding.FirstOrDefault()?.Code
+            ?? "Condition";
+
+    private static string GetAllergyLabel(Hl7.Fhir.Model.AllergyIntolerance allergy)
+        => allergy.Code?.Text
+            ?? allergy.Code?.Coding.FirstOrDefault()?.Display
+            ?? allergy.Code?.Coding.FirstOrDefault()?.Code
+            ?? "Allergy";
+
+    private static string GetObservationLabel(Hl7.Fhir.Model.Observation observation)
+        => observation.Code?.Text
+            ?? observation.Code?.Coding.FirstOrDefault()?.Display
+            ?? observation.Code?.Coding.FirstOrDefault()?.Code
+            ?? "Observation";
+
+    private static string GetMedicationLabel(Hl7.Fhir.Model.MedicationRequest medicationRequest)
+        => medicationRequest.Medication?.Concept?.Text
+            ?? medicationRequest.Medication?.Concept?.Coding.FirstOrDefault()?.Display
+            ?? medicationRequest.Medication?.Concept?.Coding.FirstOrDefault()?.Code
+            ?? medicationRequest.Medication?.Reference?.Reference
+            ?? "Medication request";
+
+    private static string GetEncounterLabel(Hl7.Fhir.Model.Encounter encounter)
+        => encounter.Type.FirstOrDefault()?.Text
+            ?? encounter.Type.FirstOrDefault()?.Coding.FirstOrDefault()?.Display
+            ?? encounter.Class?.FirstOrDefault()?.Coding.FirstOrDefault()?.Code
+            ?? "Encounter";
+
+    private static string GetAppointmentLabel(Hl7.Fhir.Model.Appointment appointment)
+        => appointment.Description
+            ?? appointment.AppointmentType?.Text
+            ?? appointment.AppointmentType?.Coding.FirstOrDefault()?.Display
+            ?? "Appointment";
+
+    private static string GetAppointmentDate(Hl7.Fhir.Model.Appointment appointment)
+    {
+        if (DateTimeOffset.TryParse(appointment.StartElement?.Value?.ToString(), out var start))
+        {
+            return start.ToLocalTime().ToString("dd MMM yyyy HH:mm");
+        }
+
+        return appointment.Status?.ToString() ?? "unknown";
+    }
 }
