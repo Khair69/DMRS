@@ -66,6 +66,7 @@ builder.Services.AddScoped<ObservationFeatureService>();
 builder.Services.AddScoped<ProcedureFeatureService>();
 builder.Services.AddScoped<AllergyIntoleranceFeatureService>();
 builder.Services.AddScoped<MedicationRequestFeatureService>();
+builder.Services.AddScoped<MedicationDecisionSupportService>();
 builder.Services.AddScoped<ServiceRequestFeatureService>();
 builder.Services.AddScoped<AppointmentFeatureService>();
 builder.Services.AddScoped<EncounterFeatureService>();

@@ -6,6 +6,7 @@ using Hl7.Fhir.Model;
 using Hl7.Fhir.Rest;
 using Hl7.Fhir.Serialization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace DMRS.Api.Infrastructure
 {
@@ -14,11 +15,13 @@ namespace DMRS.Api.Infrastructure
         private readonly AppDbContext _context;
         private readonly FhirJsonSerializer _serializer;
         private readonly FhirJsonDeserializer _deserializer;
-        public FhirRepository(AppDbContext context, FhirJsonSerializer serializer, FhirJsonDeserializer deserializer)
+        private readonly ILogger<FhirRepository> _logger;
+        public FhirRepository(AppDbContext context, FhirJsonSerializer serializer, FhirJsonDeserializer deserializer, ILogger<FhirRepository> logger)
         {
             _context = context;
             _serializer = serializer;
             _deserializer = deserializer;
+            _logger = logger;
         }
 
         public async Task<string> CreateAsync<T>(T resource, ISearchIndexer searchIndexer) where T : Resource
@@ -104,7 +107,16 @@ namespace DMRS.Api.Infrastructure
 
             if (entity == null) return null;
 
-            var resource = _deserializer.Deserialize<T>(entity.RawContent);
+            T resource;
+            try
+            {
+                resource = _deserializer.Deserialize<T>(entity.RawContent);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Skipping malformed FHIR resource {ResourceType}/{ResourceId} during read.", entity.ResourceType, entity.Id);
+                return null;
+            }
 
             resource.Meta ??= new Meta();
             resource.Meta.VersionId = entity.VersionId.ToString();
@@ -147,9 +159,21 @@ namespace DMRS.Api.Infrastructure
                     matchedIds.Contains(r.Id))
                 .ToListAsync();
 
-            return resources
-                .Select(r => _deserializer.Deserialize<T>(r.RawContent))
-                .ToList();
+            var result = new List<T>(resources.Count);
+            foreach (var resourceEntity in resources)
+            {
+                try
+                {
+                    var parsed = _deserializer.Deserialize<T>(resourceEntity.RawContent);
+                    result.Add(parsed);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Skipping malformed FHIR resource {ResourceType}/{ResourceId} during search.", resourceEntity.ResourceType, resourceEntity.Id);
+                }
+            }
+
+            return result;
         }
 
         public async System.Threading.Tasks.Task UpdateAsync<T>(string id, T resource, ISearchIndexer searchIndexer) where T : Resource
@@ -213,7 +237,16 @@ namespace DMRS.Api.Infrastructure
                 return null;
             }
 
-            var resource = _deserializer.Deserialize<T>(entity.RawContent);
+            T resource;
+            try
+            {
+                resource = _deserializer.Deserialize<T>(entity.RawContent);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Skipping malformed FHIR resource version {ResourceType}/{ResourceId}/_history/{VersionId}.", entity.ResourceType, entity.Id, entity.VersionId);
+                return null;
+            }
 
             resource.Meta ??= new Meta();
             resource.Meta.VersionId = entity.VersionId.ToString();
@@ -231,15 +264,29 @@ namespace DMRS.Api.Infrastructure
                 .OrderByDescending(r => r.VersionId)
                 .ToListAsync();
 
-            var resources = versions.Select(v => _deserializer.Deserialize<T>(v.RawContent))
-                .ToList();
+            var resources = new List<T>(versions.Count);
+            var parsedVersions = new List<FhirResourceVersion>(versions.Count);
+
+            foreach (var version in versions)
+            {
+                try
+                {
+                    var resource = _deserializer.Deserialize<T>(version.RawContent);
+                    resources.Add(resource);
+                    parsedVersions.Add(version);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Skipping malformed FHIR resource version {ResourceType}/{ResourceId}/_history/{VersionId}.", version.ResourceType, version.Id, version.VersionId);
+                }
+            }
 
             for (int i = 0;i < resources.Count;i++)
             {
                 var resource = resources[i];
                 resource.Meta ??= new Meta();
-                resource.Meta.VersionId = versions[i].VersionId.ToString();
-                resource.Meta.LastUpdated = versions[i].LastUpdated;
+                resource.Meta.VersionId = parsedVersions[i].VersionId.ToString();
+                resource.Meta.LastUpdated = parsedVersions[i].LastUpdated;
             }
 
             return resources;

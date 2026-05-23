@@ -111,6 +111,11 @@ public sealed class CdsRulePreviewResponseModel
     public List<CdsCardModel> Cards { get; set; } = [];
 }
 
+public sealed class CdsHookResponseModel
+{
+    public List<CdsCardModel> Cards { get; set; } = [];
+}
+
 public sealed class CdsMedicineKnowledgeModel
 {
     public string RxCui { get; set; } = string.Empty;
