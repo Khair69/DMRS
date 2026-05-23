@@ -46,10 +46,21 @@ public sealed class PatientClaimController : ControllerBase
             return BadRequest("Keycloak user id is required.");
         }
 
-        var patientMatches = await _repository.SearchAsync<Patient>(new Dictionary<string, string>
+        var inviteParams = new Dictionary<string, string>
         {
             ["identifier"] = $"{InviteCodeIdentifierSystem}|{request.InviteCode.Trim()}"
-        });
+        };
+
+        var patientMatches = await _repository.SearchAsync<Patient>(inviteParams);
+        var patientRawCount = await _repository.SearchCountAsync<Patient>(inviteParams);
+
+        // If raw count exceeds deserialized count, one or more records were silently skipped
+        // due to JSON corruption. Fail with a 500 rather than silently treating a valid invite
+        // as missing (which would lock out the patient).
+        if (patientRawCount != patientMatches.Count)
+        {
+            return StatusCode(500, "Invite code lookup encountered a data integrity error. Please contact support.");
+        }
 
         if (patientMatches.Count == 0)
         {
@@ -68,10 +79,20 @@ public sealed class PatientClaimController : ControllerBase
         }
 
         var keycloakIdentifierSystem = BuildKeycloakIdentifierSystem(_configuration["Keycloak:Authority"]);
-        var existingLinked = await _repository.SearchAsync<Patient>(new Dictionary<string, string>
+        var linkedParams = new Dictionary<string, string>
         {
             ["identifier"] = $"{keycloakIdentifierSystem}|{request.KeycloakUserId.Trim()}"
-        });
+        };
+
+        var existingLinked = await _repository.SearchAsync<Patient>(linkedParams);
+        var existingLinkedRawCount = await _repository.SearchCountAsync<Patient>(linkedParams);
+
+        // Fail closed: if any linked record couldn't be deserialized, block the link to prevent
+        // a malformed record from bypassing the one-account-per-patient invariant.
+        if (existingLinkedRawCount != existingLinked.Count)
+        {
+            return Conflict("This Keycloak account is already linked to another patient.");
+        }
 
         var duplicateLink = existingLinked.Any(p => !string.Equals(p.Id, patient.Id, StringComparison.OrdinalIgnoreCase));
         if (duplicateLink)

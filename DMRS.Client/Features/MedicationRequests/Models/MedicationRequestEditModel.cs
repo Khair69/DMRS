@@ -138,9 +138,11 @@ public sealed class MedicationRequestEditModel
 
     private static int? ExtractFrequencyPerDay(MedicationRequest request)
     {
+        // Explicitly exclude 0: Frequency=0 is invalid FHIR but can exist in persisted data.
+        // A null check alone would return 0, which fails [Range(1, 24)] validation on load.
         return request.DosageInstruction
             .Select(d => d.Timing?.Repeat?.Frequency)
-            .FirstOrDefault(f => f is not null);
+            .FirstOrDefault(f => f is not null and > 0);
     }
 
     private static MedicationRequest.MedicationrequestStatus ParseStatus(string? value)

@@ -255,6 +255,38 @@ namespace DMRS.Api.Infrastructure
             return resource;
         }
 
+        public async Task<int> SearchCountAsync<T>(Dictionary<string, string> queryParams) where T : Resource
+        {
+            var typeName = typeof(T).Name;
+
+            var query = _context.ResourceIndices
+                .Where(x => x.ResourceType == typeName);
+
+            foreach (var param in queryParams)
+            {
+                var key = param.Key.ToLower();
+                var value = param.Value.ToLower();
+
+                if (key.StartsWith("_"))
+                    continue;
+
+                query = query.Where(x =>
+                    x.SearchParamCode == key &&
+                    x.Value == value);
+            }
+
+            var matchedIds = await query
+                .Select(x => x.ResourceId)
+                .Distinct()
+                .ToListAsync();
+
+            return await _context.FhirResources
+                .CountAsync(r =>
+                    r.ResourceType == typeName &&
+                    !r.IsDeleted &&
+                    matchedIds.Contains(r.Id));
+        }
+
         public async Task<List<T>> GetHistoryAsync<T>(string id) where T : Resource
         {
             var resourceType = typeof(T).Name;

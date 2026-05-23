@@ -64,7 +64,8 @@ public sealed class DashboardFeatureService
         var riskTasks = assessablePatients
             .Select(async patient =>
             {
-                var risk = await _fhirApiService.GetApiJsonAsync<HighUtilizationRiskAssessmentModel>($"cds/risk/high-utilization/{patient.Id}");
+                var risk = await _fhirApiService.GetApiJsonAsync<HighUtilizationRiskAssessmentModel>(
+                    $"cds/risk/high-utilization/{Uri.EscapeDataString(patient.Id!)}");
                 return (patient, risk);
             })
             .ToList();

@@ -141,6 +141,14 @@
 
     private async Task PreviewDecisionSupportAsync()
     {
+        // Validate the patient ID here — the Preview button lives outside the EditForm
+        // so normal [Required] validation does not run before this handler is invoked.
+        if (string.IsNullOrWhiteSpace(model.PatientId))
+        {
+            previewError = "Enter a Patient ID before previewing CDS results.";
+            return;
+        }
+
         isPreviewing = true;
         previewError = null;
 

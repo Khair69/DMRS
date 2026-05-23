@@ -12,5 +12,12 @@ namespace DMRS.Api.Domain.Interfaces
         System.Threading.Tasks.Task UpdateAsync<T>(string id, T resource, ISearchIndexer searchIndexer) where T : Resource;
         System.Threading.Tasks.Task DeleteAsync(string resourceType, string id);
         Task<List<T>> SearchAsync<T>(Dictionary<string, string> queryParams) where T : Resource;
+
+        /// <summary>
+        /// Returns the raw database count of matching resources without deserialising them.
+        /// Use this in security-critical paths to detect records silently skipped by SearchAsync
+        /// due to deserialization errors, and fail closed when the counts diverge.
+        /// </summary>
+        Task<int> SearchCountAsync<T>(Dictionary<string, string> queryParams) where T : Resource;
     }
 }
