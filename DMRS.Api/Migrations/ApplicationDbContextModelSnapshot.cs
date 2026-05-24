@@ -22,60 +22,189 @@ namespace DMRS.Api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("DMRS.Api.Domain.DrugMapping", b =>
+            modelBuilder.Entity("DMRS.Api.Domain.ClinicalDecisionSupport.CdsRuleDefinition", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("IngredientRxCui")
+                    b.Property<string>("CardTemplateJson")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("jsonb");
 
-                    b.Property<DateTimeOffset>("LastUpdatedUtc")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("SourceSystem")
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExpressionJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<bool>("HasUnpublishedChanges")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("HookId")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("SourceTerm")
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PublishedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("PublishedVersionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("PublishedVersionNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SourceTerm", "SourceSystem", "IngredientRxCui")
-                        .IsUnique();
+                    b.HasIndex("PublishedVersionId");
 
-                    b.ToTable("DrugMappings");
+                    b.HasIndex("HookId", "Status", "IsActive");
+
+                    b.ToTable("CdsRuleDefinitions");
                 });
 
-            modelBuilder.Entity("DMRS.Api.Domain.DrugMaxDose", b =>
+            modelBuilder.Entity("DMRS.Api.Domain.ClinicalDecisionSupport.CdsRuleVersion", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Display")
+                    b.Property<string>("CardTemplateJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<string>("IngredientRxCui")
+                    b.Property<string>("ExpressionJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("HookId")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTimeOffset>("LastUpdatedUtc")
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("PublishedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<double>("MaxDailyDoseMg")
-                        .HasColumnType("double precision");
+                    b.Property<string>("PublishedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RuleDefinitionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IngredientRxCui")
+                    b.HasIndex("HookId");
+
+                    b.HasIndex("RuleDefinitionId", "VersionNumber")
                         .IsUnique();
 
-                    b.ToTable("DrugMaxDoses");
+                    b.ToTable("CdsRuleVersions");
+                });
+
+            modelBuilder.Entity("DMRS.Api.Domain.ClinicalDecisionSupport.MedicineKnowledgeRecord", b =>
+                {
+                    b.Property<string>("RxCui")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("FetchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IndicationCodesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("IndicationSearchText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("IngredientCodesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("IngredientNamesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("IngredientSearchText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool?>("IsControlled")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("MaxDailyMg")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("MaxSingleMg")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PregnancyCategory")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("WarningThresholdMg")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("RxCui");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("MedicineKnowledgeRecords");
                 });
 
             modelBuilder.Entity("DMRS.Api.Domain.FhirResource", b =>
@@ -157,6 +286,23 @@ namespace DMRS.Api.Migrations
                     b.HasIndex("ResourceType", "SearchParamCode", "Value");
 
                     b.ToTable("ResourceIndices");
+                });
+
+            modelBuilder.Entity("DMRS.Api.Domain.ClinicalDecisionSupport.CdsRuleDefinition", b =>
+                {
+                    b.HasOne("DMRS.Api.Domain.ClinicalDecisionSupport.CdsRuleVersion", null)
+                        .WithMany()
+                        .HasForeignKey("PublishedVersionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("DMRS.Api.Domain.ClinicalDecisionSupport.CdsRuleVersion", b =>
+                {
+                    b.HasOne("DMRS.Api.Domain.ClinicalDecisionSupport.CdsRuleDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("RuleDefinitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

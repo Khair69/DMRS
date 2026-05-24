@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using DMRS.Api.Domain;
+using DMRS.Api.Domain.ClinicalDecisionSupport;
 namespace DMRS.Api.Infrastructure.Persistence
 {
     public class AppDbContext:DbContext
@@ -8,18 +9,18 @@ namespace DMRS.Api.Infrastructure.Persistence
         public DbSet<FhirResource> FhirResources { get; set; }
         public DbSet<FhirResourceVersion> FhirResourceVersions { get; set; }
         public DbSet<ResourceIndex> ResourceIndices { get; set; }
-        public DbSet<DrugMapping> DrugMappings { get; set; }
-        public DbSet<DrugMaxDose> DrugMaxDoses { get; set; }
+        public DbSet<CdsRuleDefinition> CdsRuleDefinitions { get; set; }
+        public DbSet<CdsRuleVersion> CdsRuleVersions { get; set; }
+        public DbSet<MedicineKnowledgeRecord> MedicineKnowledgeRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // 1. FhirResource Configuration
             modelBuilder.Entity<FhirResource>(entity =>
             {
-                entity.HasKey(e => new { e.ResourceType, e.Id }); // Composite Key
+                entity.HasKey(e => new { e.ResourceType, e.Id }); 
                 entity.Property(e => e.LastUpdated).IsRequired();
-                entity.Property(e => e.RawContent).IsRequired(); // In Postgres, map this to JSONB
-                entity.Property(e => e.VersionId).IsConcurrencyToken(); // Optimistic Concurrency
+                entity.Property(e => e.RawContent).IsRequired(); 
+                entity.Property(e => e.VersionId).IsConcurrencyToken();
             });
 
             modelBuilder.Entity<FhirResourceVersion>(entity =>
@@ -29,32 +30,55 @@ namespace DMRS.Api.Infrastructure.Persistence
                 entity.Property(e => e.RawContent).IsRequired();
             });
 
-            // 2. ResourceIndex Configuration
             modelBuilder.Entity<ResourceIndex>(entity =>
             {
                 entity.HasKey(i => i.Id);
 
-                // CRITICAL: Indexes for performance
                 entity.HasIndex(i => new { i.ResourceType, i.SearchParamCode, i.Value });
             });
 
-            modelBuilder.Entity<DrugMapping>(entity =>
+            modelBuilder.Entity<CdsRuleDefinition>(entity =>
             {
-                entity.HasKey(x => x.Id);
-                entity.Property(x => x.SourceTerm).IsRequired();
-                entity.Property(x => x.SourceSystem).IsRequired();
-                entity.Property(x => x.IngredientRxCui).IsRequired();
-                entity.Property(x => x.LastUpdatedUtc).IsRequired();
-                entity.HasIndex(x => new { x.SourceTerm, x.SourceSystem, x.IngredientRxCui }).IsUnique();
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.HookId).IsRequired();
+                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.Status).HasConversion<string>();
+                entity.Property(e => e.ExpressionJson).HasColumnType("jsonb");
+                entity.Property(e => e.CardTemplateJson).HasColumnType("jsonb");
+                entity.HasIndex(e => new { e.HookId, e.Status, e.IsActive });
+
+                entity.HasOne<CdsRuleVersion>()
+                    .WithMany()
+                    .HasForeignKey(e => e.PublishedVersionId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
-            modelBuilder.Entity<DrugMaxDose>(entity =>
+            modelBuilder.Entity<CdsRuleVersion>(entity =>
             {
-                entity.HasKey(x => x.Id);
-                entity.Property(x => x.IngredientRxCui).IsRequired();
-                entity.Property(x => x.MaxDailyDoseMg).IsRequired();
-                entity.Property(x => x.LastUpdatedUtc).IsRequired();
-                entity.HasIndex(x => x.IngredientRxCui).IsUnique();
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.HookId).IsRequired();
+                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.ExpressionJson).HasColumnType("jsonb");
+                entity.Property(e => e.CardTemplateJson).HasColumnType("jsonb");
+                entity.HasIndex(e => new { e.RuleDefinitionId, e.VersionNumber }).IsUnique();
+                entity.HasIndex(e => e.HookId);
+
+                entity.HasOne<CdsRuleDefinition>()
+                    .WithMany()
+                    .HasForeignKey(e => e.RuleDefinitionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<MedicineKnowledgeRecord>(entity =>
+            {
+                entity.HasKey(e => e.RxCui);
+                entity.Property(e => e.RxCui).ValueGeneratedNever();
+                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.IngredientCodesJson).HasColumnType("jsonb");
+                entity.Property(e => e.IngredientNamesJson).HasColumnType("jsonb");
+                entity.Property(e => e.IndicationCodesJson).HasColumnType("jsonb");
+                entity.Property(e => e.Source).IsRequired();
+                entity.HasIndex(e => e.Name);
             });
         }
     }

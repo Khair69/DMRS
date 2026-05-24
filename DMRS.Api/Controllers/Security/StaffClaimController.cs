@@ -47,10 +47,21 @@ public sealed class StaffClaimController : ControllerBase
             return BadRequest("Keycloak user id is required.");
         }
 
-        var practitionerMatches = await _repository.SearchAsync<Practitioner>(new Dictionary<string, string>
+        var inviteParams = new Dictionary<string, string>
         {
             ["identifier"] = $"{InviteCodeIdentifierSystem}|{request.InviteCode.Trim()}"
-        });
+        };
+
+        var practitionerMatches = await _repository.SearchAsync<Practitioner>(inviteParams);
+        var practitionerRawCount = await _repository.SearchCountAsync<Practitioner>(inviteParams);
+
+        // If raw count exceeds deserialized count, one or more records were silently skipped
+        // due to JSON corruption. Fail with a 500 rather than silently treating a valid invite
+        // as missing (which would lock out the practitioner).
+        if (practitionerRawCount != practitionerMatches.Count)
+        {
+            return StatusCode(500, "Invite code lookup encountered a data integrity error. Please contact support.");
+        }
 
         if (practitionerMatches.Count == 0)
         {
@@ -70,10 +81,20 @@ public sealed class StaffClaimController : ControllerBase
 
         // Prevent linking one Keycloak account to multiple practitioners.
         var keycloakIdentifierSystem = BuildKeycloakIdentifierSystem(_configuration["Keycloak:Authority"]);
-        var existingLinked = await _repository.SearchAsync<Practitioner>(new Dictionary<string, string>
+        var linkedParams = new Dictionary<string, string>
         {
             ["identifier"] = $"{keycloakIdentifierSystem}|{request.KeycloakUserId.Trim()}"
-        });
+        };
+
+        var existingLinked = await _repository.SearchAsync<Practitioner>(linkedParams);
+        var existingLinkedRawCount = await _repository.SearchCountAsync<Practitioner>(linkedParams);
+
+        // Fail closed: if any linked record couldn't be deserialized, block the link to prevent
+        // a malformed record from bypassing the one-account-per-practitioner invariant.
+        if (existingLinkedRawCount != existingLinked.Count)
+        {
+            return Conflict("This Keycloak account is already linked to another practitioner.");
+        }
 
         var duplicateLink = existingLinked.Any(p => !string.Equals(p.Id, practitioner.Id, StringComparison.OrdinalIgnoreCase));
         if (duplicateLink)

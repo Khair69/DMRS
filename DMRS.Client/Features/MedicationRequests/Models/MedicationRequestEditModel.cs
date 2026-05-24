@@ -16,6 +16,15 @@ public sealed class MedicationRequestEditModel
     [MaxLength(200)]
     public string MedicationText { get; set; } = string.Empty;
 
+    [MaxLength(40)]
+    public string? MedicationRxCui { get; set; }
+
+    [Range(0.01, 100000)]
+    public decimal? DoseMg { get; set; }
+
+    [Range(1, 24)]
+    public int? FrequencyPerDay { get; set; }
+
     [Required]
     [MaxLength(40)]
     public string Status { get; set; } = "active";
@@ -35,6 +44,9 @@ public sealed class MedicationRequestEditModel
             Id = request.Id,
             PatientId = patientId,
             MedicationText = medicationText,
+            MedicationRxCui = medicationConcept?.Coding.FirstOrDefault()?.Code,
+            DoseMg = ExtractDoseMg(request),
+            FrequencyPerDay = ExtractFrequencyPerDay(request),
             Status = request.Status?.ToString().ToLowerInvariant() ?? "unknown",
             Intent = request.Intent?.ToString().ToLowerInvariant() ?? "order"
         };
@@ -49,7 +61,7 @@ public sealed class MedicationRequestEditModel
             Intent = ParseIntent(Intent),
             Medication = new CodeableReference
             {
-                Concept = new CodeableConcept { Text = MedicationText }
+                Concept = BuildMedicationConcept()
             }
         };
 
@@ -59,7 +71,78 @@ public sealed class MedicationRequestEditModel
             request.Subject = new ResourceReference(subjectRef);
         }
 
+        if (DoseMg.HasValue || FrequencyPerDay.HasValue)
+        {
+            request.DosageInstruction.Add(BuildDosageInstruction());
+        }
+
         return request;
+    }
+
+    private CodeableConcept BuildMedicationConcept()
+    {
+        var concept = new CodeableConcept { Text = MedicationText };
+        if (!string.IsNullOrWhiteSpace(MedicationRxCui))
+        {
+            concept.Coding.Add(new Coding(
+                "http://www.nlm.nih.gov/research/umls/rxnorm",
+                MedicationRxCui.Trim(),
+                MedicationText));
+        }
+
+        return concept;
+    }
+
+    private Dosage BuildDosageInstruction()
+    {
+        var dosage = new Dosage();
+
+        if (DoseMg.HasValue)
+        {
+            dosage.DoseAndRate.Add(new Dosage.DoseAndRateComponent
+            {
+                Dose = new Quantity
+                {
+                    Value = DoseMg.Value,
+                    Unit = "mg",
+                    System = "http://unitsofmeasure.org",
+                    Code = "mg"
+                }
+            });
+        }
+
+        if (FrequencyPerDay.HasValue)
+        {
+            dosage.Timing = new Timing
+            {
+                Repeat = new Timing.RepeatComponent
+                {
+                    Frequency = FrequencyPerDay.Value,
+                    Period = 1,
+                    PeriodUnit = Timing.UnitsOfTime.D
+                }
+            };
+        }
+
+        return dosage;
+    }
+
+    private static decimal? ExtractDoseMg(MedicationRequest request)
+    {
+        return request.DosageInstruction
+            .SelectMany(d => d.DoseAndRate)
+            .Select(d => d.Dose as Quantity)
+            .FirstOrDefault(q => string.Equals(q?.Code, "mg", StringComparison.OrdinalIgnoreCase) || string.Equals(q?.Unit, "mg", StringComparison.OrdinalIgnoreCase))
+            ?.Value;
+    }
+
+    private static int? ExtractFrequencyPerDay(MedicationRequest request)
+    {
+        // Explicitly exclude 0: Frequency=0 is invalid FHIR but can exist in persisted data.
+        // A null check alone would return 0, which fails [Range(1, 24)] validation on load.
+        return request.DosageInstruction
+            .Select(d => d.Timing?.Repeat?.Frequency)
+            .FirstOrDefault(f => f is not null and > 0);
     }
 
     private static MedicationRequest.MedicationrequestStatus ParseStatus(string? value)

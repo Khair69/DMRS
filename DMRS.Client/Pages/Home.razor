@@ -1,7 +1,196 @@
-﻿@page "/"
+@page "/"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Dashboard.Models
+@inject DMRS.Client.Features.Dashboard.Services.DashboardFeatureService DashboardService
 
-<PageTitle>Home</PageTitle>
+<PageTitle>DMRS Workspace</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="workspace-hero">
+    <div>
+        <span class="workspace-eyebrow">Digital Medical Records System</span>
+        <h1>Clinical Workspace</h1>
+        <p>One operational view for patient flow, medication safety, and predictive insights.</p>
+    </div>
+    <div class="workspace-hero__actions">
+        <a class="btn btn-light" href="/patients/create">Register Patient</a>
+        <a class="btn btn-outline-light" href="/cds/admin">Open CDS Admin</a>
+    </div>
+</div>
 
-Welcome to your new app.
+@if (isLoading)
+{
+    <div class="dmrs-loading-shell">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else
+{
+    <section class="dmrs-metrics-grid">
+        @foreach (var metric in snapshot.Metrics)
+        {
+            <a class="dmrs-metric-card @metric.AccentClass" href="@metric.Href">
+                <div class="dmrs-metric-card__label">@metric.Label</div>
+                <div class="dmrs-metric-card__value">@metric.Value</div>
+                <div class="dmrs-metric-card__helper">@metric.Helper</div>
+            </a>
+        }
+    </section>
+
+    <section class="row g-4 mt-1">
+        <div class="col-12 col-xl-7">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Predictive Watchlist</div>
+                        <div class="dmrs-panel__subtitle">Patients surfaced by the AI high-utilization model.</div>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" href="/ai-insights">All AI Insights</a>
+                </div>
+                <div class="dmrs-list">
+                    @if (snapshot.HighRiskPatients.Count == 0)
+                    {
+                        <div class="dmrs-empty-state">No assessable patients yet. Import sample patients with birth date and gender to activate the risk panel.</div>
+                    }
+                    else
+                    {
+                        @foreach (var patient in snapshot.HighRiskPatients)
+                        {
+                            <a class="dmrs-list-item" href="@patient.Href">
+                                <div>
+                                    <div class="dmrs-list-item__title">@patient.DisplayName</div>
+                                    <div class="dmrs-list-item__subtitle">@patient.Summary</div>
+                                </div>
+                                <span class="dmrs-pill @RiskLevelPillClass(patient.RiskLevel)">
+                                    @patient.RiskLevel
+                                </span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-5">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">CDS Status</div>
+                        <div class="dmrs-panel__subtitle">Rule authoring and governance snapshot.</div>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" href="/cds/admin">Manage Rules</a>
+                </div>
+                <div class="dmrs-stack">
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Live Rules</div>
+                        <p>@snapshot.ActiveRuleCount active CDS rules are ready to participate in medication decision support.</p>
+                    </div>
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Draft Changes</div>
+                        <p>@snapshot.DraftRuleCount rule drafts currently have unpublished edits that still need review.</p>
+                    </div>
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Demo Story</div>
+                        <p>Use the patient chart and medication request flow to show allergy checks, dose warnings, and AI-assisted prioritization together.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="row g-4 mt-1">
+        <div class="col-12 col-xl-6">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Upcoming Appointments</div>
+                        <div class="dmrs-panel__subtitle">The next scheduled patient touchpoints.</div>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" href="/appointments">Appointments</a>
+                </div>
+                <div class="dmrs-list">
+                    @if (snapshot.UpcomingAppointments.Count == 0)
+                    {
+                        <div class="dmrs-empty-state">No upcoming appointments are available yet.</div>
+                    }
+                    else
+                    {
+                        @foreach (var item in snapshot.UpcomingAppointments)
+                        {
+                            <a class="dmrs-list-item" href="@item.Href">
+                                <div>
+                                    <div class="dmrs-list-item__title">@item.Title</div>
+                                    <div class="dmrs-list-item__subtitle">@item.Subtitle</div>
+                                </div>
+                                <span class="dmrs-list-item__meta">@item.Meta</span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Recent Medication Activity</div>
+                        <div class="dmrs-panel__subtitle">Prescribing activity and CDS entry points.</div>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" href="/medication-requests">Medication Requests</a>
+                </div>
+                <div class="dmrs-list">
+                    @if (snapshot.RecentMedicationRequests.Count == 0)
+                    {
+                        <div class="dmrs-empty-state">No medication requests are available yet.</div>
+                    }
+                    else
+                    {
+                        @foreach (var item in snapshot.RecentMedicationRequests)
+                        {
+                            <a class="dmrs-list-item" href="@item.Href">
+                                <div>
+                                    <div class="dmrs-list-item__title">@item.Title</div>
+                                    <div class="dmrs-list-item__subtitle">@item.Subtitle</div>
+                                </div>
+                                <span class="dmrs-list-item__meta">@item.Meta</span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private DashboardSnapshotModel snapshot = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            snapshot = await DashboardService.GetSnapshotAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load the workspace dashboard: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static string RiskLevelPillClass(string riskLevel) => riskLevel switch
+    {
+        "High"   => "dmrs-pill--danger",
+        "Medium" => "dmrs-pill--warning",
+        _        => "dmrs-pill--neutral"
+    };
+}

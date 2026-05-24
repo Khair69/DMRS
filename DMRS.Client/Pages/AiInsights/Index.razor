@@ -1,0 +1,187 @@
+@page "/ai-insights"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Dashboard.Models
+@inject DMRS.Client.Features.Dashboard.Services.DashboardFeatureService DashboardService
+
+<PageTitle>AI Insights</PageTitle>
+
+<div class="workspace-hero workspace-hero--ai">
+    <div>
+        <span class="workspace-eyebrow">Predictive Layer</span>
+        <h1>AI Insights</h1>
+        <p>Clinical composite risk scores built from the ONNX model plus real patient data — conditions, medications, and encounter frequency.</p>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="dmrs-loading-shell">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else
+{
+    <!-- Risk distribution summary row -->
+    <div class="dmrs-metrics-grid dmrs-metrics-grid--compact mb-4">
+        <div class="dmrs-metric-card metric-rose">
+            <div class="dmrs-metric-card__label">High Risk</div>
+            <div class="dmrs-metric-card__value">@snapshot.HighRiskPatients.Count(p => p.RiskLevel == "High")</div>
+            <div class="dmrs-metric-card__helper">Composite score ≥ 65%</div>
+        </div>
+        <div class="dmrs-metric-card metric-gold">
+            <div class="dmrs-metric-card__label">Medium Risk</div>
+            <div class="dmrs-metric-card__value">@snapshot.HighRiskPatients.Count(p => p.RiskLevel == "Medium")</div>
+            <div class="dmrs-metric-card__helper">Composite score 35–65%</div>
+        </div>
+        <div class="dmrs-metric-card metric-emerald">
+            <div class="dmrs-metric-card__label">Low Risk</div>
+            <div class="dmrs-metric-card__value">@snapshot.HighRiskPatients.Count(p => p.RiskLevel == "Low")</div>
+            <div class="dmrs-metric-card__helper">Composite score &lt; 35%</div>
+        </div>
+        <div class="dmrs-metric-card metric-ocean">
+            <div class="dmrs-metric-card__label">With Chronic Conditions</div>
+            <div class="dmrs-metric-card__value">@snapshot.HighRiskPatients.Count(p => p.HasChronicConditions)</div>
+            <div class="dmrs-metric-card__helper">Detected chronic illness</div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-8">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Patient Risk Watchlist</div>
+                        <div class="dmrs-panel__subtitle">Ranked by composite score — ONNX model output enriched with clinical data.</div>
+                    </div>
+                </div>
+
+                @if (snapshot.HighRiskPatients.Count == 0)
+                {
+                    <div class="dmrs-empty-state">No assessable patients yet. Import sample patients with birth date and gender to activate the risk panel.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Risk Level</th>
+                                    <th>Score</th>
+                                    <th>Conditions</th>
+                                    <th>Active Meds</th>
+                                    <th>Recent Visits</th>
+                                    <th>Top Factors</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in snapshot.HighRiskPatients)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a href="@p.Href" class="fw-semibold text-decoration-none">@p.DisplayName</a>
+                                        </td>
+                                        <td>
+                                            <span class="dmrs-pill @RiskLevelClass(p.RiskLevel)">@p.RiskLevel</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="progress flex-grow-1" style="height:6px; min-width:60px">
+                                                    <div class="progress-bar @RiskBarClass(p.RiskLevel)"
+                                                         style="@($"width:{(p.CompositeScore * 100).ToString("0")}%")"></div>
+                                                </div>
+                                                <small class="text-muted">@((p.CompositeScore * 100).ToString("0"))%</small>
+                                            </div>
+                                        </td>
+                                        <td>@p.ConditionCount</td>
+                                        <td>@p.MedicationCount</td>
+                                        <td>@p.RecentEncounterCount</td>
+                                        <td>
+                                            <small class="text-muted">@(p.TopRiskFactors?.FirstOrDefault() ?? "—")</small>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">How Scoring Works</div>
+                        <div class="dmrs-panel__subtitle">Composite model architecture</div>
+                    </div>
+                </div>
+                <div class="dmrs-stack">
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">ONNX Base Score</div>
+                        <p>Age and gender fed into the trained high-utilization predictor. Provides the demographic baseline probability.</p>
+                    </div>
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Clinical Signal Boosts</div>
+                        <p class="mb-1">The following signals add to the composite score:</p>
+                        <ul class="mb-0 small">
+                            <li>Chronic condition detected <strong>+18%</strong></li>
+                            <li>Polypharmacy (5+ active meds) <strong>+12%</strong></li>
+                            <li>High encounter frequency (4+) <strong>+12%</strong></li>
+                            <li>Multiple conditions (3+) <strong>+6%</strong></li>
+                            <li>Age ≥ 65 <strong>+8%</strong></li>
+                        </ul>
+                    </div>
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Risk Tiers</div>
+                        <ul class="mb-0 small">
+                            <li><strong>High</strong> — composite ≥ 65%</li>
+                            <li><strong>Medium</strong> — 35%–65%</li>
+                            <li><strong>Low</strong> — below 35%</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private DashboardSnapshotModel snapshot = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            snapshot = await DashboardService.GetSnapshotAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load AI insights: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static string RiskLevelClass(string riskLevel) => riskLevel switch
+    {
+        "High"   => "dmrs-pill--danger",
+        "Medium" => "dmrs-pill--warning",
+        _        => "dmrs-pill--neutral"
+    };
+
+    private static string RiskBarClass(string riskLevel) => riskLevel switch
+    {
+        "High"   => "bg-danger",
+        "Medium" => "bg-warning",
+        _        => "bg-success"
+    };
+}

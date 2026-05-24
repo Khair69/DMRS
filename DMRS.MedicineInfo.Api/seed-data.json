@@ -1,0 +1,210 @@
+﻿[
+  {
+    "rxCui": "161",
+    "name": "Acetaminophen (Tylenol)",
+    "dosing": {
+      "maxDailyMg": 4000,
+      "maxSingleMg": 1000,
+      "warningThreshold": 3000
+    },
+    "safety": {
+      "pregnancyCategory": "B",
+      "isControlled": false
+    },
+    "ingredients": [
+      {
+        "code": "UNII-L960UP28W1",
+        "name": "Acetaminophen"
+      }
+    ],
+    "indications": [ "ICD10-R50.9", "ICD10-M79.1" ]
+  },
+  {
+    "rxCui": "5640",
+    "name": "Ibuprofen (Advil)",
+    "dosing": {
+      "maxDailyMg": 3200,
+      "maxSingleMg": 800,
+      "warningThreshold": 2400
+    },
+    "safety": {
+      "pregnancyCategory": "C",
+      "isControlled": false
+    },
+    "ingredients": [
+      {
+        "code": "UNII-WK2XYI10QM",
+        "name": "Ibuprofen"
+      }
+    ],
+    "indications": [ "ICD10-M25.5", "ICD10-R51.9" ]
+  },
+  {
+    "rxCui": "723",
+    "name": "Amoxicillin",
+    "dosing": {
+      "maxDailyMg": 3000,
+      "maxSingleMg": 1000,
+      "warningThreshold": 2000
+    },
+    "safety": {
+      "pregnancyCategory": "B",
+      "isControlled": false
+    },
+    "ingredients": [
+      {
+        "code": "UNII-804826J2HU",
+        "name": "Amoxicillin"
+      }
+    ],
+    "indications": [ "ICD10-J01.9", "ICD10-A54.9" ]
+  },
+  {
+    "rxCui": "214182",
+    "name": "Percocet (Oxycodone/Acetaminophen)",
+    "dosing": {
+      "maxDailyMg": 4000,
+      "maxSingleMg": 1000,
+      "warningThreshold": 2500
+    },
+    "safety": {
+      "pregnancyCategory": "C",
+      "isControlled": true
+    },
+    "ingredients": [
+      {
+        "code": "UNII-CDH51W4452",
+        "name": "Oxycodone"
+      },
+      {
+        "code": "UNII-L960UP28W1",
+        "name": "Acetaminophen"
+      }
+    ],
+    "indications": [ "ICD10-G89.2", "ICD10-M54.5" ]
+  },
+  {
+    "rxCui": "29046",
+    "name": "Lisinopril (Zestril)",
+    "dosing": {
+      "maxDailyMg": 80,
+      "maxSingleMg": 40,
+      "warningThreshold": 40
+    },
+    "safety": {
+      "pregnancyCategory": "D",
+      "isControlled": false
+    },
+    "ingredients": [
+      {
+        "code": "UNII-E7QM0DX79F",
+        "name": "Lisinopril"
+      }
+    ],
+    "indications": [ "ICD10-I10", "ICD10-I50.9" ]
+  },
+  {
+    "rxCui": "83367",
+    "name": "Atorvastatin (Lipitor)",
+    "dosing": {
+      "maxDailyMg": 80,
+      "maxSingleMg": 80,
+      "warningThreshold": 40
+    },
+    "safety": {
+      "pregnancyCategory": "X",
+      "isControlled": false
+    },
+    "ingredients": [
+      {
+        "code": "UNII-A0H25606NV",
+        "name": "Atorvastatin"
+      }
+    ],
+    "indications": [ "ICD10-E78.0", "ICD10-I25.1" ]
+  },
+  {
+    "rxCui": "6809",
+    "name": "Metformin",
+    "dosing": {
+      "maxDailyMg": 2550,
+      "maxSingleMg": 1000,
+      "warningThreshold": 2000
+    },
+    "safety": {
+      "pregnancyCategory": "B",
+      "isControlled": false
+    },
+    "ingredients": [
+      {
+        "code": "UNII-9100L32L2X",
+        "name": "Metformin"
+      }
+    ],
+    "indications": [ "ICD10-E11.9" ]
+  },
+  {
+    "rxCui": "211516",
+    "name": "Augmentin (Amoxicillin/Clavulanate)",
+    "dosing": {
+      "maxDailyMg": 4000,
+      "maxSingleMg": 2000,
+      "warningThreshold": 2000
+    },
+    "safety": {
+      "pregnancyCategory": "B",
+      "isControlled": false
+    },
+    "ingredients": [
+      {
+        "code": "UNII-804826J2HU",
+        "name": "Amoxicillin"
+      },
+      {
+        "code": "UNII-O63896NA07",
+        "name": "Clavulanic Acid"
+      }
+    ],
+    "indications": [ "ICD10-J18.9", "ICD10-N39.0" ]
+  },
+  {
+    "rxCui": "8640",
+    "name": "Prednisone",
+    "dosing": {
+      "maxDailyMg": 80,
+      "maxSingleMg": 60,
+      "warningThreshold": 40
+    },
+    "safety": {
+      "pregnancyCategory": "C",
+      "isControlled": false
+    },
+    "ingredients": [
+      {
+        "code": "UNII-VB0R961HZT",
+        "name": "Prednisone"
+      }
+    ],
+    "indications": [ "ICD10-M06.9", "ICD10-J45.909" ]
+  },
+  {
+    "rxCui": "25480",
+    "name": "Gabapentin (Neurontin)",
+    "dosing": {
+      "maxDailyMg": 3600,
+      "maxSingleMg": 1200,
+      "warningThreshold": 1800
+    },
+    "safety": {
+      "pregnancyCategory": "C",
+      "isControlled": false
+    },
+    "ingredients": [
+      {
+        "code": "UNII-6CW7F3G59X",
+        "name": "Gabapentin"
+      }
+    ],
+    "indications": [ "ICD10-G50.0", "ICD10-G40.909" ]
+  }
+]

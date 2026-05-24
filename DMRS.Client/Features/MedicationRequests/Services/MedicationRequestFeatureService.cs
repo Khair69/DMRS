@@ -17,7 +17,7 @@ public sealed class MedicationRequestFeatureService : FhirFeatureServiceBase<Med
     {
         var patientId = FhirReferenceHelper.ExtractReferenceId(request.Subject?.Reference, "patient") ?? "(unknown)";
         var medicationConcept = request.Medication?.Concept;
-        var medicationText = medicationConcept?.Text ?? medicationConcept?.Coding.FirstOrDefault()?.Code ?? "(no-med)";
+        var medicationText = medicationConcept?.Text ?? medicationConcept?.Coding.FirstOrDefault()?.Display ?? medicationConcept?.Coding.FirstOrDefault()?.Code ?? "(no-med)";
 
         return new MedicationRequestSummaryViewModel(
             request.Id ?? "(no-id)",

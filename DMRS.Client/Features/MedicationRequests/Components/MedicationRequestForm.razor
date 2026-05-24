@@ -15,6 +15,21 @@
             <ValidationMessage For="() => Model.MedicationText" />
         </div>
         <div class="col-md-4">
+            <label class="form-label">Medication RxCUI</label>
+            <InputText @bind-Value="Model.MedicationRxCui" class="form-control" />
+            <div class="form-text">Use a mock medicine code like <code>161</code> or <code>5640</code> for CDS demos.</div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Dose (mg)</label>
+            <InputNumber @bind-Value="Model.DoseMg" class="form-control" />
+            <ValidationMessage For="() => Model.DoseMg" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Frequency Per Day</label>
+            <InputNumber @bind-Value="Model.FrequencyPerDay" class="form-control" />
+            <ValidationMessage For="() => Model.FrequencyPerDay" />
+        </div>
+        <div class="col-md-4">
             <label class="form-label">Status</label>
             <InputSelect @bind-Value="Model.Status" class="form-select">
                 <option value="active">Active</option>

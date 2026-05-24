@@ -1,22 +1,110 @@
 @page "/medication-requests/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.MedicationRequests.Models
 @inject DMRS.Client.Features.MedicationRequests.Services.MedicationRequestFeatureService MedicationService
+@inject DMRS.Client.Features.MedicationRequests.Services.MedicationDecisionSupportService DecisionSupportService
 
 <PageTitle>Medication Request Details</PageTitle>
 
-<h1>Medication Request Details</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
+@if (isLoading)
+{
+    <div class="dmrs-loading-shell">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
+else if (request is not null)
+{
+    <div class="workspace-hero workspace-hero--patient">
+        <div>
+            <span class="workspace-eyebrow">Medication Workflow</span>
+            <h1>@DisplayMedicationName</h1>
+            <p>Patient @PatientIdDisplay | @request.Status | @request.Intent</p>
+        </div>
+        <div class="workspace-hero__actions">
+            <NavLink class="btn btn-light" href="@($"/medication-requests/{Id}/edit")">Edit</NavLink>
+            <NavLink class="btn btn-outline-light" href="@($"/medication-requests/{Id}/history")">History</NavLink>
+        </div>
+    </div>
 
-<div class="mb-3">
-    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/medication-requests/{Id}/edit")">Edit</NavLink>
-    <NavLink class="btn btn-sm btn-outline-info" href="@($"/medication-requests/{Id}/history")">History</NavLink>
-</div>
+    <div class="row g-4">
+        <div class="col-12 col-xl-7">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Medication Request Payload</div>
+                        <div class="dmrs-panel__subtitle">The underlying FHIR resource for this order.</div>
+                    </div>
+                </div>
+                <FhirJsonView Resource="request" />
+            </div>
+        </div>
 
-<FhirJsonView Resource="request" />
+        <div class="col-12 col-xl-5">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Clinical Decision Snapshot</div>
+                        <div class="dmrs-panel__subtitle">Knowledge resolution plus live CDS hook evaluation for this request.</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="RefreshSnapshotAsync" disabled="@isRefreshing">
+                        @(isRefreshing ? "Refreshing..." : "Refresh")
+                    </button>
+                </div>
+
+                @if (isRefreshing)
+                {
+                    <div class="dmrs-loading-shell">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                }
+                else if (!string.IsNullOrWhiteSpace(snapshotError))
+                {
+                    <div class="alert alert-danger">@snapshotError</div>
+                }
+                else if (snapshot is not null)
+                {
+                    <div class="dmrs-stack">
+                        <div class="dmrs-note-card">
+                            <div class="dmrs-note-card__title">Medicine Knowledge</div>
+                            @if (snapshot.Medicine is null)
+                            {
+                                <p class="mb-0">No medicine knowledge record was resolved for this request.</p>
+                            }
+                            else
+                            {
+                                <p class="mb-1"><strong>@snapshot.Medicine.Name</strong> (RxCUI @snapshot.Medicine.RxCui)</p>
+                                <p class="mb-1">Max daily dose: @(snapshot.Medicine.MaxDailyMg?.ToString("0.##") ?? "n/a") mg</p>
+                                <p class="mb-0">Ingredients: @string.Join(", ", snapshot.Medicine.Ingredients.Select(i => i.Name))</p>
+                            }
+                        </div>
+
+                        <div class="dmrs-note-card">
+                            <div class="dmrs-note-card__title">Triggered CDS Cards</div>
+                            @if (snapshot.HookResponse?.Cards.Count > 0)
+                            {
+                                @foreach (var card in snapshot.HookResponse.Cards)
+                                {
+                                    <div class="dmrs-mini-row">
+                                        <div class="dmrs-mini-row__title">@card.Summary</div>
+                                        <div class="dmrs-mini-row__meta">@card.Detail</div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="mb-0">No CDS cards were triggered for this request.</p>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     [Parameter]
@@ -24,21 +112,74 @@
 
     private Hl7.Fhir.Model.MedicationRequest? request;
     private string? errorMessage;
+    private string? snapshotError;
+    private bool isLoading = true;
+    private bool isRefreshing;
+    private MedicationDecisionSupportSnapshotModel? snapshot;
+
+    private string PatientIdDisplay
+        => DMRS.Client.Services.FhirReferenceHelper.ExtractReferenceId(request?.Subject?.Reference, "patient") ?? "unknown";
+
+    private string DisplayMedicationName
+        => request?.Medication?.Concept?.Text
+            ?? request?.Medication?.Concept?.Coding.FirstOrDefault()?.Display
+            ?? request?.Medication?.Concept?.Coding.FirstOrDefault()?.Code
+            ?? "Medication Request";
 
     protected override async Task OnParametersSetAsync()
     {
+        isLoading = true;
         errorMessage = null;
+        request = null;
+        snapshot = null;
         try
         {
             request = await MedicationService.GetAsync(Id);
             if (request is null)
             {
                 errorMessage = $"Medication request {Id} not found.";
+                return;
             }
+
+            await RefreshSnapshotAsync();
         }
         catch (Exception ex)
         {
             errorMessage = $"Failed to load medication request: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RefreshSnapshotAsync()
+    {
+        if (request is null)
+        {
+            return;
+        }
+
+        var patientId = PatientIdDisplay;
+        if (string.IsNullOrWhiteSpace(patientId) || patientId == "unknown")
+        {
+            snapshotError = "Cannot evaluate CDS: this medication request has no resolvable patient reference.";
+            return;
+        }
+
+        isRefreshing = true;
+        snapshotError = null;
+        try
+        {
+            snapshot = await DecisionSupportService.GetSnapshotAsync(request, patientId);
+        }
+        catch (Exception ex)
+        {
+            snapshotError = $"Unable to refresh medication decision support: {ex.Message}";
+        }
+        finally
+        {
+            isRefreshing = false;
         }
     }
 }
