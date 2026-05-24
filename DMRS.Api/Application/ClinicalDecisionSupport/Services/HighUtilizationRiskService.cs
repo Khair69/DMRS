@@ -104,17 +104,12 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             var (label, probability) = ParseOutputs(results);
             var modelProbability = probability ?? (label == true ? 1f : 0f);
 
-            // Fetch clinical data in parallel for composite scoring
+            // Fetch clinical data sequentially — EF Core's scoped DbContext does not support
+            // concurrent async operations on the same instance, so Task.WhenAll is not safe here.
             var patientRef = $"Patient/{normalizedPatientId}";
-            var conditionsTask = _fhirRepository.SearchAsync<Condition>(new Dictionary<string, string> { ["patient"] = patientRef });
-            var medicationsTask = _fhirRepository.SearchAsync<MedicationRequest>(new Dictionary<string, string> { ["patient"] = patientRef });
-            var encountersTask = _fhirRepository.SearchAsync<Encounter>(new Dictionary<string, string> { ["patient"] = patientRef });
-
-            await System.Threading.Tasks.Task.WhenAll(conditionsTask, medicationsTask, encountersTask);
-
-            var conditions = conditionsTask.Result;
-            var medications = medicationsTask.Result;
-            var encounters = encountersTask.Result;
+            var conditions = await _fhirRepository.SearchAsync<Condition>(new Dictionary<string, string> { ["patient"] = patientRef });
+            var medications = await _fhirRepository.SearchAsync<MedicationRequest>(new Dictionary<string, string> { ["patient"] = patientRef });
+            var encounters = await _fhirRepository.SearchAsync<Encounter>(new Dictionary<string, string> { ["patient"] = patientRef });
 
             var conditionCount = conditions.Count;
             var medicationCount = medications.Count(m =>
