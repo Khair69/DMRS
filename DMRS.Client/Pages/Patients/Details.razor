@@ -2,10 +2,13 @@
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
 @inject DMRS.Client.Features.Patients.Services.PatientChartFeatureService PatientChartService
+@inject DMRS.Client.Features.Documents.Services.PatientDocumentFeatureService DocumentService
 @inject IConfiguration Configuration
 @inject NavigationManager NavigationManager
 @using DMRS.Client.Features.Dashboard.Models
+@using DMRS.Client.Features.Documents.Models
 @using DMRS.Client.Features.Patients.Models
+@using Microsoft.AspNetCore.Components.Forms
 
 <PageTitle>Patient Details</PageTitle>
 
@@ -28,10 +31,10 @@ else
             <p>@DisplayPatientDemographics</p>
         </div>
         <div class="workspace-hero__actions">
-            @if (riskAssessment is not null)
+            @if (riskAssessment is not null && riskAssessment.FeaturesComplete)
             {
-                <span class="dmrs-pill @(riskAssessment.IsHighRisk ? "dmrs-pill--danger" : "dmrs-pill--neutral")">
-                    @(riskAssessment.IsHighRisk ? "AI: High Utilization Risk" : "AI: Standard Risk")
+                <span class="dmrs-pill @RiskLevelPillClass(riskAssessment.RiskLevel)">
+                    AI Risk: @riskAssessment.RiskLevel
                 </span>
             }
             <a class="btn btn-light" href="@($"/patients/{Id}/edit")">Edit Patient</a>
@@ -211,43 +214,126 @@ else
                 </div>
                 <div class="dmrs-stack">
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">High-Utilization Risk</div>
+                        <div class="dmrs-note-card__title">Composite Risk Score</div>
                         @if (riskAssessment is null)
                         {
-                            <p>No risk assessment is available for this patient yet.</p>
+                            <p>No risk assessment available for this patient yet.</p>
                         }
                         else if (!riskAssessment.FeaturesComplete)
                         {
-                            <p>The model could not fully assess risk because birth date or gender is missing.</p>
+                            <p>Could not fully assess risk — birth date or gender is missing.</p>
                         }
                         else
                         {
-                            <p>
-                                This patient is currently marked as
-                                <strong>@(riskAssessment.IsHighRisk ? "high risk" : "standard risk")</strong>
-                                for high utilization.
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="progress flex-grow-1" style="height:8px">
+                                    <div class="progress-bar @RiskBarClass(riskAssessment.RiskLevel)"
+                                         style="@($"width:{(riskAssessment.CompositeScore * 100).ToString("0")}%")"></div>
+                                </div>
+                                <strong>@((riskAssessment.CompositeScore * 100).ToString("0"))%</strong>
+                            </div>
+                            <p class="mb-1">
+                                Risk level: <strong>@riskAssessment.RiskLevel</strong>
+                                @if (riskAssessment.HasChronicConditions)
+                                {
+                                    <span class="badge text-bg-warning ms-1">Chronic</span>
+                                }
                             </p>
-                            <p class="mb-0">Probability: @(riskAssessment.Probability.HasValue ? $"{riskAssessment.Probability:P0}" : "n/a")</p>
+                            @if (riskAssessment.TopRiskFactors.Count > 0)
+                            {
+                                <div class="small text-muted mb-0">
+                                    <div class="fw-semibold mb-1">Contributing factors:</div>
+                                    <ul class="mb-0 ps-3">
+                                        @foreach (var factor in riskAssessment.TopRiskFactors)
+                                        {
+                                            <li>@factor</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
                         }
                     </div>
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Recommended Demo Moves</div>
-                        <p class="mb-2">Use this chart as the starting point for your demo:</p>
-                        <ul class="mb-0">
-                            <li>Open medication requests and show CDS warnings.</li>
-                            <li>Use the AI risk label to explain proactive care prioritization.</li>
-                            <li>Walk through allergies, conditions, and encounters from one page.</li>
-                        </ul>
+                        <div class="dmrs-note-card__title">Clinical Data Points</div>
+                        @if (riskAssessment?.FeaturesComplete == true)
+                        {
+                            <ul class="mb-0 small">
+                                <li>@riskAssessment.ConditionCount condition(s) on record</li>
+                                <li>@riskAssessment.MedicationCount active medication(s)</li>
+                                <li>@riskAssessment.RecentEncounterCount recent visit(s)</li>
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="mb-0">Clinical data not yet evaluated.</p>
+                        }
                     </div>
                     <div class="dmrs-note-card">
                         <div class="dmrs-note-card__title">Quick Links</div>
                         <div class="d-grid gap-2">
-                            <a class="btn btn-outline-primary" href="/medication-requests">Medication Requests</a>
+                            <a class="btn btn-outline-primary" href="/medication-requests/new?patient=@Id">New Medication Request</a>
+                            <a class="btn btn-outline-primary" href="/conditions/new?patient=@Id">Add Condition</a>
                             <a class="btn btn-outline-primary" href="/ai-insights">AI Insights</a>
-                            <a class="btn btn-outline-primary" href="/cds/admin">CDS Admin</a>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Documents Panel -->
+            <div class="dmrs-panel mt-4">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Patient Documents</div>
+                        <div class="dmrs-panel__subtitle">Upload reports, referrals, or any clinical file.</div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(uploadError))
+                {
+                    <div class="alert alert-danger py-2 small">@uploadError</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(uploadSuccess))
+                {
+                    <div class="alert alert-success py-2 small">@uploadSuccess</div>
+                }
+
+                <InputFile id="docUpload" OnChange="HandleFileUpload" accept="*/*" class="d-none" />
+                <label for="docUpload" class="btn btn-outline-primary btn-sm w-100 mb-3 @(isUploading ? "disabled" : "")">
+                    @(isUploading ? "Uploading…" : "Upload Document")
+                </label>
+
+                @if (isLoadingDocuments)
+                {
+                    <div class="text-muted small text-center py-2">Loading documents…</div>
+                }
+                else if (documents.Count == 0)
+                {
+                    <div class="dmrs-empty-state dmrs-empty-state--inline">No documents uploaded yet.</div>
+                }
+                else
+                {
+                    <div class="dmrs-stack">
+                        @foreach (var doc in documents)
+                        {
+                            <div class="dmrs-note-card d-flex justify-content-between align-items-start gap-2">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="fw-semibold text-truncate" title="@doc.FileName">
+                                        @doc.FileIcon @doc.FileName
+                                    </div>
+                                    <div class="small text-muted">@doc.SizeDisplay · @doc.UploadedAt.ToLocalTime().ToString("dd MMM yyyy")</div>
+                                </div>
+                                <div class="d-flex gap-1 flex-shrink-0">
+                                    <a href="@DocumentService.GetDownloadUrl(Id, doc.Id)"
+                                       target="_blank"
+                                       class="btn btn-sm btn-outline-primary">↓</a>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => DeleteDocumentAsync(doc.Id)"
+                                            disabled="@isDeletingDocument">✕</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
             </div>
 
             <div class="card mt-4">
@@ -316,6 +402,14 @@ else
     private int medicationCount;
     private int encounterCount;
 
+    // Documents
+    private List<PatientDocumentModel> documents = [];
+    private bool isLoadingDocuments;
+    private bool isUploading;
+    private bool isDeletingDocument;
+    private string? uploadError;
+    private string? uploadSuccess;
+
     private string DisplayPatientName
     {
         get
@@ -342,7 +436,11 @@ else
 
         try
         {
-            chart = await PatientChartService.GetSnapshotAsync(Id);
+            var chartTask = PatientChartService.GetSnapshotAsync(Id);
+            var docsTask = LoadDocumentsAsync();
+            await System.Threading.Tasks.Task.WhenAll(chartTask, docsTask);
+
+            chart = chartTask.Result;
             patient = chart?.Patient;
             riskAssessment = chart?.Risk;
 
@@ -367,6 +465,69 @@ else
         finally
         {
             isBusy = false;
+        }
+    }
+
+    private async System.Threading.Tasks.Task LoadDocumentsAsync()
+    {
+        isLoadingDocuments = true;
+        try
+        {
+            documents = (await DocumentService.ListAsync(Id)).ToList();
+        }
+        catch
+        {
+            // Non-fatal: documents panel simply stays empty
+        }
+        finally
+        {
+            isLoadingDocuments = false;
+        }
+    }
+
+    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null) return;
+
+        isUploading = true;
+        uploadError = null;
+        uploadSuccess = null;
+
+        try
+        {
+            var uploaded = await DocumentService.UploadAsync(Id, file);
+            if (uploaded is not null)
+            {
+                documents.Insert(0, uploaded);
+                uploadSuccess = $"'{file.Name}' uploaded successfully.";
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadError = $"Upload failed: {ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private async Task DeleteDocumentAsync(string documentId)
+    {
+        isDeletingDocument = true;
+        try
+        {
+            await DocumentService.DeleteAsync(Id, documentId);
+            documents.RemoveAll(d => d.Id == documentId);
+        }
+        catch (Exception ex)
+        {
+            uploadError = $"Delete failed: {ex.Message}";
+        }
+        finally
+        {
+            isDeletingDocument = false;
         }
     }
 
@@ -455,6 +616,20 @@ else
     }
 
     private const string InviteCodeIdentifierSystem = "https://dmrs.local/invites/patient";
+
+    private static string RiskBarClass(string riskLevel) => riskLevel switch
+    {
+        "High"   => "bg-danger",
+        "Medium" => "bg-warning",
+        _        => "bg-success"
+    };
+
+    private static string RiskLevelPillClass(string riskLevel) => riskLevel switch
+    {
+        "High"   => "dmrs-pill--danger",
+        "Medium" => "dmrs-pill--warning",
+        _        => "dmrs-pill--success"
+    };
 
     private static string GetConditionLabel(Hl7.Fhir.Model.Condition condition)
         => condition.Code?.Text

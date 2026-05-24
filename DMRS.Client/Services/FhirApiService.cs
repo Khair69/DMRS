@@ -210,6 +210,31 @@ public class FhirApiService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<TResponse?> PostMultipartAsync<TResponse>(string path, MultipartFormDataContent content)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, path);
+        request.Headers.Accept.Clear();
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        request.Content = content;
+
+        using var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<TResponse>();
+    }
+
+    public async System.Threading.Tasks.Task DeleteApiAsync(string path)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, path);
+        request.Headers.Accept.Clear();
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public string GetDownloadUrl(string path) => $"{_httpClient.BaseAddress}{path}";
+
     private IReadOnlyList<T> DeserializeResourceList<T>(string json) where T : Resource
     {
         using var document = JsonDocument.Parse(json);

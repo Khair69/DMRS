@@ -321,6 +321,16 @@ code {
     color: #334155;
 }
 
+.dmrs-pill--warning {
+    background: rgba(254, 243, 199, 0.92);
+    color: #92400e;
+}
+
+.dmrs-pill--success {
+    background: rgba(209, 250, 229, 0.92);
+    color: #065f46;
+}
+
 .dmrs-stack {
     display: grid;
     gap: 0.95rem;

@@ -64,8 +64,8 @@ else
                                     <div class="dmrs-list-item__title">@patient.DisplayName</div>
                                     <div class="dmrs-list-item__subtitle">@patient.Summary</div>
                                 </div>
-                                <span class="dmrs-pill @(patient.IsHighRisk ? "dmrs-pill--danger" : "dmrs-pill--neutral")">
-                                    @(patient.IsHighRisk ? "High Risk" : "Review")
+                                <span class="dmrs-pill @RiskLevelPillClass(patient.RiskLevel)">
+                                    @patient.RiskLevel
                                 </span>
                             </a>
                         }
@@ -186,4 +186,11 @@ else
             isLoading = false;
         }
     }
+
+    private static string RiskLevelPillClass(string riskLevel) => riskLevel switch
+    {
+        "High"   => "dmrs-pill--danger",
+        "Medium" => "dmrs-pill--warning",
+        _        => "dmrs-pill--neutral"
+    };
 }

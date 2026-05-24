@@ -53,6 +53,10 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             {
                 await EnrichMedicationContextAsync(data, request, patientId, cancellationToken);
             }
+            else if (string.Equals(request.Hook, "patient-view", StringComparison.OrdinalIgnoreCase))
+            {
+                await EnrichPatientViewContextAsync(data, patientId, cancellationToken);
+            }
 
             return CdsContext.Create(
                 request.Hook,
@@ -141,6 +145,40 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 medicationInput,
                 ingredientCodes,
                 cancellationToken);
+        }
+
+        private async System.Threading.Tasks.Task EnrichPatientViewContextAsync(
+            IDictionary<string, object?> data,
+            string? patientId,
+            CancellationToken cancellationToken)
+        {
+            await EnrichPatientContextAsync(data, patientId);
+            data["conditions"] = await BuildConditionContextAsync(patientId);
+            data["ai"] = await BuildAiContextAsync(patientId, cancellationToken);
+
+            // Medication count for polypharmacy detection on patient view
+            if (!string.IsNullOrWhiteSpace(patientId))
+            {
+                var patientRef = NormalizePatientReference(patientId);
+                var allMeds = await _fhirRepository.SearchAsync<MedicationRequest>(new Dictionary<string, string>
+                {
+                    ["patient"] = patientRef
+                });
+                var activeCount = allMeds.Count(IsActiveMedicationRequest);
+                data["therapy"] = new Dictionary<string, object?>
+                {
+                    ["activeMedicationCount"] = activeCount,
+                    ["activeMedicationRxCuis"] = Array.Empty<string>(),
+                    ["activeMedicationNames"] = Array.Empty<string>(),
+                    ["activeIngredientCodes"] = Array.Empty<string>(),
+                    ["duplicateIngredientMatches"] = Array.Empty<string>(),
+                    ["duplicateIngredientConflict"] = false
+                };
+            }
+            else
+            {
+                data["therapy"] = CreateEmptyTherapyContext();
+            }
         }
 
         private async System.Threading.Tasks.Task EnrichPatientContextAsync(
@@ -282,6 +320,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 
             return new Dictionary<string, object?>
             {
+                ["activeMedicationCount"] = activeMedicationRequests.Length,
                 ["activeMedicationRxCuis"] = activeRxCuis.ToArray(),
                 ["activeMedicationNames"] = activeNames.ToArray(),
                 ["activeIngredientCodes"] = activeIngredientCodes.ToArray(),
@@ -293,6 +332,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         private static Dictionary<string, object?> CreateEmptyTherapyContext()
             => new()
             {
+                ["activeMedicationCount"] = 0,
                 ["activeMedicationRxCuis"] = Array.Empty<string>(),
                 ["activeMedicationNames"] = Array.Empty<string>(),
                 ["activeIngredientCodes"] = Array.Empty<string>(),
@@ -323,7 +363,12 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 ["highUtilizationEvaluatedAt"] = assessment.EvaluatedAt,
                 ["highUtilizationFeaturesComplete"] = assessment.FeaturesComplete,
                 ["highUtilizationAge"] = assessment.Age,
-                ["highUtilizationGender"] = assessment.Gender
+                ["highUtilizationGender"] = assessment.Gender,
+                ["compositeScore"] = assessment.CompositeScore,
+                ["riskLevel"] = assessment.RiskLevel,
+                ["hasChronicConditions"] = assessment.HasChronicConditions,
+                ["conditionCount"] = assessment.ConditionCount,
+                ["medicationCount"] = assessment.MedicationCount
             };
         }
 
@@ -336,7 +381,12 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 ["highUtilizationEvaluatedAt"] = null,
                 ["highUtilizationFeaturesComplete"] = false,
                 ["highUtilizationAge"] = null,
-                ["highUtilizationGender"] = null
+                ["highUtilizationGender"] = null,
+                ["compositeScore"] = 0f,
+                ["riskLevel"] = "Unknown",
+                ["hasChronicConditions"] = false,
+                ["conditionCount"] = 0,
+                ["medicationCount"] = 0
             };
 
         private async System.Threading.Tasks.Task<IReadOnlyList<string>> GetPatientAllergyCodesAsync(string? patientId, CancellationToken cancellationToken)

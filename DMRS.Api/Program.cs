@@ -2,10 +2,12 @@
 using DMRS.Api.Application.ClinicalDecisionSupport.Interfaces;
 using DMRS.Api.Application.ClinicalDecisionSupport.Models;
 using DMRS.Api.Application.ClinicalDecisionSupport.Services;
+using DMRS.Api.Application.Documents;
 using DMRS.Api.Application.Interfaces;
 using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Infrastructure;
 using DMRS.Api.Infrastructure.ClinicalDecisionSupport;
+using DMRS.Api.Infrastructure.Documents;
 using DMRS.Api.Infrastructure.Persistence;
 using DMRS.Api.Infrastructure.Search.Administrative;
 using DMRS.Api.Infrastructure.Search.Clinical;
@@ -120,6 +122,7 @@ builder.Services.AddScoped<IMedicineKnowledgeService, MedicineKnowledgeService>(
 builder.Services.AddScoped<IClinicalKnowledgeService, ClinicalKnowledgeService>();
 builder.Services.AddScoped<IMedicationRequestKnowledgeWarmup, MedicationRequestKnowledgeWarmup>();
 builder.Services.AddScoped<IHighUtilizationRiskService, HighUtilizationRiskService>();
+builder.Services.AddScoped<IPatientDocumentService, PatientDocumentService>();
 
 var knowledgeProvider = builder.Configuration["Cds:Knowledge:Provider"];
 if (string.Equals(knowledgeProvider, "RxNorm", StringComparison.OrdinalIgnoreCase))

@@ -14,6 +14,8 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         private const string IndicationMismatchTemplate = "indication-mismatch";
         private const string DuplicateIngredientConflictTemplate = "duplicate-ingredient-conflict";
         private const string HighUtilizationRiskTemplate = "high-utilization-risk-warning";
+        private const string PolypharmacyWarningTemplate = "polypharmacy-warning";
+        private const string HighRiskPatientViewTemplate = "high-risk-patient-view";
 
         private static readonly IReadOnlyList<RuleTemplateDefinition> Templates =
         [
@@ -69,6 +71,20 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 [
                     new RuleTemplateParameterDefinition("name", "string", true, "Human-readable rule name."),
                     new RuleTemplateParameterDefinition("highUtilizationProbabilityThreshold", "number", false, "Optional minimum AI probability required to trigger the warning.")
+                ]),
+            new(
+                PolypharmacyWarningTemplate,
+                "Polypharmacy Warning",
+                "Warn when a patient has 5 or more active medications, indicating a polypharmacy risk.",
+                [
+                    new RuleTemplateParameterDefinition("name", "string", true, "Human-readable rule name.")
+                ]),
+            new(
+                HighRiskPatientViewTemplate,
+                "High-Risk Patient Alert (patient-view)",
+                "Display a risk alert when opening a patient chart with a high composite risk score.",
+                [
+                    new RuleTemplateParameterDefinition("name", "string", true, "Human-readable rule name.")
                 ])
         ];
 
@@ -97,13 +113,20 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 IndicationMismatchTemplate => BuildIndicationMismatchTemplate(request),
                 DuplicateIngredientConflictTemplate => BuildDuplicateIngredientConflictTemplate(request),
                 HighUtilizationRiskTemplate => BuildHighUtilizationRiskTemplate(request),
+                PolypharmacyWarningTemplate => BuildPolypharmacyWarningTemplate(request),
+                HighRiskPatientViewTemplate => BuildHighRiskPatientViewTemplate(request),
                 _ => throw new ArgumentException($"Unsupported template '{request.TemplateId}'.", nameof(request))
             };
+
+            // patient-view templates always use patient-view hook
+            var hookId = request.TemplateId.Trim() == HighRiskPatientViewTemplate
+                ? "patient-view"
+                : string.IsNullOrWhiteSpace(request.HookId) ? "medication-prescribe" : request.HookId;
 
             return new CdsRuleDefinition
             {
                 Id = Guid.Empty,
-                HookId = string.IsNullOrWhiteSpace(request.HookId) ? "medication-prescribe" : request.HookId,
+                HookId = hookId,
                 Name = request.Name.Trim(),
                 Description = request.Description?.Trim(),
                 Priority = request.Priority,
@@ -287,6 +310,40 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                     request,
                     "High utilization risk for patient {{patient.id}}",
                     "AI model {{ai.highUtilizationModel}} predicts frequent-flyer risk with probability {{ai.highUtilizationProbability}}."));
+        }
+
+        private static (object expression, object card) BuildPolypharmacyWarningTemplate(RuleTemplateRequest request)
+        {
+            return (
+                new Dictionary<string, object?>
+                {
+                    [">="] = new object[]
+                    {
+                        Var("therapy.activeMedicationCount"),
+                        5
+                    }
+                },
+                BuildCard(
+                    request,
+                    "Polypharmacy risk — {{therapy.activeMedicationCount}} active medications",
+                    "This patient is on 5 or more concurrent active medications. Review for potential drug interactions and deprescribing opportunities."));
+        }
+
+        private static (object expression, object card) BuildHighRiskPatientViewTemplate(RuleTemplateRequest request)
+        {
+            return (
+                new Dictionary<string, object?>
+                {
+                    ["=="] = new object[]
+                    {
+                        Var("ai.highUtilizationRisk"),
+                        true
+                    }
+                },
+                BuildCard(
+                    request,
+                    "High-utilization risk patient — {{ai.riskLevel}} ({{ai.compositeScore}})",
+                    "This patient has been flagged by the AI risk model. Key factors: chronic conditions={{ai.hasChronicConditions}}, condition count={{ai.conditionCount}}, medication count={{ai.medicationCount}}."));
         }
 
         private static Dictionary<string, object?> BuildCard(

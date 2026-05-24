@@ -12,6 +12,7 @@ using DMRS.Client.Features.Organizations.Services;
 using DMRS.Client.Features.Patients.Services;
 using DMRS.Client.Features.Procedures.Services;
 using DMRS.Client.Features.ServiceRequests.Services;
+using DMRS.Client.Features.Documents.Services;
 using DMRS.Client.Features.Staff.Services;
 using DMRS.Client.Services;
 using Hl7.Fhir.Serialization;
@@ -71,5 +72,6 @@ builder.Services.AddScoped<ServiceRequestFeatureService>();
 builder.Services.AddScoped<AppointmentFeatureService>();
 builder.Services.AddScoped<EncounterFeatureService>();
 builder.Services.AddScoped<LocationFeatureService>();
+builder.Services.AddScoped<PatientDocumentFeatureService>();
 
 await builder.Build().RunAsync();

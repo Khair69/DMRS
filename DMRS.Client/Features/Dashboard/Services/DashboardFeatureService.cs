@@ -75,18 +75,25 @@ public sealed class DashboardFeatureService
         var watchlist = riskTasks
             .Select(task => task.Result)
             .Where(x => x.risk is not null)
-            .OrderByDescending(x => x.risk!.IsHighRisk)
+            .OrderByDescending(x => x.risk!.CompositeScore)
             .ThenByDescending(x => x.risk!.Probability ?? 0)
             .Take(5)
             .Select(x => new DashboardWatchlistItemModel(
                 x.patient.Id ?? string.Empty,
                 FormatPatientName(x.patient),
                 x.risk!.FeaturesComplete
-                    ? $"Age {x.risk.Age:0} | Probability {(x.risk.Probability.HasValue ? $"{x.risk.Probability:P0}" : "n/a")}"
+                    ? BuildWatchlistSummary(x.risk)
                     : "Missing age or gender for prediction",
                 $"/patients/{x.patient.Id}",
                 x.risk.IsHighRisk,
-                x.risk.Probability))
+                x.risk.Probability,
+                x.risk.RiskLevel,
+                x.risk.CompositeScore,
+                x.risk.ConditionCount,
+                x.risk.MedicationCount,
+                x.risk.RecentEncounterCount,
+                x.risk.HasChronicConditions,
+                x.risk.TopRiskFactors))
             .ToList();
 
         return new DashboardSnapshotModel
@@ -136,6 +143,16 @@ public sealed class DashboardFeatureService
             $"Patient {patientId}",
             $"{request.Status?.ToString() ?? "unknown"} | {request.Intent?.ToString() ?? "unknown"}",
             $"/medication-requests/{request.Id}");
+    }
+
+    private static string BuildWatchlistSummary(HighUtilizationRiskAssessmentModel risk)
+    {
+        var parts = new List<string>();
+        if (risk.ConditionCount > 0) parts.Add($"{risk.ConditionCount} condition{(risk.ConditionCount == 1 ? "" : "s")}");
+        if (risk.MedicationCount > 0) parts.Add($"{risk.MedicationCount} med{(risk.MedicationCount == 1 ? "" : "s")}");
+        if (risk.RecentEncounterCount > 0) parts.Add($"{risk.RecentEncounterCount} recent visit{(risk.RecentEncounterCount == 1 ? "" : "s")}");
+        var detail = parts.Count > 0 ? string.Join(" · ", parts) : $"Age {risk.Age:0}";
+        return $"{risk.RiskLevel} risk · {detail}";
     }
 
     private static string FormatPatientName(Patient patient)

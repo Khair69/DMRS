@@ -12,6 +12,28 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 {
     public sealed class HighUtilizationRiskService : IHighUtilizationRiskService, IDisposable
     {
+        private static readonly HashSet<string> ChronicConditionKeywords = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "diabetes", "diabetic", "copd", "heart failure", "renal failure", "kidney disease",
+            "chronic kidney", "ckd", "cancer", "hypertension", "asthma", "stroke",
+            "coronary artery", "atrial fibrillation", "epilepsy", "alzheimer", "parkinson",
+            "multiple sclerosis", "cirrhosis", "liver disease", "obesity"
+        };
+
+        private static readonly HashSet<string> ChronicSnomedCodes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "44054006",  // Type 2 diabetes
+            "73211009",  // Diabetes mellitus
+            "13645005",  // COPD
+            "84114007",  // Heart failure
+            "38341003",  // Hypertension
+            "363346000", // Malignant neoplasm
+            "709044004", // CKD
+            "195967001", // Asthma
+            "230690007", // Stroke
+            "41401008",  // Coronary artery disease
+        };
+
         private readonly IFhirRepository _fhirRepository;
         private readonly InferenceSession _session;
         private readonly AiRiskPredictorOptions _options;
@@ -71,6 +93,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                     false);
             }
 
+            // Run ONNX model
             var inputTensor = new DenseTensor<float>(new[] { ageYears.Value, genderValue.Value }, new[] { 1, 2 });
             var inputs = new List<NamedOnnxValue>
             {
@@ -79,7 +102,91 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 
             using IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = _session.Run(inputs);
             var (label, probability) = ParseOutputs(results);
-            var isHighRisk = label ?? (probability.HasValue && probability.Value >= _options.HighRiskThreshold);
+            var modelProbability = probability ?? (label == true ? 1f : 0f);
+
+            // Fetch clinical data in parallel for composite scoring
+            var patientRef = $"Patient/{normalizedPatientId}";
+            var conditionsTask = _fhirRepository.SearchAsync<Condition>(new Dictionary<string, string> { ["patient"] = patientRef });
+            var medicationsTask = _fhirRepository.SearchAsync<MedicationRequest>(new Dictionary<string, string> { ["patient"] = patientRef });
+            var encountersTask = _fhirRepository.SearchAsync<Encounter>(new Dictionary<string, string> { ["patient"] = patientRef });
+
+            await System.Threading.Tasks.Task.WhenAll(conditionsTask, medicationsTask, encountersTask);
+
+            var conditions = conditionsTask.Result;
+            var medications = medicationsTask.Result;
+            var encounters = encountersTask.Result;
+
+            var conditionCount = conditions.Count;
+            var medicationCount = medications.Count(m =>
+                m.Status == MedicationRequest.MedicationrequestStatus.Active ||
+                m.Status == MedicationRequest.MedicationrequestStatus.OnHold);
+
+            var sixMonthsAgo = DateTimeOffset.UtcNow.AddMonths(-6);
+            var recentEncounterCount = encounters.Count(e =>
+            {
+                // FHIR R5 uses ActualPeriod; fall back to counting all if period not set
+                var start = e.ActualPeriod?.Start;
+                return start != null && DateTimeOffset.TryParse(start, out var dt) && dt >= sixMonthsAgo;
+            });
+            if (recentEncounterCount == 0)
+            {
+                // Fallback: count all encounters as a proxy when period data is absent
+                recentEncounterCount = encounters.Count;
+            }
+
+            var hasChronicConditions = DetectChronicConditions(conditions);
+
+            // Build composite score: ONNX base + clinical signal boosts
+            var composite = modelProbability;
+            var riskFactors = new List<string>();
+
+            if (hasChronicConditions)
+            {
+                composite += 0.18f;
+                riskFactors.Add("Chronic condition on record");
+            }
+            if (medicationCount >= 5)
+            {
+                composite += 0.12f;
+                riskFactors.Add($"Polypharmacy ({medicationCount} active medications)");
+            }
+            else if (medicationCount >= 3)
+            {
+                composite += 0.05f;
+            }
+            if (recentEncounterCount >= 4)
+            {
+                composite += 0.12f;
+                riskFactors.Add($"High encounter frequency ({recentEncounterCount} recent visits)");
+            }
+            else if (recentEncounterCount >= 2)
+            {
+                composite += 0.05f;
+            }
+            if (conditionCount >= 3)
+            {
+                composite += 0.06f;
+                riskFactors.Add($"Multiple conditions ({conditionCount} on record)");
+            }
+            if (ageYears.Value >= 65)
+            {
+                composite += 0.08f;
+                riskFactors.Add("Age ≥ 65");
+            }
+            else if (ageYears.Value >= 50)
+            {
+                composite += 0.03f;
+            }
+
+            composite = Math.Clamp(composite, 0f, 1f);
+
+            var riskLevel = composite >= 0.65f ? "High" : composite >= 0.35f ? "Medium" : "Low";
+            var isHighRisk = composite >= _options.HighRiskThreshold;
+
+            if (riskFactors.Count == 0)
+            {
+                riskFactors.Add("Demographic baseline only");
+            }
 
             return new HighUtilizationRiskAssessment(
                 normalizedPatientId,
@@ -89,7 +196,49 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 probability,
                 _modelName,
                 DateTimeOffset.UtcNow,
-                true);
+                true,
+                conditionCount,
+                medicationCount,
+                recentEncounterCount,
+                hasChronicConditions,
+                composite,
+                riskLevel,
+                riskFactors.ToArray());
+        }
+
+        private static bool DetectChronicConditions(IEnumerable<Condition> conditions)
+        {
+            foreach (var condition in conditions)
+            {
+                // Check coding codes
+                var codes = condition.Code?.Coding?.Select(c => c.Code) ?? [];
+                if (codes.Any(code => !string.IsNullOrWhiteSpace(code) && ChronicSnomedCodes.Contains(code!)))
+                {
+                    return true;
+                }
+
+                // Check display text and condition text
+                var texts = new[]
+                {
+                    condition.Code?.Text,
+                    condition.Code?.Coding?.FirstOrDefault()?.Display
+                };
+
+                foreach (var text in texts)
+                {
+                    if (string.IsNullOrWhiteSpace(text))
+                    {
+                        continue;
+                    }
+
+                    if (ChronicConditionKeywords.Any(keyword => text.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public void Dispose()

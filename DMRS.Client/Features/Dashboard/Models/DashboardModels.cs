@@ -13,7 +13,14 @@ public sealed record DashboardWatchlistItemModel(
     string Summary,
     string Href,
     bool IsHighRisk,
-    float? Probability);
+    float? Probability,
+    string RiskLevel = "Unknown",
+    float CompositeScore = 0f,
+    int ConditionCount = 0,
+    int MedicationCount = 0,
+    int RecentEncounterCount = 0,
+    bool HasChronicConditions = false,
+    List<string>? TopRiskFactors = null);
 
 public sealed record DashboardActivityItemModel(
     string Title,
@@ -41,4 +48,13 @@ public sealed class HighUtilizationRiskAssessmentModel
     public string ModelName { get; set; } = string.Empty;
     public DateTimeOffset EvaluatedAt { get; set; }
     public bool FeaturesComplete { get; set; }
+
+    // Clinical composite score fields
+    public int ConditionCount { get; set; }
+    public int MedicationCount { get; set; }
+    public int RecentEncounterCount { get; set; }
+    public bool HasChronicConditions { get; set; }
+    public float CompositeScore { get; set; }
+    public string RiskLevel { get; set; } = "Unknown";
+    public List<string> TopRiskFactors { get; set; } = [];
 }
