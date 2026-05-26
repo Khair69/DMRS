@@ -102,7 +102,13 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 
             using IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = _session.Run(inputs);
             var (label, probability) = ParseOutputs(results);
-            var modelProbability = probability ?? (label == true ? 1f : 0f);
+
+            // Cap the ONNX base contribution at 0.50 so that clinical signals are always
+            // required to push a patient into the High tier (≥ 0.65).  When the model cannot
+            // produce a probability tensor (null), use a conservative fallback rather than 1.0,
+            // which would make every positively-labelled patient unconditionally "High".
+            var rawProbability = probability ?? (label == true ? 0.40f : 0.05f);
+            var modelProbability = Math.Min(rawProbability, 0.50f);
 
             // Fetch clinical data sequentially — EF Core's scoped DbContext does not support
             // concurrent async operations on the same instance, so Task.WhenAll is not safe here.
@@ -140,14 +146,19 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 composite += 0.18f;
                 riskFactors.Add("Chronic condition on record");
             }
-            if (medicationCount >= 5)
+            if (medicationCount >= 10)
             {
-                composite += 0.12f;
+                composite += 0.25f;
+                riskFactors.Add($"Severe polypharmacy ({medicationCount} active medications)");
+            }
+            else if (medicationCount >= 5)
+            {
+                composite += 0.15f;
                 riskFactors.Add($"Polypharmacy ({medicationCount} active medications)");
             }
             else if (medicationCount >= 3)
             {
-                composite += 0.05f;
+                composite += 0.06f;
             }
             if (recentEncounterCount >= 4)
             {
