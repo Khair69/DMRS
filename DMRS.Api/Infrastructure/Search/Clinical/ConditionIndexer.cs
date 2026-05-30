@@ -47,7 +47,7 @@ namespace DMRS.Api.Infrastructure.Search.Clinical
             foreach (var coding in condition.Severity?.Coding ?? [])
                 AddIndex(indices, condition.Id, "severity", coding.Code);
 
-            AddIndex(indices, condition.Id, "asserter", condition.Participant.FirstOrDefault().Actor.Reference);
+            AddIndex(indices, condition.Id, "asserter", condition.Participant.FirstOrDefault()?.Actor?.Reference);
 
             foreach (var category in condition.Category)
             {

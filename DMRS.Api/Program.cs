@@ -125,6 +125,11 @@ builder.Services.AddScoped<IMedicationRequestKnowledgeWarmup, MedicationRequestK
 builder.Services.AddScoped<IHighUtilizationRiskService, HighUtilizationRiskService>();
 builder.Services.AddScoped<IPatientDocumentService, PatientDocumentService>();
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddScoped<DMRS.Api.Application.DevTools.SeedDataService>();
+}
+
 var knowledgeProvider = builder.Configuration["Cds:Knowledge:Provider"];
 if (string.Equals(knowledgeProvider, "RxNorm", StringComparison.OrdinalIgnoreCase))
 {

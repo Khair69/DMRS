@@ -71,3 +71,4 @@ keycloak_data/
 settings.local.json
 
 DMRS.Api/Documents
+DMRS.Api/sampledata

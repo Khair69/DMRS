@@ -16,9 +16,9 @@ namespace DMRS.Api.Infrastructure.Search.Medication
 
             AddIndex(indices, medicationRequest.Id, "_id", medicationRequest?.Id);
             AddIndex(indices, medicationRequest.Id, "_lastUpdated", medicationRequest.Meta?.LastUpdated?.ToString("o"));
-            AddIndex(indices, medicationRequest.Id, "status", medicationRequest.Status?.ToString());
-            AddIndex(indices, medicationRequest.Id, "intent", medicationRequest.Intent?.ToString());
-            AddIndex(indices, medicationRequest.Id, "priority", medicationRequest.Priority?.ToString());
+            AddIndex(indices, medicationRequest.Id, "status", medicationRequest.StatusElement?.ObjectValue?.ToString());
+            AddIndex(indices, medicationRequest.Id, "intent", medicationRequest.IntentElement?.ObjectValue?.ToString());
+            AddIndex(indices, medicationRequest.Id, "priority", medicationRequest.PriorityElement?.ObjectValue?.ToString());
             AddIndex(indices, medicationRequest.Id, "subject", medicationRequest.Subject?.Reference);
             AddIndex(indices, medicationRequest.Id, "patient", medicationRequest.Subject?.Reference);
             AddIndex(indices, medicationRequest.Id, "encounter", medicationRequest.Encounter?.Reference);

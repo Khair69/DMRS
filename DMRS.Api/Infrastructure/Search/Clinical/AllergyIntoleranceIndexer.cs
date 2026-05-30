@@ -19,7 +19,7 @@ namespace DMRS.Api.Infrastructure.Search.Clinical
             AddIndex(indices, allergy.Id, "clinical-status", allergy.ClinicalStatus?.Text);
             AddIndex(indices, allergy.Id, "verification-status", allergy.VerificationStatus?.Text);
             AddIndex(indices, allergy.Id, "type", allergy.Type?.ToString());
-            AddIndex(indices, allergy.Id, "criticality", allergy.Criticality?.ToString());
+            AddIndex(indices, allergy.Id, "criticality", allergy.CriticalityElement?.ObjectValue?.ToString());
             AddIndex(indices, allergy.Id, "patient", allergy.Patient?.Reference);
             AddIndex(indices, allergy.Id, "encounter", allergy.Encounter?.Reference);
             AddIndex(indices, allergy.Id, "recorder", allergy.Participant?.FirstOrDefault()?.Actor.Reference);
@@ -47,7 +47,7 @@ namespace DMRS.Api.Infrastructure.Search.Clinical
                 foreach (var manifestation in reaction.Manifestation)
                 {
                     AddIndex(indices, allergy.Id, "manifestation", manifestation?.Reference?.Reference);
-                    foreach (var coding in manifestation?.Concept?.Coding)
+                    foreach (var coding in manifestation?.Concept?.Coding ?? [])
                         AddIndex(indices, allergy.Id, "manifestation", coding.Code);
                 }
             }

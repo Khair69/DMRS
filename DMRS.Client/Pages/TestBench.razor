@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Hl7.Fhir.Model
 @using DMRS.Client.Services
+@using System.Text.Json.Serialization
 @inject FhirApiService FhirService
 @inject IAccessTokenProvider TokenProvider
 @inject NavigationManager Navigation
@@ -62,16 +63,352 @@
             </div>
         </Authorized>
     </AuthorizeView>
+
+    <AuthorizeView Roles="ROLE_SYSTEM_ADMIN">
+        <Authorized>
+            <div class="card mb-4 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    🛠 Sample Data — Dev Only
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Imports ~100 Synthea patient bundles from <code>sampledata/fhir/</code>.
+                        Only available while the API runs in <strong>Development</strong> mode.
+                        Skips resources that already exist — safe to run multiple times.
+                    </p>
+
+                    @if (seedStatusLoading)
+                    {
+                        <div class="spinner-border spinner-border-sm text-warning me-2"></div>
+                        <span class="text-muted">Checking status…</span>
+                    }
+                    else if (seedStatus is not null)
+                    {
+                        @if (seedStatus.HasData)
+                        {
+                            <div class="alert alert-info mb-3">
+                                Database already contains <strong>@seedStatus.PatientCount patient(s)</strong>.
+                                Clicking Seed will only add missing records.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-secondary mb-3">Database is empty — ready to seed.</div>
+                        }
+                    }
+                    else if (!string.IsNullOrWhiteSpace(seedStatusError))
+                    {
+                        <div class="alert alert-danger mb-3">@seedStatusError</div>
+                    }
+
+                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                        <button class="btn btn-warning" @onclick="SeedSampleDataAsync"
+                                disabled="@(isSeeding || isReindexing)">
+                            @if (isSeeding)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                                <span>Seeding @seedProgress / @seedTotal…</span>
+                            }
+                            else
+                            {
+                                <span>Seed Sample Data</span>
+                            }
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" @onclick="ReindexAsync"
+                                disabled="@(isSeeding || isReindexing)">
+                            @if (isReindexing)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                                <span>Fixing indices…</span>
+                            }
+                            else
+                            {
+                                <span>Fix Missing Indices</span>
+                            }
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm"
+                                @onclick="RefreshSeedStatusAsync"
+                                disabled="@(seedStatusLoading || isSeeding || isReindexing)">
+                            Refresh Status
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(reindexMessage))
+                    {
+                        <div class="alert alert-info mt-3 mb-0">@reindexMessage</div>
+                    }
+
+                    @if (isSeeding && seedTotal > 0)
+                    {
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>@seedCurrentFile</span>
+                                <span>@seedProgress / @seedTotal</span>
+                            </div>
+                            <div class="progress" style="height:8px;">
+                                <div class="progress-bar bg-warning"
+                                     style="width:@(seedTotal > 0 ? (seedProgress * 100 / seedTotal) : 0)%">
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (seedResult is not null && !isSeeding)
+                    {
+                        <div class="alert alert-success mt-3 mb-0">
+                            <div class="fw-semibold mb-1">
+                                Done — @seedResult.Imported imported,
+                                @seedResult.Skipped skipped,
+                                @seedResult.Errors error(s)
+                                across @seedResult.FilesProcessed file(s).
+                            </div>
+                            @if (seedResult.ByResourceType.Count > 0)
+                            {
+                                <div class="small mt-1">
+                                    @foreach (var kv in seedResult.ByResourceType.OrderByDescending(x => x.Value))
+                                    {
+                                        <span class="badge text-bg-light border me-1">@kv.Key: @kv.Value</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(seedError))
+                    {
+                        <div class="alert alert-danger mt-3 mb-0">@seedError</div>
+                    }
+                </div>
+            </div>
+        </Authorized>
+    </AuthorizeView>
 </div>
 
 <button @onclick="TestApi" class="btn btn-info">test api</button>
 <button @onclick="GetClaims" class="btn btn-info">get claims</button>
 
 @code {
+    // ── Seed models ───────────────────────────────────────────────────────────
+
+    private sealed class SeedStatusModel
+    {
+        [JsonPropertyName("patientCount")]
+        public int PatientCount { get; set; }
+
+        [JsonPropertyName("hasData")]
+        public bool HasData { get; set; }
+    }
+
+    private sealed class ReindexTypeResultModel
+    {
+        [JsonPropertyName("resourceType")]
+        public string ResourceType { get; set; } = string.Empty;
+
+        [JsonPropertyName("reindexed")]
+        public int Reindexed { get; set; }
+    }
+
+    private sealed class SeedFilesModel
+    {
+        [JsonPropertyName("files")]
+        public List<string> Files { get; set; } = [];
+
+        [JsonPropertyName("count")]
+        public int Count { get; set; }
+    }
+
+    private sealed class SeedResultModel
+    {
+        [JsonPropertyName("filesProcessed")]
+        public int FilesProcessed { get; set; }
+
+        [JsonPropertyName("imported")]
+        public int Imported { get; set; }
+
+        [JsonPropertyName("skipped")]
+        public int Skipped { get; set; }
+
+        [JsonPropertyName("errors")]
+        public int Errors { get; set; }
+
+        [JsonPropertyName("byResourceType")]
+        public Dictionary<string, int> ByResourceType { get; set; } = new();
+    }
+
+    // ── General state ─────────────────────────────────────────────────────────
+
     private string? currentToken;
     private string testPatientId = "example-id";
     private string? apiResult;
     private bool isLoading = false;
+
+    // ── Seed state ────────────────────────────────────────────────────────────
+
+    private bool seedStatusLoading = true;
+    private string? seedStatusError;
+    private SeedStatusModel? seedStatus;
+    private bool isSeeding;
+    private SeedResultModel? seedResult;
+    private string? seedError;
+    private int seedProgress;
+    private int seedTotal;
+    private string seedCurrentFile = string.Empty;
+    private bool isReindexing;
+    private string? reindexMessage;
+
+    protected override async System.Threading.Tasks.Task OnInitializedAsync()
+    {
+        await RefreshSeedStatusAsync();
+    }
+
+    private async System.Threading.Tasks.Task RefreshSeedStatusAsync()
+    {
+        seedStatusLoading = true;
+        seedStatusError = null;
+        try
+        {
+            seedStatus = await FhirService.GetApiJsonAsync<SeedStatusModel>("dev/seed/status");
+        }
+        catch (Exception ex)
+        {
+            // Not a dev environment, or API not running — don't show a red error
+            seedStatusError = ex.Message.Contains("404")
+                ? "Seed endpoint not available (API may not be running in Development mode)."
+                : $"Status check failed: {ex.Message}";
+            seedStatus = null;
+        }
+        finally
+        {
+            seedStatusLoading = false;
+        }
+    }
+
+    private async System.Threading.Tasks.Task SeedSampleDataAsync()
+    {
+        isSeeding   = true;
+        seedResult  = null;
+        seedError   = null;
+        seedProgress = 0;
+        seedTotal   = 0;
+        seedCurrentFile = string.Empty;
+
+        try
+        {
+            // 1. Get the file list — fast call, no timeout risk.
+            var filesResponse = await FhirService.GetApiJsonAsync<SeedFilesModel>("dev/seed/files");
+            if (filesResponse is null || filesResponse.Files.Count == 0)
+            {
+                seedError = "No sample-data files found on the server.";
+                return;
+            }
+
+            seedTotal = filesResponse.Files.Count;
+
+            // Accumulator across all file calls.
+            var totals = new SeedResultModel();
+
+            // 2. Seed one file per request — each is fast; no global timeout.
+            foreach (var fileName in filesResponse.Files)
+            {
+                seedCurrentFile = fileName;
+                StateHasChanged(); // update progress bar immediately
+
+                try
+                {
+                    var fileResult = await FhirService.PostApiJsonAsync<object, SeedResultModel>(
+                        "dev/seed/file", new { fileName });
+
+                    if (fileResult is not null)
+                    {
+                        totals.FilesProcessed++;
+                        totals.Imported += fileResult.Imported;
+                        totals.Skipped  += fileResult.Skipped;
+                        totals.Errors   += fileResult.Errors;
+
+                        foreach (var (type, count) in fileResult.ByResourceType)
+                        {
+                            totals.ByResourceType[type] =
+                                totals.ByResourceType.GetValueOrDefault(type) + count;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log per-file failures but continue with the rest.
+                    totals.Errors++;
+                    Console.WriteLine($"[seed] Error on {fileName}: {ex.Message}");
+                }
+
+                seedProgress++;
+            }
+
+            seedResult = totals;
+        }
+        catch (Exception ex)
+        {
+            seedError = $"Seeding failed: {ex.Message}";
+        }
+        finally
+        {
+            isSeeding = false;
+            seedCurrentFile = string.Empty;
+            await RefreshSeedStatusAsync();
+        }
+    }
+
+    private async System.Threading.Tasks.Task ReindexAsync()
+    {
+        isReindexing = true;
+        reindexMessage = null;
+        var totalRepaired = 0;
+
+        try
+        {
+            // Step 1: find which types need repair.
+            var status = await FhirService.GetApiJsonAsync<Dictionary<string, int>>(
+                "dev/seed/reindex/status");
+
+            if (status is null || status.Count == 0)
+            {
+                reindexMessage = "Nothing to reindex — all resources already have search indices.";
+                return;
+            }
+
+            var typesToFix = status.Where(kv => kv.Value > 0).ToList();
+            var typeIndex = 0;
+
+            // Step 2: reindex one type at a time.
+            foreach (var (resourceType, count) in typesToFix)
+            {
+                typeIndex++;
+                reindexMessage = $"Reindexing {resourceType} ({count} resources) — {typeIndex}/{typesToFix.Count}…";
+                StateHasChanged();
+
+                try
+                {
+                    var result = await FhirService.PostApiJsonAsync<object, ReindexTypeResultModel>(
+                        $"dev/seed/reindex/{resourceType}", new { });
+                    if (result is not null)
+                        totalRepaired += result.Reindexed;
+                }
+                catch (Exception ex)
+                {
+                    reindexMessage = $"Reindex failed on {resourceType}: {ex.Message}";
+                    return;
+                }
+            }
+
+            reindexMessage = $"Reindex complete — {totalRepaired} resource(s) had indices rebuilt across {typesToFix.Count} type(s).";
+        }
+        catch (Exception ex)
+        {
+            reindexMessage = $"Reindex failed: {ex.Message}";
+        }
+        finally
+        {
+            isReindexing = false;
+        }
+    }
 
     private void Login() => Navigation.NavigateToLogin("authentication/login");
     private void Logout() => Navigation.NavigateToLogout("authentication/logout");

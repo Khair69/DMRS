@@ -15,8 +15,8 @@ namespace DMRS.Api.Infrastructure.Search.Administrative
 
             AddIndex(indices, encounter.Id, "_id", encounter.Id);
             AddIndex(indices, encounter.Id, "_lastUpdated", encounter.Meta?.LastUpdated?.ToString("o"));
-            AddIndex(indices, encounter.Id, "status", encounter.Status?.ToString());
-            AddIndex(indices, encounter.Id, "class", encounter.Class?.FirstOrDefault().Coding.FirstOrDefault().Code);
+            AddIndex(indices, encounter.Id, "status", encounter.StatusElement?.ObjectValue?.ToString());
+            AddIndex(indices, encounter.Id, "class", encounter.Class?.FirstOrDefault()?.Coding?.FirstOrDefault()?.Code);
             AddIndex(indices, encounter.Id, "subject", encounter.Subject?.Reference);
             AddIndex(indices, encounter.Id, "patient", encounter.Subject?.Reference);
             AddIndex(indices, encounter.Id, "service-provider", encounter.ServiceProvider?.Reference);

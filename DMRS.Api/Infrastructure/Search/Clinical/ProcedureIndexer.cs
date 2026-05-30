@@ -16,7 +16,7 @@ namespace DMRS.Api.Infrastructure.Search.Clinical
 
             AddIndex(indices, procedure.Id, "_id", procedure.Id);
             AddIndex(indices, procedure.Id, "_lastUpdated", procedure.Meta?.LastUpdated?.ToString("o"));
-            AddIndex(indices, procedure.Id, "status", procedure.Status?.ToString());
+            AddIndex(indices, procedure.Id, "status", procedure.StatusElement?.ObjectValue?.ToString());
             AddIndex(indices, procedure.Id, "subject", procedure.Subject?.Reference);
             AddIndex(indices, procedure.Id, "patient", procedure.Subject?.Reference);
             AddIndex(indices, procedure.Id, "encounter", procedure.Encounter?.Reference);
@@ -36,9 +36,9 @@ namespace DMRS.Api.Infrastructure.Search.Clinical
                 AddIndex(indices, procedure.Id, "code", coding.Code);
 
             foreach (var category in procedure.Category ?? [])
-                AddIndex(indices, procedure.Id, "category", category.Coding.FirstOrDefault().Code);
+                AddIndex(indices, procedure.Id, "category", category.Coding.FirstOrDefault()?.Code);
 
-            AddIndex(indices, procedure.Id, "category", procedure.Category.FirstOrDefault().Text);
+            AddIndex(indices, procedure.Id, "category", procedure.Category.FirstOrDefault()?.Text);
 
             foreach (var basedOn in procedure.BasedOn)
                 AddIndex(indices, procedure.Id, "based-on", basedOn.Reference);

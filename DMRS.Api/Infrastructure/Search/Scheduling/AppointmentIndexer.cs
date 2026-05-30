@@ -16,7 +16,7 @@ namespace DMRS.Api.Infrastructure.Search.Scheduling
 
             AddIndex(indices, appointment.Id, "_id", appointment.Id);
             AddIndex(indices, appointment.Id, "_lastUpdated", appointment.Meta?.LastUpdated?.ToString("o"));
-            AddIndex(indices, appointment.Id, "status", appointment.Status?.ToString());
+            AddIndex(indices, appointment.Id, "status", appointment.StatusElement?.ObjectValue?.ToString());
             AddIndex(indices, appointment.Id, "date", appointment.StartElement?.Value?.ToString("o"));
             AddIndex(indices, appointment.Id, "date", appointment.EndElement?.Value?.ToString("o"));
             AddIndex(indices, appointment.Id, "appointment-type", appointment.AppointmentType?.Text);
