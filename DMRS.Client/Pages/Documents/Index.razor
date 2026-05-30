@@ -1,0 +1,183 @@
+@page "/documents"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Documents.Models
+@inject DMRS.Client.Services.FhirApiService FhirApi
+@inject DMRS.Client.Features.Documents.Services.PatientDocumentFeatureService DocumentService
+
+<PageTitle>Documents</PageTitle>
+
+<div class="workspace-hero workspace-hero--documents">
+    <div>
+        <span class="workspace-eyebrow">Clinical Records</span>
+        <h1>Documents</h1>
+        <p>All uploaded patient documents across the workspace — reports, imaging, referrals, and clinical notes.</p>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="dmrs-loading-shell">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else
+{
+    <!-- Summary metrics -->
+    <div class="dmrs-metrics-grid dmrs-metrics-grid--compact mb-4">
+        <div class="dmrs-metric-card metric-ocean">
+            <div class="dmrs-metric-card__label">Total Documents</div>
+            <div class="dmrs-metric-card__value">@allDocuments.Count</div>
+            <div class="dmrs-metric-card__helper">Across all patients</div>
+        </div>
+        <div class="dmrs-metric-card metric-sky">
+            <div class="dmrs-metric-card__label">Patients with Files</div>
+            <div class="dmrs-metric-card__value">@allDocuments.Select(d => d.PatientId).Distinct().Count()</div>
+            <div class="dmrs-metric-card__helper">At least one upload</div>
+        </div>
+        <div class="dmrs-metric-card metric-gold">
+            <div class="dmrs-metric-card__label">Total Size</div>
+            <div class="dmrs-metric-card__value">@FormatTotalSize(allDocuments.Sum(d => d.Document.SizeBytes))</div>
+            <div class="dmrs-metric-card__helper">Combined storage used</div>
+        </div>
+        <div class="dmrs-metric-card metric-emerald">
+            <div class="dmrs-metric-card__label">Most Recent</div>
+            <div class="dmrs-metric-card__value">@(allDocuments.Count > 0 ? TimeAgo(allDocuments[0].Document.UploadedAt) : "—")</div>
+            <div class="dmrs-metric-card__helper">Last upload</div>
+        </div>
+    </div>
+
+    <div class="dmrs-panel">
+        <div class="dmrs-panel__header">
+            <div>
+                <div class="dmrs-panel__title">Document Vault</div>
+                <div class="dmrs-panel__subtitle">All files ordered by most recently uploaded. Click a patient name to manage their records.</div>
+            </div>
+        </div>
+
+        @if (allDocuments.Count == 0)
+        {
+            <div class="dmrs-empty-state">
+                No documents uploaded yet. Open a patient record and use the Documents panel to upload files.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:2rem;"></th>
+                            <th>File Name</th>
+                            <th>Patient</th>
+                            <th>Size</th>
+                            <th>Uploaded</th>
+                            <th>Uploaded By</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in allDocuments)
+                        {
+                            <tr>
+                                <td class="text-center" style="font-size:1.2rem;">@row.Document.FileIcon</td>
+                                <td>
+                                    <span class="fw-semibold">@row.Document.FileName</span>
+                                    <div class="small text-muted">@row.Document.ContentType</div>
+                                </td>
+                                <td>
+                                    <a href="/patients/@row.PatientId" class="text-decoration-none fw-semibold">@row.PatientName</a>
+                                </td>
+                                <td class="text-nowrap">@row.Document.SizeDisplay</td>
+                                <td class="text-nowrap">
+                                    <span title="@row.Document.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")">
+                                        @TimeAgo(row.Document.UploadedAt)
+                                    </span>
+                                </td>
+                                <td class="text-muted small">@row.Document.UploadedBy</td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       href="@DocumentService.GetDownloadUrl(row.PatientId, row.Document.Id)"
+                                       target="_blank">
+                                        Download
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private sealed record DocumentRow(string PatientId, string PatientName, PatientDocumentModel Document);
+
+    private bool isLoading = true;
+    private string? errorMessage;
+    private List<DocumentRow> allDocuments = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var patients = await FhirApi.SearchResourcesAsync<Hl7.Fhir.Model.Patient>();
+
+            var docTasks = patients
+                .Where(p => !string.IsNullOrWhiteSpace(p.Id))
+                .Select(async p =>
+                {
+                    var docs = await DocumentService.ListAsync(p.Id!);
+                    var name = FormatPatientName(p);
+                    return docs.Select(d => new DocumentRow(p.Id!, name, d));
+                })
+                .ToList();
+
+            await System.Threading.Tasks.Task.WhenAll(docTasks);
+
+            allDocuments = docTasks
+                .SelectMany(t => t.Result)
+                .OrderByDescending(r => r.Document.UploadedAt)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load documents: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static string FormatPatientName(Hl7.Fhir.Model.Patient patient)
+    {
+        var name = patient.Name.FirstOrDefault();
+        var parts = new[] { name?.Given?.FirstOrDefault(), name?.Family }
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .ToArray();
+        return parts.Length == 0 ? $"Patient {patient.Id}" : string.Join(" ", parts);
+    }
+
+    private static string FormatTotalSize(long bytes) => bytes switch
+    {
+        >= 1_073_741_824 => $"{bytes / 1_073_741_824.0:0.#} GB",
+        >= 1_048_576     => $"{bytes / 1_048_576.0:0.#} MB",
+        >= 1_024         => $"{bytes / 1_024.0:0.#} KB",
+        _                => $"{bytes} B"
+    };
+
+    private static string TimeAgo(DateTimeOffset uploadedAt)
+    {
+        var elapsed = DateTimeOffset.UtcNow - uploadedAt;
+        if (elapsed.TotalSeconds < 60)  return "just now";
+        if (elapsed.TotalMinutes < 60)  return $"{(int)elapsed.TotalMinutes}m ago";
+        if (elapsed.TotalHours < 24)    return $"{(int)elapsed.TotalHours}h ago";
+        if (elapsed.TotalDays < 30)     return $"{(int)elapsed.TotalDays}d ago";
+        return uploadedAt.ToLocalTime().ToString("dd MMM yyyy");
+    }
+}
