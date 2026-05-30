@@ -36,6 +36,9 @@ public sealed class DashboardSnapshotModel
     public List<DashboardActivityItemModel> RecentMedicationRequests { get; set; } = [];
     public int ActiveRuleCount { get; set; }
     public int DraftRuleCount { get; set; }
+    public int HighRiskCount { get; set; }
+    public int MediumRiskCount { get; set; }
+    public int LowRiskCount { get; set; }
 }
 
 public sealed class HighUtilizationRiskAssessmentModel

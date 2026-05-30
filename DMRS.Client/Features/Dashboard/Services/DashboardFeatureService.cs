@@ -72,9 +72,16 @@ public sealed class DashboardFeatureService
 
         await Task.WhenAll(riskTasks);
 
-        var watchlist = riskTasks
+        var allAssessed = riskTasks
             .Select(task => task.Result)
             .Where(x => x.risk is not null)
+            .ToList();
+
+        var highRiskCount   = allAssessed.Count(x => x.risk!.RiskLevel == "High");
+        var mediumRiskCount = allAssessed.Count(x => x.risk!.RiskLevel == "Medium");
+        var lowRiskCount    = allAssessed.Count(x => x.risk!.RiskLevel == "Low");
+
+        var watchlist = allAssessed
             .OrderByDescending(x => x.risk!.CompositeScore)
             .ThenByDescending(x => x.risk!.Probability ?? 0)
             .Take(5)
@@ -111,7 +118,10 @@ public sealed class DashboardFeatureService
             UpcomingAppointments = upcomingAppointments.Select(MapAppointment).ToList(),
             RecentMedicationRequests = recentMedicationRequests.Select(MapMedicationRequest).ToList(),
             ActiveRuleCount = rules.Count(r => r.IsActive),
-            DraftRuleCount = rules.Count(r => r.HasUnpublishedChanges)
+            DraftRuleCount = rules.Count(r => r.HasUnpublishedChanges),
+            HighRiskCount = highRiskCount,
+            MediumRiskCount = mediumRiskCount,
+            LowRiskCount = lowRiskCount
         };
     }
 

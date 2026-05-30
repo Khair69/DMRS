@@ -48,6 +48,50 @@ else
                         <div class="dmrs-panel__title">Predictive Watchlist</div>
                         <div class="dmrs-panel__subtitle">Patients surfaced by the AI high-utilization model.</div>
                     </div>
+                    @{
+                        var _total = snapshot.HighRiskCount + snapshot.MediumRiskCount + snapshot.LowRiskCount;
+                        const float _r = 36f;
+                        const float _c = 2f * MathF.PI * _r;
+                        float _hd = _total > 0 ? (snapshot.HighRiskCount   / (float)_total) * _c : 0f;
+                        float _md = _total > 0 ? (snapshot.MediumRiskCount / (float)_total) * _c : 0f;
+                        float _ld = _total > 0 ? (snapshot.LowRiskCount    / (float)_total) * _c : 0f;
+                        string Fmt(float v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                    }
+                    <div class="d-flex align-items-center gap-3">
+                        <svg width="76" height="76" viewBox="0 0 80 80" aria-hidden="true">
+                            <g transform="rotate(-90 40 40)">
+                                <circle cx="40" cy="40" r="@Fmt(_r)" fill="none" stroke="#e5e7eb" stroke-width="10"/>
+                                @if (_total > 0)
+                                {
+                                    <circle cx="40" cy="40" r="@Fmt(_r)" fill="none" stroke="#ef4444" stroke-width="10"
+                                            stroke-dasharray="@Fmt(_hd) @Fmt(_c)"
+                                            stroke-dashoffset="0"/>
+                                    <circle cx="40" cy="40" r="@Fmt(_r)" fill="none" stroke="#f59e0b" stroke-width="10"
+                                            stroke-dasharray="@Fmt(_md) @Fmt(_c)"
+                                            stroke-dashoffset="@Fmt(-_hd)"/>
+                                    <circle cx="40" cy="40" r="@Fmt(_r)" fill="none" stroke="#22c55e" stroke-width="10"
+                                            stroke-dasharray="@Fmt(_ld) @Fmt(_c)"
+                                            stroke-dashoffset="@Fmt(-(_hd + _md))"/>
+                                }
+                            </g>
+                            <text x="40" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">@_total</text>
+                            <text x="40" y="49" text-anchor="middle" font-size="9" fill="#6b7280">assessed</text>
+                        </svg>
+                        <div style="font-size:0.78rem;line-height:1.7;">
+                            <div class="d-flex align-items-center gap-1">
+                                <span style="width:9px;height:9px;border-radius:50%;background:#ef4444;flex-shrink:0;"></span>
+                                <span>@snapshot.HighRiskCount High</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span style="width:9px;height:9px;border-radius:50%;background:#f59e0b;flex-shrink:0;"></span>
+                                <span>@snapshot.MediumRiskCount Medium</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span style="width:9px;height:9px;border-radius:50%;background:#22c55e;flex-shrink:0;"></span>
+                                <span>@snapshot.LowRiskCount Low</span>
+                            </div>
+                        </div>
+                    </div>
                     <a class="btn btn-sm btn-outline-primary" href="/ai-insights">All AI Insights</a>
                 </div>
                 <div class="dmrs-list">
