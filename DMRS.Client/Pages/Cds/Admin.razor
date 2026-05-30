@@ -1,5 +1,6 @@
 @page "/cds/admin"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN")]
+@implements IDisposable
 @using System.Text.Json
 @using DMRS.Client.Features.Cds.Models
 @inject DMRS.Client.Features.Cds.Services.CdsAdminFeatureService CdsService
@@ -241,11 +242,13 @@
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Expression JSON</label>
-                                <InputTextArea @bind-Value="editableRule.ExpressionJson" class="form-control font-monospace" rows="8" />
+                                <InputTextArea @bind-Value="editableRule.ExpressionJson" class="form-control font-monospace" rows="8"
+                                              @oninput="OnExpressionJsonInput" />
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Card Template JSON</label>
-                                <InputTextArea @bind-Value="editableRule.CardTemplateJson" class="form-control font-monospace" rows="8" />
+                                <InputTextArea @bind-Value="editableRule.CardTemplateJson" class="form-control font-monospace" rows="8"
+                                              @oninput="OnCardTemplateJsonInput" />
                             </div>
                         </div>
                         <div class="d-flex flex-wrap gap-2 mt-4">
@@ -310,8 +313,18 @@
 
         <div class="card shadow-sm border-0 cds-admin-card mb-4">
             <div class="card-header bg-white border-0 pb-0">
-                <h2 class="h5 mb-1">Preview Cards</h2>
-                <p class="text-body-secondary mb-0">The result of previewing the current rule against the current sample payload.</p>
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <h2 class="h5 mb-1">Preview Cards</h2>
+                        <p class="text-body-secondary mb-0">The result of previewing the current rule against the current sample payload.</p>
+                    </div>
+                    @if (isAutoPreviewPending || isPreviewing)
+                    {
+                        <span class="text-body-secondary small d-flex align-items-center gap-1 pt-1">
+                            <span class="spinner-border spinner-border-sm"></span>Updating…
+                        </span>
+                    }
+                </div>
             </div>
             <div class="card-body">
                 @if (previewResponse is null)
@@ -497,6 +510,8 @@
     private bool isArchiving;
     private bool isCloning;
     private bool isSearchingMedicines;
+    private bool isAutoPreviewPending;
+    private CancellationTokenSource? _debounceCts;
     private string? loadError;
     private string? builderError;
     private string? builderSuccess;
@@ -1043,4 +1058,60 @@
         };
 
     private static string DisplayDose(decimal? dose) => dose is null ? "n/a" : $"{dose:0.##} mg";
+
+    // ── Debounced auto-preview ─────────────────────────────────────────────────
+
+    private Task OnExpressionJsonInput(ChangeEventArgs e)
+    {
+        if (editableRule is null) return Task.CompletedTask;
+        editableRule.ExpressionJson = e.Value?.ToString() ?? string.Empty;
+        return DebouncePreviewAsync();
+    }
+
+    private Task OnCardTemplateJsonInput(ChangeEventArgs e)
+    {
+        if (editableRule is null) return Task.CompletedTask;
+        editableRule.CardTemplateJson = e.Value?.ToString() ?? string.Empty;
+        return DebouncePreviewAsync();
+    }
+
+    private async Task DebouncePreviewAsync()
+    {
+        if (editableRule is null) return;
+
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        isAutoPreviewPending = true;
+
+        try
+        {
+            await Task.Delay(800, token);
+
+            if (!token.IsCancellationRequested)
+            {
+                isAutoPreviewPending = false;
+                await PreviewEditableRuleAsync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer keystroke cancelled this debounce — do nothing.
+        }
+        finally
+        {
+            if (!token.IsCancellationRequested)
+            {
+                isAutoPreviewPending = false;
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+    }
 }
