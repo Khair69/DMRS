@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @using DMRS.Client.Features.Dashboard.Models
 @inject DMRS.Client.Features.Dashboard.Services.DashboardFeatureService DashboardService
+@inject DMRS.Client.Services.FhirApiService FhirApi
 
 <PageTitle>AI Insights</PageTitle>
 
@@ -148,18 +149,85 @@ else
             </div>
         </div>
     </div>
+
+    <!-- Population Health -->
+    <div class="row g-4 mt-1">
+        <div class="col-12">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Population Health — Condition Prevalence</div>
+                        <div class="dmrs-panel__subtitle">Top conditions recorded across all patients in this workspace.</div>
+                    </div>
+                </div>
+
+                @if (conditionPrevalence.Count == 0)
+                {
+                    <div class="dmrs-empty-state">No condition data available yet. Add conditions to patient records to see prevalence.</div>
+                }
+                else
+                {
+                    <div class="px-1 py-2">
+                        @foreach (var item in conditionPrevalence)
+                        {
+                            var barPct = maxConditionCount > 0
+                                ? (int)((item.Count / (double)maxConditionCount) * 100)
+                                : 0;
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <div style="width:200px; font-size:0.82rem; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0;"
+                                     title="@item.Name">
+                                    @item.Name
+                                </div>
+                                <div class="flex-grow-1" style="background:#f3f4f6; border-radius:4px; height:22px; overflow:hidden;">
+                                    <div style="width:@(barPct)%; background: linear-gradient(90deg,#6366f1,#8b5cf6); height:100%; border-radius:4px;
+                                                transition:width .4s ease; display:flex; align-items:center; padding-left:8px;">
+                                        @if (barPct > 15)
+                                        {
+                                            <span style="font-size:0.75rem; color:#fff; font-weight:600;">@item.Count</span>
+                                        }
+                                    </div>
+                                </div>
+                                @if (barPct <= 15)
+                                {
+                                    <span style="font-size:0.78rem; color:#6b7280; width:24px;">@item.Count</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 }
 
 @code {
+    private sealed class ConditionPrevalenceItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Count { get; set; }
+    }
+
     private bool isLoading = true;
     private string? errorMessage;
     private DashboardSnapshotModel snapshot = new();
+    private List<ConditionPrevalenceItem> conditionPrevalence = [];
+    private int maxConditionCount = 1;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            snapshot = await DashboardService.GetSnapshotAsync();
+            var snapshotTask    = DashboardService.GetSnapshotAsync();
+            var prevalenceTask  = FhirApi.GetApiJsonAsync<List<ConditionPrevalenceItem>>(
+                "analytics/condition-prevalence");
+
+            await Task.WhenAll(snapshotTask, prevalenceTask);
+
+            snapshot             = snapshotTask.Result;
+            conditionPrevalence  = prevalenceTask.Result ?? [];
+            maxConditionCount    = conditionPrevalence.Count > 0
+                ? conditionPrevalence.Max(x => x.Count)
+                : 1;
         }
         catch (Exception ex)
         {
