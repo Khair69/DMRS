@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DMRS.Api.Application.ClinicalDecisionSupport.Interfaces;
 using DMRS.Api.Application.ClinicalDecisionSupport.Models;
+using DMRS.Api.Application.ClinicalDecisionSupport.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,11 +14,16 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
     {
         private readonly ICdsHookService _hookService;
         private readonly ICdsServiceRegistry _serviceRegistry;
+        private readonly CdsAlertFeed _alertFeed;
 
-        public CdsHooksController(ICdsHookService hookService, ICdsServiceRegistry serviceRegistry)
+        public CdsHooksController(
+            ICdsHookService hookService,
+            ICdsServiceRegistry serviceRegistry,
+            CdsAlertFeed alertFeed)
         {
             _hookService = hookService;
             _serviceRegistry = serviceRegistry;
+            _alertFeed = alertFeed;
         }
 
         [HttpGet]
@@ -43,7 +49,35 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
             }
 
             var response = await _hookService.EvaluateAsync(service.Hook, request, cancellationToken);
+
+            if (response.Cards.Count > 0)
+            {
+                var patientId = ExtractPatientId(request.Context);
+                _alertFeed.Enqueue(patientId, service.Hook, response.Cards);
+            }
+
             return Ok(response);
+        }
+
+        private static string ExtractPatientId(JsonElement context)
+        {
+            // CDS Hooks context typically carries patientId at the top level
+            if (context.TryGetProperty("patientId", out var pid) && pid.ValueKind == JsonValueKind.String)
+                return pid.GetString() ?? "unknown";
+
+            // Fallback: some hooks nest it under patient.id
+            if (context.TryGetProperty("patient", out var pt))
+            {
+                if (pt.ValueKind == JsonValueKind.String)
+                    return pt.GetString()?.Replace("Patient/", "") ?? "unknown";
+
+                if (pt.ValueKind == JsonValueKind.Object
+                    && pt.TryGetProperty("id", out var id)
+                    && id.ValueKind == JsonValueKind.String)
+                    return id.GetString() ?? "unknown";
+            }
+
+            return "unknown";
         }
 
         private static CdsHookRequest? ParseRequest(JsonElement body, CdsServiceDefinition service)

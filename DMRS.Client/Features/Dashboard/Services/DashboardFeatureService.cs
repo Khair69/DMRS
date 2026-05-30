@@ -24,6 +24,7 @@ public sealed class DashboardFeatureService
         var serviceRequestsTask = _fhirApiService.SearchResourcesAsync<ServiceRequest>();
         var conditionsTask = _fhirApiService.SearchResourcesAsync<Condition>();
         var rulesTask = _fhirApiService.GetApiJsonAsync<List<CdsRuleSummary>>("cds/rules");
+        var alertsTask = _fhirApiService.GetApiJsonAsync<List<CdsAlertEventModel>>("cds/alerts");
 
         await Task.WhenAll(
             patientsTask,
@@ -32,7 +33,8 @@ public sealed class DashboardFeatureService
             encountersTask,
             serviceRequestsTask,
             conditionsTask,
-            rulesTask);
+            rulesTask,
+            alertsTask);
 
         var patients = patientsTask.Result;
         var appointments = appointmentsTask.Result;
@@ -121,7 +123,8 @@ public sealed class DashboardFeatureService
             DraftRuleCount = rules.Count(r => r.HasUnpublishedChanges),
             HighRiskCount = highRiskCount,
             MediumRiskCount = mediumRiskCount,
-            LowRiskCount = lowRiskCount
+            LowRiskCount = lowRiskCount,
+            RecentAlerts = alertsTask.Result ?? []
         };
     }
 

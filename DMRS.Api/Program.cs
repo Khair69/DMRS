@@ -107,6 +107,7 @@ builder.Services.Configure<MockMedicineApiOptions>(builder.Configuration.GetSect
 builder.Services.Configure<AiRiskPredictorOptions>(builder.Configuration.GetSection("Cds:Ai:HighUtilizationRisk"));
 
 builder.Services.AddSingleton<ICdsServiceRegistry, CdsServiceRegistry>();
+builder.Services.AddSingleton<CdsAlertFeed>();
 builder.Services.AddScoped<ICdsHookService, CdsHookService>();
 builder.Services.AddScoped<ICdsContextBuilder, CdsContextBuilder>();
 builder.Services.AddScoped<IRuleEngine, RuleEngine>();

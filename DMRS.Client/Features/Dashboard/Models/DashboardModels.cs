@@ -39,6 +39,17 @@ public sealed class DashboardSnapshotModel
     public int HighRiskCount { get; set; }
     public int MediumRiskCount { get; set; }
     public int LowRiskCount { get; set; }
+    public List<CdsAlertEventModel> RecentAlerts { get; set; } = [];
+}
+
+public sealed class CdsAlertEventModel
+{
+    public string Id { get; set; } = string.Empty;
+    public string PatientId { get; set; } = string.Empty;
+    public string Hook { get; set; } = string.Empty;
+    public string CardSummary { get; set; } = string.Empty;
+    public string Indicator { get; set; } = string.Empty;
+    public DateTimeOffset FiredAt { get; set; }
 }
 
 public sealed class HighUtilizationRiskAssessmentModel

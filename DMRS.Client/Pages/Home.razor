@@ -119,28 +119,41 @@ else
         </div>
 
         <div class="col-12 col-xl-5">
-            <div class="dmrs-panel">
+            <div class="dmrs-panel h-100">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">CDS Status</div>
-                        <div class="dmrs-panel__subtitle">Rule authoring and governance snapshot.</div>
+                        <div class="dmrs-panel__title">CDS Activity</div>
+                        <div class="dmrs-panel__subtitle">
+                            <span class="me-3">@snapshot.ActiveRuleCount live rule@(snapshot.ActiveRuleCount == 1 ? "" : "s")</span>
+                            <span>@snapshot.DraftRuleCount draft@(snapshot.DraftRuleCount == 1 ? "" : "s")</span>
+                        </div>
                     </div>
                     <a class="btn btn-sm btn-outline-primary" href="/cds/admin">Manage Rules</a>
                 </div>
-                <div class="dmrs-stack">
-                    <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Live Rules</div>
-                        <p>@snapshot.ActiveRuleCount active CDS rules are ready to participate in medication decision support.</p>
+
+                @if (snapshot.RecentAlerts.Count == 0)
+                {
+                    <div class="dmrs-empty-state">No CDS alerts have fired yet. Open a patient detail page or create a medication request to trigger rules.</div>
+                }
+                else
+                {
+                    <div class="dmrs-list">
+                        @foreach (var alert in snapshot.RecentAlerts.Take(8))
+                        {
+                            <a class="dmrs-list-item" href="/patients/@alert.PatientId">
+                                <div style="min-width:0;">
+                                    <div class="dmrs-list-item__title text-truncate">@alert.CardSummary</div>
+                                    <div class="dmrs-list-item__subtitle">
+                                        @alert.Hook · @TimeAgo(alert.FiredAt)
+                                    </div>
+                                </div>
+                                <span class="dmrs-pill @IndicatorPillClass(alert.Indicator)" style="flex-shrink:0;">
+                                    @alert.Indicator
+                                </span>
+                            </a>
+                        }
                     </div>
-                    <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Draft Changes</div>
-                        <p>@snapshot.DraftRuleCount rule drafts currently have unpublished edits that still need review.</p>
-                    </div>
-                    <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Demo Story</div>
-                        <p>Use the patient chart and medication request flow to show allergy checks, dose warnings, and AI-assisted prioritization together.</p>
-                    </div>
-                </div>
+                }
             </div>
         </div>
     </section>
@@ -237,4 +250,20 @@ else
         "Medium" => "dmrs-pill--warning",
         _        => "dmrs-pill--neutral"
     };
+
+    private static string IndicatorPillClass(string indicator) => indicator switch
+    {
+        "hard-stop" => "dmrs-pill--danger",
+        "warning"   => "dmrs-pill--warning",
+        _           => "dmrs-pill--neutral"
+    };
+
+    private static string TimeAgo(DateTimeOffset firedAt)
+    {
+        var elapsed = DateTimeOffset.UtcNow - firedAt;
+        if (elapsed.TotalSeconds < 60)  return "just now";
+        if (elapsed.TotalMinutes < 60)  return $"{(int)elapsed.TotalMinutes}m ago";
+        if (elapsed.TotalHours < 24)    return $"{(int)elapsed.TotalHours}h ago";
+        return $"{(int)elapsed.TotalDays}d ago";
+    }
 }
