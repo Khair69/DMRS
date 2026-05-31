@@ -26,7 +26,7 @@ public sealed class ProcedureEditModel
     {
         var patientId = FhirReferenceHelper.ExtractReferenceId(procedure.Subject?.Reference, "patient") ?? string.Empty;
         var codeText = procedure.Code?.Text ?? procedure.Code?.Coding.FirstOrDefault()?.Code ?? string.Empty;
-        var status = procedure.Status?.ToString().ToLowerInvariant() ?? "unknown";
+        var status = procedure.SafeStatus();
 
         DateTime? performed = null;
         if (procedure.Occurrence is FhirDateTime dateTime && DateTime.TryParse(dateTime.Value, out var parsed))

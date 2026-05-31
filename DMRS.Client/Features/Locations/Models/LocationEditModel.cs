@@ -27,7 +27,7 @@ public sealed class LocationEditModel
         {
             Id = location.Id,
             Name = location.Name ?? string.Empty,
-            Status = location.Status?.ToString().ToLowerInvariant() ?? "unknown",
+            Status = location.SafeStatus(),
             ManagingOrganizationId = managingOrgId
         };
     }

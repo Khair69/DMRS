@@ -15,8 +15,13 @@ namespace DMRS.Api.Infrastructure.Search.Administrative
 
             AddIndex(indices, encounter.Id, "_id", encounter.Id);
             AddIndex(indices, encounter.Id, "_lastUpdated", encounter.Meta?.LastUpdated?.ToString("o"));
-            AddIndex(indices, encounter.Id, "status", encounter.StatusElement?.ObjectValue?.ToString());
-            AddIndex(indices, encounter.Id, "class", encounter.Class?.FirstOrDefault()?.Coding?.FirstOrDefault()?.Code);
+            AddIndex(indices, encounter.Id, "status", encounter.StatusElement?.JsonValue?.ToString());
+            // encounter.Class changed from a single Coding (R4) to List<CodeableConcept> (R5).
+            // Accessing the getter on R4-format stored data throws CodedValidationException.
+            string? classCode = null;
+            try { classCode = encounter.Class?.FirstOrDefault()?.Coding?.FirstOrDefault()?.Code; }
+            catch { /* R4→R5 shape mismatch — skip class index */ }
+            AddIndex(indices, encounter.Id, "class", classCode);
             AddIndex(indices, encounter.Id, "subject", encounter.Subject?.Reference);
             AddIndex(indices, encounter.Id, "patient", encounter.Subject?.Reference);
             AddIndex(indices, encounter.Id, "service-provider", encounter.ServiceProvider?.Reference);

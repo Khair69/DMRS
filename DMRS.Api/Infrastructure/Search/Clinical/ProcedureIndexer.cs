@@ -16,7 +16,7 @@ namespace DMRS.Api.Infrastructure.Search.Clinical
 
             AddIndex(indices, procedure.Id, "_id", procedure.Id);
             AddIndex(indices, procedure.Id, "_lastUpdated", procedure.Meta?.LastUpdated?.ToString("o"));
-            AddIndex(indices, procedure.Id, "status", procedure.StatusElement?.ObjectValue?.ToString());
+            AddIndex(indices, procedure.Id, "status", procedure.StatusElement?.JsonValue?.ToString());
             AddIndex(indices, procedure.Id, "subject", procedure.Subject?.Reference);
             AddIndex(indices, procedure.Id, "patient", procedure.Subject?.Reference);
             AddIndex(indices, procedure.Id, "encounter", procedure.Encounter?.Reference);

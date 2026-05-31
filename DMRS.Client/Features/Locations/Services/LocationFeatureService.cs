@@ -20,7 +20,7 @@ public sealed class LocationFeatureService : FhirFeatureServiceBase<Location, Lo
         return new LocationSummaryViewModel(
             location.Id ?? "(no-id)",
             location.Name ?? "(no-name)",
-            location.Status?.ToString() ?? "unknown",
+            location.SafeStatus(),
             managingOrgId);
     }
 }

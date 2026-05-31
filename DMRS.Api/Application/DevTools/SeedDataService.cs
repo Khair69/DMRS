@@ -7,6 +7,7 @@ using DMRS.Api.Infrastructure.Search.Medication;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 using System.Text.Json;
 
 namespace DMRS.Api.Application.DevTools;
@@ -101,6 +102,19 @@ public sealed class SeedDataService
     /// Finds resources that are stored in the DB but have no ResourceIndex rows
     /// (saved during a broken seed run) and re-extracts their search indices.
     /// </summary>
+    /// <summary>
+    /// Deletes all FHIR resources, versions, and search indices from the database.
+    /// Dev-only — used to wipe broken seed data before a clean re-seed.
+    /// </summary>
+    public async Task<int> ClearAllFhirDataAsync(CancellationToken ct = default)
+    {
+        await _db.ResourceIndices.ExecuteDeleteAsync(ct);
+        await _db.FhirResourceVersions.ExecuteDeleteAsync(ct);
+        var count = await _db.FhirResources.ExecuteDeleteAsync(ct);
+        _logger.LogWarning("Dev seed CLEAR: deleted {Count} resources", count);
+        return count;
+    }
+
     /// <summary>
     /// Returns a count of un-indexed resources per resource type so the client
     /// can decide which types need repair and display progress.
@@ -277,6 +291,173 @@ public sealed class SeedDataService
     // ── Private ───────────────────────────────────────────────────────────────
 
     /// <summary>
+    /// Builds a mapping from the temporary urn:uuid: identifiers used in
+    /// Synthea transaction bundles to their final ResourceType/Id form.
+    ///
+    /// Example: "urn:uuid:b4566afb-..." → "Patient/b4566afb-..."
+    ///
+    /// This map is used to rewrite cross-resource references before importing,
+    /// so that searches (e.g. "give me all conditions for patient X") work
+    /// exactly the same as for resources created through the regular FHIR API.
+    /// </summary>
+    private static Dictionary<string, string> BuildUrnMap(JsonElement bundleRoot)
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        if (!bundleRoot.TryGetProperty("entry", out var entries)) return map;
+
+        foreach (var entry in entries.EnumerateArray())
+        {
+            if (!entry.TryGetProperty("fullUrl", out var fullUrlEl)) continue;
+            var fullUrl = fullUrlEl.GetString() ?? string.Empty;
+            if (!fullUrl.StartsWith("urn:uuid:", StringComparison.OrdinalIgnoreCase)) continue;
+
+            if (!entry.TryGetProperty("resource", out var res)) continue;
+            if (!res.TryGetProperty("resourceType", out var rtEl)) continue;
+            if (!res.TryGetProperty("id", out var idEl)) continue;
+
+            var resourceType = rtEl.GetString() ?? string.Empty;
+            var id           = idEl.GetString() ?? string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(resourceType) && !string.IsNullOrWhiteSpace(id))
+                map[fullUrl] = $"{resourceType}/{id}";
+        }
+
+        return map;
+    }
+
+    /// <summary>
+    /// Recursively walks a JSON element and rewrites every string value that
+    /// is a known urn:uuid: reference to its ResourceType/Id equivalent.
+    /// Returns the original json unchanged if the map is empty.
+    /// </summary>
+    private static string ResolveUrnReferences(
+        string json,
+        Dictionary<string, string> urnMap)
+    {
+        if (urnMap.Count == 0) return json;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            using var ms  = new MemoryStream();
+            using var w   = new Utf8JsonWriter(ms);
+            RewriteElement(w, doc.RootElement, urnMap);
+            w.Flush();
+            return Encoding.UTF8.GetString(ms.ToArray());
+        }
+        catch
+        {
+            return json; // if rewriting fails, return original
+        }
+    }
+
+    private static void RewriteElement(
+        Utf8JsonWriter w,
+        JsonElement el,
+        Dictionary<string, string> map)
+    {
+        switch (el.ValueKind)
+        {
+            case JsonValueKind.Object:
+                w.WriteStartObject();
+                foreach (var p in el.EnumerateObject())
+                {
+                    w.WritePropertyName(p.Name);
+                    RewriteElement(w, p.Value, map);
+                }
+                w.WriteEndObject();
+                break;
+
+            case JsonValueKind.Array:
+                w.WriteStartArray();
+                foreach (var item in el.EnumerateArray())
+                    RewriteElement(w, item, map);
+                w.WriteEndArray();
+                break;
+
+            case JsonValueKind.String:
+                var s = el.GetString() ?? string.Empty;
+                w.WriteStringValue(
+                    s.StartsWith("urn:uuid:", StringComparison.OrdinalIgnoreCase) && map.TryGetValue(s, out var resolved)
+                        ? resolved
+                        : s);
+                break;
+
+            default:
+                el.WriteTo(w);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to rewrite a resource's JSON from FHIR R4 format to a form
+    /// Firely's R5 deserializer can parse. Returns null if no fix is known.
+    ///
+    /// Known R4→R5 structural changes handled here:
+    ///   • AllergyIntolerance.type   : code (string) → CodeableConcept (object)
+    ///   • AllergyIntolerance.category: code (string) → code[] (array of strings)
+    /// </summary>
+    private static string? TryFixR4Json(string resourceType, string json)
+    {
+        if (!string.Equals(resourceType, "AllergyIntolerance", StringComparison.OrdinalIgnoreCase))
+            return null; // only known fix is for AllergyIntolerance
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            bool needsFix = false;
+
+            // Check for R4 string where R5 expects an object / array.
+            if (root.TryGetProperty("type", out var typeEl) && typeEl.ValueKind == JsonValueKind.String)
+                needsFix = true;
+
+            if (root.TryGetProperty("category", out var catEl) && catEl.ValueKind == JsonValueKind.String)
+                needsFix = true;
+
+            if (!needsFix) return null;
+
+            using var ms    = new System.IO.MemoryStream();
+            using var writer = new Utf8JsonWriter(ms);
+
+            writer.WriteStartObject();
+            foreach (var prop in root.EnumerateObject())
+            {
+                if (prop.Name == "type" && prop.Value.ValueKind == JsonValueKind.String)
+                {
+                    // R4: "type": "allergy"  →  R5: "type": {"text": "allergy"}
+                    writer.WritePropertyName("type");
+                    writer.WriteStartObject();
+                    writer.WriteString("text", prop.Value.GetString());
+                    writer.WriteEndObject();
+                }
+                else if (prop.Name == "category" && prop.Value.ValueKind == JsonValueKind.String)
+                {
+                    // R4: "category": "food"  →  R5: "category": ["food"]
+                    writer.WritePropertyName("category");
+                    writer.WriteStartArray();
+                    writer.WriteStringValue(prop.Value.GetString());
+                    writer.WriteEndArray();
+                }
+                else
+                {
+                    prop.WriteTo(writer);
+                }
+            }
+            writer.WriteEndObject();
+            writer.Flush();
+
+            return System.Text.Encoding.UTF8.GetString(ms.ToArray());
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Lightweight System.Text.Json scan to collect (ResourceType/Id) keys
     /// for supported types — no Firely deserialization, no failures.
     /// </summary>
@@ -340,6 +521,10 @@ public sealed class SeedDataService
                 || entries.ValueKind != JsonValueKind.Array)
                 return;
 
+            // Build urn:uuid → ResourceType/Id map for this bundle so that
+            // cross-resource references are resolved before storing.
+            var urnMap = BuildUrnMap(doc.RootElement);
+
             var now        = DateTimeOffset.UtcNow;
             var batchCount = 0;
 
@@ -370,19 +555,42 @@ public sealed class SeedDataService
 
                 // ── Deserialize just this one resource ───────────────────────
                 Resource resource;
+                // Resolve urn:uuid references → ResourceType/Id BEFORE Firely
+                // so stored references match what the search engine expects.
+                var rawResourceJson = ResolveUrnReferences(resourceEl.GetRawText(), urnMap);
                 try
                 {
-                    resource = _deserializer.Deserialize<Resource>(resourceEl.GetRawText());
+                    resource = _deserializer.Deserialize<Resource>(rawResourceJson);
                 }
-                catch (Exception ex)
+                catch
                 {
-                    _logger.LogWarning(
-                        "Skipping {ResourceType}/{Id} — {ExceptionType}: {ExceptionMessage}",
-                        resourceType, id,
-                        ex.GetType().Name,
-                        ex.Message.Split('\n')[0]); // first line only, keeps log readable
-                    result.Errors++;
-                    continue;
+                    // First-pass failed — try an R4→R5 compatibility rewrite for
+                    // known structural changes (e.g. AllergyIntolerance.type:
+                    // was a code string in R4, became CodeableConcept in R5).
+                    var fixedJson = TryFixR4Json(resourceType, rawResourceJson);
+                    if (fixedJson == null)
+                    {
+                        _logger.LogWarning(
+                            "Skipping {ResourceType}/{Id} — could not deserialize (no R4 fix available)",
+                            resourceType, id);
+                        result.Errors++;
+                        continue;
+                    }
+
+                    try
+                    {
+                        resource = _deserializer.Deserialize<Resource>(fixedJson);
+                    }
+                    catch (Exception ex2)
+                    {
+                        _logger.LogWarning(
+                            "Skipping {ResourceType}/{Id} — {ExceptionType}: {ExceptionMessage}",
+                            resourceType, id,
+                            ex2.GetType().Name,
+                            ex2.Message.Split('\n')[0]);
+                        result.Errors++;
+                        continue;
+                    }
                 }
 
                 // ── Extract indices before touching the DbContext ────────────

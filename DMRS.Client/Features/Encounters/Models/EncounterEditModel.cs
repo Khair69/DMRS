@@ -44,7 +44,7 @@ public sealed class EncounterEditModel
         {
             Id = encounter.Id,
             PatientId = patientId,
-            Status = encounter.Status?.ToString().ToLowerInvariant() ?? "unknown",
+            Status = encounter.SafeStatus(),
             ClassCode = classCode,
             Start = start,
             End = end

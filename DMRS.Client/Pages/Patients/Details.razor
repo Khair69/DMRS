@@ -103,7 +103,7 @@ else
                                 {
                                     <div class="dmrs-mini-row">
                                         <div class="dmrs-mini-row__title">@GetAllergyLabel(allergy)</div>
-                                        <div class="dmrs-mini-row__meta">@allergy.Criticality</div>
+                                        <div class="dmrs-mini-row__meta">@allergy.SafeCriticality()</div>
                                     </div>
                                 }
                             }
@@ -122,7 +122,7 @@ else
                                 {
                                     <div class="dmrs-mini-row">
                                         <div class="dmrs-mini-row__title">@GetObservationLabel(observation)</div>
-                                        <div class="dmrs-mini-row__meta">@observation.Status</div>
+                                        <div class="dmrs-mini-row__meta">@observation.SafeStatus()</div>
                                     </div>
                                 }
                             }
@@ -141,7 +141,7 @@ else
                                 {
                                     <div class="dmrs-mini-row">
                                         <div class="dmrs-mini-row__title">@GetMedicationLabel(medication)</div>
-                                        <div class="dmrs-mini-row__meta">@medication.Status | @medication.Intent</div>
+                                        <div class="dmrs-mini-row__meta">@medication.SafeStatus() | @medication.SafeIntent()</div>
                                     </div>
                                 }
                             }
@@ -171,7 +171,7 @@ else
                                 {
                                     <a class="dmrs-mini-row dmrs-mini-row--link" href="@($"/encounters/{encounter.Id}")">
                                         <div class="dmrs-mini-row__title">@GetEncounterLabel(encounter)</div>
-                                        <div class="dmrs-mini-row__meta">@encounter.Status</div>
+                                        <div class="dmrs-mini-row__meta">@encounter.SafeStatus()</div>
                                     </a>
                                 }
                             }
@@ -675,6 +675,6 @@ else
             return start.ToLocalTime().ToString("dd MMM yyyy HH:mm");
         }
 
-        return appointment.Status?.ToString() ?? "unknown";
+        return appointment.SafeStatus().Length > 0 ? appointment.SafeStatus() : "unknown";
     }
 }

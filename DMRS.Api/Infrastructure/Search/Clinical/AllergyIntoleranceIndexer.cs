@@ -19,7 +19,7 @@ namespace DMRS.Api.Infrastructure.Search.Clinical
             AddIndex(indices, allergy.Id, "clinical-status", allergy.ClinicalStatus?.Text);
             AddIndex(indices, allergy.Id, "verification-status", allergy.VerificationStatus?.Text);
             AddIndex(indices, allergy.Id, "type", allergy.Type?.ToString());
-            AddIndex(indices, allergy.Id, "criticality", allergy.CriticalityElement?.ObjectValue?.ToString());
+            AddIndex(indices, allergy.Id, "criticality", allergy.CriticalityElement?.JsonValue?.ToString());
             AddIndex(indices, allergy.Id, "patient", allergy.Patient?.Reference);
             AddIndex(indices, allergy.Id, "encounter", allergy.Encounter?.Reference);
             AddIndex(indices, allergy.Id, "recorder", allergy.Participant?.FirstOrDefault()?.Actor.Reference);

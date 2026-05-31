@@ -49,7 +49,7 @@ public sealed class AppointmentEditModel
         {
             Id = appointment.Id,
             PatientId = patientId,
-            Status = appointment.Status?.ToString().ToLowerInvariant() ?? "unknown",
+            Status = appointment.SafeStatus(),
             Start = start,
             End = end
         };

@@ -16,12 +16,14 @@ public sealed class EncounterFeatureService : FhirFeatureServiceBase<Encounter, 
     protected override EncounterSummaryViewModel MapToSummary(Encounter encounter)
     {
         var patientId = FhirReferenceHelper.ExtractReferenceId(encounter.Subject?.Reference, "patient") ?? "(unknown)";
-        var classCode = encounter.Class?.FirstOrDefault()?.Coding.FirstOrDefault()?.Code ?? "(no-class)";
+        string classCode;
+        try { classCode = encounter.Class?.FirstOrDefault()?.Coding.FirstOrDefault()?.Code ?? "(no-class)"; }
+        catch { classCode = "(no-class)"; }
 
         return new EncounterSummaryViewModel(
             encounter.Id ?? "(no-id)",
             patientId,
-            encounter.Status?.ToString() ?? "unknown",
+            encounter.SafeStatus(),
             classCode);
     }
 }

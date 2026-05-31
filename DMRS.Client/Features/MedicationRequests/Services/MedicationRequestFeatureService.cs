@@ -23,7 +23,7 @@ public sealed class MedicationRequestFeatureService : FhirFeatureServiceBase<Med
             request.Id ?? "(no-id)",
             patientId,
             medicationText,
-            request.Status?.ToString() ?? "unknown",
-            request.Intent?.ToString() ?? "unknown");
+            request.SafeStatus(),
+            request.SafeIntent());
     }
 }

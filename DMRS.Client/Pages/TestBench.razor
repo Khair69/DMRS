@@ -72,10 +72,20 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted mb-3">
-                        Imports ~100 Synthea patient bundles from <code>sampledata/fhir/</code>.
+                        Imports Synthea patient bundles from <code>sampledata/fhir/</code>.
                         Only available while the API runs in <strong>Development</strong> mode.
-                        Skips resources that already exist — safe to run multiple times.
+                        URN references are resolved automatically so patient searches work correctly.
                     </p>
+
+                    <div class="mb-3 d-flex align-items-center gap-3">
+                        <label class="form-label mb-0 fw-semibold">Patients to import:</label>
+                        <select class="form-select form-select-sm" style="width:auto;" @bind="seedFileLimit" disabled="@(isSeeding || isClearing)">
+                            <option value="20">20 patients (fast, ~6k records)</option>
+                            <option value="50">50 patients (~15k records)</option>
+                            <option value="100">100 patients (~30k records)</option>
+                            <option value="0">All (~1180 patients)</option>
+                        </select>
+                    </div>
 
                     @if (seedStatusLoading)
                     {
@@ -102,8 +112,20 @@
                     }
 
                     <div class="d-flex gap-2 flex-wrap align-items-center">
+                        <button class="btn btn-danger btn-sm" @onclick="ClearAllDataAsync"
+                                disabled="@(isSeeding || isReindexing || isClearing)">
+                            @if (isClearing)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                                <span>Clearing…</span>
+                            }
+                            else
+                            {
+                                <span>Clear All Data</span>
+                            }
+                        </button>
                         <button class="btn btn-warning" @onclick="SeedSampleDataAsync"
-                                disabled="@(isSeeding || isReindexing)">
+                                disabled="@(isSeeding || isReindexing || isClearing)">
                             @if (isSeeding)
                             {
                                 <span class="spinner-border spinner-border-sm me-1"></span>
@@ -115,7 +137,7 @@
                             }
                         </button>
                         <button class="btn btn-outline-primary btn-sm" @onclick="ReindexAsync"
-                                disabled="@(isSeeding || isReindexing)">
+                                disabled="@(isSeeding || isReindexing || isClearing)">
                             @if (isReindexing)
                             {
                                 <span class="spinner-border spinner-border-sm me-1"></span>
@@ -128,10 +150,15 @@
                         </button>
                         <button class="btn btn-outline-secondary btn-sm"
                                 @onclick="RefreshSeedStatusAsync"
-                                disabled="@(seedStatusLoading || isSeeding || isReindexing)">
+                                disabled="@(seedStatusLoading || isSeeding || isReindexing || isClearing)">
                             Refresh Status
                         </button>
                     </div>
+
+                    @if (!string.IsNullOrWhiteSpace(clearMessage))
+                    {
+                        <div class="alert alert-secondary mt-3 mb-0">@clearMessage</div>
+                    }
 
                     @if (!string.IsNullOrWhiteSpace(reindexMessage))
                     {
@@ -199,6 +226,12 @@
         public bool HasData { get; set; }
     }
 
+    private sealed class ClearResultModel
+    {
+        [JsonPropertyName("cleared")]
+        public int Cleared { get; set; }
+    }
+
     private sealed class ReindexTypeResultModel
     {
         [JsonPropertyName("resourceType")]
@@ -255,6 +288,9 @@
     private string seedCurrentFile = string.Empty;
     private bool isReindexing;
     private string? reindexMessage;
+    private bool isClearing;
+    private string? clearMessage;
+    private int seedFileLimit = 20;
 
     protected override async System.Threading.Tasks.Task OnInitializedAsync()
     {
@@ -295,7 +331,8 @@
         try
         {
             // 1. Get the file list — fast call, no timeout risk.
-            var filesResponse = await FhirService.GetApiJsonAsync<SeedFilesModel>("dev/seed/files");
+            var limitParam = seedFileLimit > 0 ? $"?limit={seedFileLimit}" : string.Empty;
+            var filesResponse = await FhirService.GetApiJsonAsync<SeedFilesModel>($"dev/seed/files{limitParam}");
             if (filesResponse is null || filesResponse.Files.Count == 0)
             {
                 seedError = "No sample-data files found on the server.";
@@ -353,6 +390,29 @@
             isSeeding = false;
             seedCurrentFile = string.Empty;
             await RefreshSeedStatusAsync();
+        }
+    }
+
+    private async System.Threading.Tasks.Task ClearAllDataAsync()
+    {
+        isClearing = true;
+        clearMessage = null;
+        seedResult = null;
+        try
+        {
+            var result = await FhirService.DeleteApiJsonAsync<ClearResultModel>("dev/seed");
+            clearMessage = result is null
+                ? "Cleared."
+                : $"Cleared {result.Cleared} resource(s) from the database.";
+            await RefreshSeedStatusAsync();
+        }
+        catch (Exception ex)
+        {
+            clearMessage = $"Clear failed: {ex.Message}";
+        }
+        finally
+        {
+            isClearing = false;
         }
     }
 

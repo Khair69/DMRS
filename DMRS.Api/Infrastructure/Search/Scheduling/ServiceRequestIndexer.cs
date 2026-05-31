@@ -16,9 +16,9 @@ namespace DMRS.Api.Infrastructure.Search.Scheduling
 
             AddIndex(indices, serviceRequest.Id, "_id", serviceRequest.Id);
             AddIndex(indices, serviceRequest.Id, "_lastUpdated", serviceRequest.Meta?.LastUpdated?.ToString("o"));
-            AddIndex(indices, serviceRequest.Id, "status", serviceRequest.StatusElement?.ObjectValue?.ToString());
-            AddIndex(indices, serviceRequest.Id, "intent", serviceRequest.IntentElement?.ObjectValue?.ToString());
-            AddIndex(indices, serviceRequest.Id, "priority", serviceRequest.PriorityElement?.ObjectValue?.ToString());
+            AddIndex(indices, serviceRequest.Id, "status", serviceRequest.StatusElement?.JsonValue?.ToString());
+            AddIndex(indices, serviceRequest.Id, "intent", serviceRequest.IntentElement?.JsonValue?.ToString());
+            AddIndex(indices, serviceRequest.Id, "priority", serviceRequest.PriorityElement?.JsonValue?.ToString());
             AddIndex(indices, serviceRequest.Id, "subject", serviceRequest.Subject?.Reference);
             AddIndex(indices, serviceRequest.Id, "patient", serviceRequest.Subject?.Reference);
             AddIndex(indices, serviceRequest.Id, "encounter", serviceRequest.Encounter?.Reference);

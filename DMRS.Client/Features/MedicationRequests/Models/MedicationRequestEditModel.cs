@@ -47,8 +47,8 @@ public sealed class MedicationRequestEditModel
             MedicationRxCui = medicationConcept?.Coding.FirstOrDefault()?.Code,
             DoseMg = ExtractDoseMg(request),
             FrequencyPerDay = ExtractFrequencyPerDay(request),
-            Status = request.Status?.ToString().ToLowerInvariant() ?? "unknown",
-            Intent = request.Intent?.ToString().ToLowerInvariant() ?? "order"
+            Status = request.SafeStatus(),
+            Intent = request.SafeIntent()
         };
     }
 

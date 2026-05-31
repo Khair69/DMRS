@@ -31,8 +31,8 @@ public sealed class ServiceRequestEditModel
         var patientId = FhirReferenceHelper.ExtractReferenceId(request.Subject?.Reference, "patient") ?? string.Empty;
         var codeConcept = request.Code?.Concept;
         var codeText = codeConcept?.Text ?? codeConcept?.Coding.FirstOrDefault()?.Code ?? string.Empty;
-        var status = request.Status?.ToString().ToLowerInvariant() ?? "unknown";
-        var intent = request.Intent?.ToString().ToLowerInvariant() ?? "order";
+        var status = request.SafeStatus();
+        var intent = request.SafeIntent();
 
         DateTime? occurrence = null;
         if (request.Occurrence is FhirDateTime dateTime && DateTime.TryParse(dateTime.Value, out var parsed))

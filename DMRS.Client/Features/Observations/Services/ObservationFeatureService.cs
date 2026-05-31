@@ -17,7 +17,7 @@ public sealed class ObservationFeatureService : FhirFeatureServiceBase<Observati
     {
         var patientId = FhirReferenceHelper.ExtractReferenceId(observation.Subject?.Reference, "patient") ?? "(unknown)";
         var codeText = observation.Code?.Text ?? observation.Code?.Coding.FirstOrDefault()?.Code ?? "(no-code)";
-        var status = observation.Status?.ToString() ?? "unknown";
+        var status = observation.SafeStatus();
 
         return new ObservationSummaryViewModel(
             observation.Id ?? "(no-id)",

@@ -24,7 +24,7 @@ public sealed class AppointmentFeatureService : FhirFeatureServiceBase<Appointme
         return new AppointmentSummaryViewModel(
             appointment.Id ?? "(no-id)",
             patientId,
-            appointment.Status?.ToString() ?? "unknown",
+            appointment.SafeStatus(),
             start);
     }
 }

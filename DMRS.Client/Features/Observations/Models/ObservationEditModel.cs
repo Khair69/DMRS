@@ -29,7 +29,7 @@ public sealed class ObservationEditModel
     {
         var patientId = FhirReferenceHelper.ExtractReferenceId(observation.Subject?.Reference, "patient") ?? string.Empty;
         var codeText = observation.Code?.Text ?? observation.Code?.Coding.FirstOrDefault()?.Code ?? string.Empty;
-        var status = observation.Status?.ToString().ToLowerInvariant() ?? "unknown";
+        var status = observation.SafeStatus();
 
         DateTime? effective = null;
         if (observation.Effective is FhirDateTime dateTime && DateTime.TryParse(dateTime.Value, out var parsed))

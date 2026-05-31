@@ -47,11 +47,24 @@ public sealed class SeedDataController : ControllerBase
     }
 
     /// <summary>
+    /// Deletes all FhirResources, versions, and search indices.
+    /// Use before a clean re-seed when existing data has bad references.
+    /// </summary>
+    [HttpDelete("seed")]
+    public async Task<IActionResult> ClearAll(CancellationToken ct)
+    {
+        if (!_env.IsDevelopment()) return NotFound();
+        var count = await _seedService.ClearAllFhirDataAsync(ct);
+        return Ok(new { cleared = count });
+    }
+
+    /// <summary>
     /// Returns the list of available sample-data file names so the client can
-    /// iterate through them one at a time.
+    /// iterate through them one at a time. Pass ?limit=N to cap the number
+    /// returned (useful when you only want a few hundred records).
     /// </summary>
     [HttpGet("seed/files")]
-    public IActionResult GetFiles()
+    public IActionResult GetFiles([FromQuery] int limit = 0)
     {
         if (!_env.IsDevelopment()) return NotFound();
 
@@ -64,7 +77,10 @@ public sealed class SeedDataController : ControllerBase
             .OrderBy(f => f)
             .ToList();
 
-        return Ok(new { files, count = files.Count });
+        if (limit > 0 && limit < files.Count)
+            files = files.Take(limit).ToList();
+
+        return Ok(new { files, count = files.Count, total = Directory.GetFiles(dataDir, "*.json").Length });
     }
 
     /// <summary>

@@ -16,7 +16,7 @@ namespace DMRS.Api.Infrastructure.Search.Administrative
             AddIndex(indices, location.Id, "_id", location.Id);
             AddIndex(indices, location.Id, "_lastUpdated", location.Meta?.LastUpdated?.ToString("o"));
             AddIndex(indices, location.Id, "name", location.Name);
-            AddIndex(indices, location.Id, "status", location.StatusElement?.ObjectValue?.ToString());
+            AddIndex(indices, location.Id, "status", location.StatusElement?.JsonValue?.ToString());
             AddIndex(indices, location.Id, "operational-status", location.OperationalStatus?.Code);
             AddIndex(indices, location.Id, "partof", location.PartOf?.Reference);
             AddIndex(indices, location.Id, "organization", location.ManagingOrganization?.Reference);

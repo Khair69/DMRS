@@ -233,6 +233,18 @@ public class FhirApiService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<TResponse?> DeleteApiJsonAsync<TResponse>(string path)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, path);
+        request.Headers.Accept.Clear();
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<TResponse>();
+    }
+
     public string GetDownloadUrl(string path) => $"{_httpClient.BaseAddress}{path}";
 
     private IReadOnlyList<T> DeserializeResourceList<T>(string json) where T : Resource

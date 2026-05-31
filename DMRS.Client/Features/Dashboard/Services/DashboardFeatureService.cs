@@ -142,7 +142,7 @@ public sealed class DashboardFeatureService
         return new DashboardActivityItemModel(
             appointment.Description ?? appointment.AppointmentType?.Text ?? "Scheduled appointment",
             $"Patient {patientId}",
-            start?.ToLocalTime().ToString("dd MMM yyyy HH:mm") ?? appointment.Status?.ToString() ?? "unknown",
+            start?.ToLocalTime().ToString("dd MMM yyyy HH:mm") ?? appointment.SafeStatus(),
             $"/appointments/{appointment.Id}");
     }
 
@@ -154,7 +154,7 @@ public sealed class DashboardFeatureService
         return new DashboardActivityItemModel(
             medication,
             $"Patient {patientId}",
-            $"{request.Status?.ToString() ?? "unknown"} | {request.Intent?.ToString() ?? "unknown"}",
+            $"{request.SafeStatus()} | {request.SafeIntent()}",
             $"/medication-requests/{request.Id}");
     }
 

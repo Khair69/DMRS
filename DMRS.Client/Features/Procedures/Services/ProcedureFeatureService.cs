@@ -17,7 +17,7 @@ public sealed class ProcedureFeatureService : FhirFeatureServiceBase<Procedure, 
     {
         var patientId = FhirReferenceHelper.ExtractReferenceId(procedure.Subject?.Reference, "patient") ?? "(unknown)";
         var codeText = procedure.Code?.Text ?? procedure.Code?.Coding.FirstOrDefault()?.Code ?? "(no-code)";
-        var status = procedure.Status?.ToString() ?? "unknown";
+        var status = procedure.SafeStatus();
 
         return new ProcedureSummaryViewModel(
             procedure.Id ?? "(no-id)",
