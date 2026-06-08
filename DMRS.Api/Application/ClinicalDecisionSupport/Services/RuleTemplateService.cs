@@ -66,8 +66,8 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 ]),
             new(
                 HighUtilizationRiskTemplate,
-                "High Utilization Risk",
-                "Warn when the AI model predicts that the patient is likely to become a frequent flyer / high-utilization patient.",
+                "Readmission Risk",
+                "Warn when the AI model predicts the patient is at high risk of 30-day hospital readmission.",
                 [
                     new RuleTemplateParameterDefinition("name", "string", true, "Human-readable rule name."),
                     new RuleTemplateParameterDefinition("highUtilizationProbabilityThreshold", "number", false, "Optional minimum AI probability required to trigger the warning.")
@@ -308,8 +308,8 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 expression,
                 BuildCard(
                     request,
-                    "High utilization risk for patient {{patient.id}}",
-                    "AI model {{ai.highUtilizationModel}} predicts frequent-flyer risk with probability {{ai.highUtilizationProbability}}."));
+                    "Readmission risk for patient {{patient.id}}",
+                    "AI model {{ai.highUtilizationModel}} predicts 30-day readmission risk with probability {{ai.highUtilizationProbability}}."));
         }
 
         private static (object expression, object card) BuildPolypharmacyWarningTemplate(RuleTemplateRequest request)
@@ -342,8 +342,8 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 },
                 BuildCard(
                     request,
-                    "High-utilization risk patient — {{ai.riskLevel}} ({{ai.compositeScore}})",
-                    "This patient has been flagged by the AI risk model. Key factors: chronic conditions={{ai.hasChronicConditions}}, condition count={{ai.conditionCount}}, medication count={{ai.medicationCount}}."));
+                    "Readmission risk patient — {{ai.riskLevel}} ({{ai.compositeScore}})",
+                    "This patient has been flagged by the AI readmission model. Key factors: chronic conditions={{ai.hasChronicConditions}}, condition count={{ai.conditionCount}}, medication count={{ai.medicationCount}}."));
         }
 
         private static Dictionary<string, object?> BuildCard(

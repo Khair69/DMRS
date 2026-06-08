@@ -23,11 +23,13 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
             _cardiovascularRiskService = cardiovascularRiskService;
         }
 
+        // Returns 200 with a null body when the model is unavailable so the patient chart, which
+        // loads all risk scores together, never fails just because the model has not been trained yet.
         [HttpGet("high-utilization/{patientId}")]
         public async Task<IActionResult> GetHighUtilizationRisk(string patientId, CancellationToken cancellationToken)
         {
             var result = await _riskService.AssessPatientAsync(patientId, cancellationToken);
-            return result == null ? NotFound() : Ok(result);
+            return Ok(result);
         }
 
         // Returns 200 with a null body when the model is unavailable so the patient chart, which

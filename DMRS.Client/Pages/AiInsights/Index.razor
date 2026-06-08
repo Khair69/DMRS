@@ -10,7 +10,7 @@
     <div>
         <span class="workspace-eyebrow">Predictive Layer</span>
         <h1>AI Insights</h1>
-        <p>Clinical composite risk scores built from the ONNX model plus real patient data — conditions, medications, and encounter frequency.</p>
+        <p>30-day readmission risk scored by a model trained on real hospital data, using each patient's FHIR record — age, conditions, medications, recent visits, and procedures.</p>
     </div>
 </div>
 
@@ -31,17 +31,17 @@ else
         <div class="dmrs-metric-card metric-rose">
             <div class="dmrs-metric-card__label">High Risk</div>
             <div class="dmrs-metric-card__value">@snapshot.HighRiskPatients.Count(p => p.RiskLevel == "High")</div>
-            <div class="dmrs-metric-card__helper">Composite score ≥ 65%</div>
+            <div class="dmrs-metric-card__helper">Readmission risk ≥ 65%</div>
         </div>
         <div class="dmrs-metric-card metric-gold">
             <div class="dmrs-metric-card__label">Medium Risk</div>
             <div class="dmrs-metric-card__value">@snapshot.HighRiskPatients.Count(p => p.RiskLevel == "Medium")</div>
-            <div class="dmrs-metric-card__helper">Composite score 35–65%</div>
+            <div class="dmrs-metric-card__helper">Readmission risk 35–65%</div>
         </div>
         <div class="dmrs-metric-card metric-emerald">
             <div class="dmrs-metric-card__label">Low Risk</div>
             <div class="dmrs-metric-card__value">@snapshot.HighRiskPatients.Count(p => p.RiskLevel == "Low")</div>
-            <div class="dmrs-metric-card__helper">Composite score &lt; 35%</div>
+            <div class="dmrs-metric-card__helper">Readmission risk &lt; 35%</div>
         </div>
         <div class="dmrs-metric-card metric-ocean">
             <div class="dmrs-metric-card__label">With Chronic Conditions</div>
@@ -56,7 +56,7 @@ else
                 <div class="dmrs-panel__header">
                     <div>
                         <div class="dmrs-panel__title">Patient Risk Watchlist</div>
-                        <div class="dmrs-panel__subtitle">Ranked by composite score — ONNX model output enriched with clinical data.</div>
+                        <div class="dmrs-panel__subtitle">Ranked by the model's predicted 30-day readmission probability.</div>
                     </div>
                 </div>
 
@@ -118,23 +118,23 @@ else
                 <div class="dmrs-panel__header">
                     <div>
                         <div class="dmrs-panel__title">How Scoring Works</div>
-                        <div class="dmrs-panel__subtitle">Composite model architecture</div>
+                        <div class="dmrs-panel__subtitle">Model-driven readmission predictor</div>
                     </div>
                 </div>
                 <div class="dmrs-stack">
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">ONNX Base Score</div>
-                        <p>Age and gender fed into the trained high-utilization predictor. Provides the demographic baseline probability.</p>
+                        <div class="dmrs-note-card__title">The Model</div>
+                        <p>An ONNX classifier trained on the UCI "130-US hospitals" dataset to predict the chance a patient is readmitted within 30 days. The model produces the score directly — no hand-tuned rules.</p>
                     </div>
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Clinical Signal Boosts</div>
-                        <p class="mb-1">The following signals add to the composite score:</p>
+                        <div class="dmrs-note-card__title">Model Inputs</div>
+                        <p class="mb-1">Pulled from each patient's FHIR record:</p>
                         <ul class="mb-0 small">
-                            <li>Chronic condition detected <strong>+18%</strong></li>
-                            <li>Polypharmacy (5+ active meds) <strong>+12%</strong></li>
-                            <li>High encounter frequency (4+) <strong>+12%</strong></li>
-                            <li>Multiple conditions (3+) <strong>+6%</strong></li>
-                            <li>Age ≥ 65 <strong>+8%</strong></li>
+                            <li>Age and gender</li>
+                            <li>Number of conditions</li>
+                            <li>Number of active medications</li>
+                            <li>Number of recent visits</li>
+                            <li>Number of procedures</li>
                         </ul>
                     </div>
                     <div class="dmrs-note-card">

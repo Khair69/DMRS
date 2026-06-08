@@ -34,7 +34,7 @@ else
             @if (riskAssessment is not null && riskAssessment.FeaturesComplete)
             {
                 <span class="dmrs-pill @RiskLevelPillClass(riskAssessment.RiskLevel)">
-                    AI Risk: @riskAssessment.RiskLevel
+                    Readmission Risk: @riskAssessment.RiskLevel
                 </span>
             }
             <a class="btn btn-light" href="@($"/patients/{Id}/edit")">Edit Patient</a>
@@ -214,10 +214,10 @@ else
                 </div>
                 <div class="dmrs-stack">
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Composite Risk Score</div>
+                        <div class="dmrs-note-card__title">Readmission Risk (30-day)</div>
                         @if (riskAssessment is null)
                         {
-                            <p>No risk assessment available for this patient yet.</p>
+                            <p>No readmission assessment available for this patient yet.</p>
                         }
                         else if (!riskAssessment.FeaturesComplete)
                         {

@@ -33,7 +33,7 @@ public sealed class PatientChartFeatureService
         var encountersTask = _fhirApiService.SearchResourcesAsync<Encounter>(query);
         var appointmentsTask = _fhirApiService.SearchResourcesAsync<Appointment>(query);
         var serviceRequestsTask = _fhirApiService.SearchResourcesAsync<ServiceRequest>(query);
-        var riskTask = _fhirApiService.GetApiJsonAsync<HighUtilizationRiskAssessmentModel>($"cds/risk/high-utilization/{patientId}");
+        var riskTask = SafeGetAsync<HighUtilizationRiskAssessmentModel>($"cds/risk/high-utilization/{patientId}");
         var diabetesRiskTask = SafeGetAsync<DiabetesRiskAssessmentModel>($"cds/risk/diabetes/{patientId}");
         var cardiovascularRiskTask = SafeGetAsync<CardiovascularRiskAssessmentModel>($"cds/risk/cardiovascular/{patientId}");
 

@@ -1,17 +1,29 @@
-using System.Collections;
-using System.Collections.ObjectModel;
 using DMRS.Api.Application.ClinicalDecisionSupport.Interfaces;
 using DMRS.Api.Application.ClinicalDecisionSupport.Models;
 using DMRS.Api.Domain.Interfaces;
 using Hl7.Fhir.Model;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
 namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 {
+    /// <summary>
+    /// Predicts 30-day hospital readmission risk (surfaced in the UI as "Readmission Risk").
+    /// The score is produced entirely by the trained ONNX model from six FHIR-derived features —
+    /// [age, gender, conditionCount, medicationCount, recentEncounterCount, procedureCount] — rather
+    /// than the hand-tuned score boosts used previously. The clinical counts are still surfaced on the
+    /// assessment as the model's inputs / informational factors, and the type/CDS-variable names are
+    /// kept as "HighUtilization" so existing CDS rules that reference them keep working.
+    /// </summary>
     public sealed class HighUtilizationRiskService : IHighUtilizationRiskService, IDisposable
     {
+        // Medians used only when age/gender are missing on the Patient (counts always come from FHIR).
+        // Update from train_readmission.py's "Imputation medians" printout if they differ.
+        private const float MedianAge = 65f;
+        private const float MedianGender = 1f; // Female=1, Male=0
+
         private static readonly HashSet<string> ChronicConditionKeywords = new(StringComparer.OrdinalIgnoreCase)
         {
             "diabetes", "diabetic", "copd", "heart failure", "renal failure", "kidney disease",
@@ -35,34 +47,44 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         };
 
         private readonly IFhirRepository _fhirRepository;
-        private readonly InferenceSession _session;
+        private readonly InferenceSession? _session;
         private readonly AiRiskPredictorOptions _options;
         private readonly string _modelName;
+        private readonly string _inputName;
+        private readonly ILogger<HighUtilizationRiskService> _logger;
 
         public HighUtilizationRiskService(
             IFhirRepository fhirRepository,
             IOptions<AiRiskPredictorOptions> options,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            ILogger<HighUtilizationRiskService> logger)
         {
             _fhirRepository = fhirRepository;
             _options = options.Value;
+            _logger = logger;
 
             var modelPath = Path.IsPathRooted(_options.ModelPath)
                 ? _options.ModelPath
                 : Path.Combine(environment.ContentRootPath, _options.ModelPath);
 
-            if (!File.Exists(modelPath))
-            {
-                throw new FileNotFoundException($"High-risk predictor model not found at '{modelPath}'.", modelPath);
-            }
-
-            _session = new InferenceSession(modelPath);
             _modelName = Path.GetFileName(modelPath);
+
+            // Degrade gracefully when the model file has not been trained/placed yet.
+            if (File.Exists(modelPath))
+            {
+                _session = new InferenceSession(modelPath);
+                _inputName = _session.InputMetadata.Keys.FirstOrDefault() ?? _options.InputName;
+            }
+            else
+            {
+                _inputName = _options.InputName;
+                logger.LogWarning("Readmission predictor model not found at '{ModelPath}' — risk scoring disabled.", modelPath);
+            }
         }
 
         public async Task<HighUtilizationRiskAssessment?> AssessPatientAsync(string patientId, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(patientId))
+            if (string.IsNullOrWhiteSpace(patientId) || _session is null)
             {
                 return null;
             }
@@ -77,45 +99,13 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 return null;
             }
 
-            var ageYears = CalculateAgeYears(patient.BirthDate);
-            var genderValue = ToGenderFeature(patient.Gender);
-
-            if (ageYears == null || genderValue == null)
-            {
-                return new HighUtilizationRiskAssessment(
-                    normalizedPatientId,
-                    ageYears ?? 0,
-                    genderValue ?? 0,
-                    false,
-                    null,
-                    _modelName,
-                    DateTimeOffset.UtcNow,
-                    false);
-            }
-
-            // Run ONNX model
-            var inputTensor = new DenseTensor<float>(new[] { ageYears.Value, genderValue.Value }, new[] { 1, 2 });
-            var inputs = new List<NamedOnnxValue>
-            {
-                NamedOnnxValue.CreateFromTensor(_options.InputName, inputTensor)
-            };
-
-            using IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = _session.Run(inputs);
-            var (label, probability) = OnnxOutputParser.ParseOutputs(results);
-
-            // Cap the ONNX base contribution at 0.50 so that clinical signals are always
-            // required to push a patient into the High tier (≥ 0.65).  When the model cannot
-            // produce a probability tensor (null), use a conservative fallback rather than 1.0,
-            // which would make every positively-labelled patient unconditionally "High".
-            var rawProbability = probability ?? (label == true ? 0.40f : 0.05f);
-            var modelProbability = Math.Min(rawProbability, 0.50f);
-
             // Fetch clinical data sequentially — EF Core's scoped DbContext does not support
             // concurrent async operations on the same instance, so Task.WhenAll is not safe here.
             var patientRef = $"Patient/{normalizedPatientId}";
             var conditions = await _fhirRepository.SearchAsync<Condition>(new Dictionary<string, string> { ["patient"] = patientRef });
             var medications = await _fhirRepository.SearchAsync<MedicationRequest>(new Dictionary<string, string> { ["patient"] = patientRef });
             var encounters = await _fhirRepository.SearchAsync<Encounter>(new Dictionary<string, string> { ["patient"] = patientRef });
+            var procedures = await _fhirRepository.SearchAsync<Procedure>(new Dictionary<string, string> { ["patient"] = patientRef });
 
             var conditionCount = conditions.Count;
             var medicationCount = medications.Count(m =>
@@ -125,89 +115,100 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             var sixMonthsAgo = DateTimeOffset.UtcNow.AddMonths(-6);
             var recentEncounterCount = encounters.Count(e =>
             {
-                // FHIR R5 uses ActualPeriod; fall back to counting all if period not set
                 var start = e.ActualPeriod?.Start;
                 return start != null && DateTimeOffset.TryParse(start, out var dt) && dt >= sixMonthsAgo;
             });
             if (recentEncounterCount == 0)
             {
-                // Fallback: count all encounters as a proxy when period data is absent
                 recentEncounterCount = encounters.Count;
             }
 
+            var procedureCount = procedures.Count;
             var hasChronicConditions = DetectChronicConditions(conditions);
 
-            // Build composite score: ONNX base + clinical signal boosts
-            var composite = modelProbability;
-            var riskFactors = new List<string>();
+            var ageYears = CalculateAgeYears(patient.BirthDate);
+            var genderValue = ToGenderFeature(patient.Gender);
+            var featuresComplete = ageYears.HasValue && genderValue.HasValue;
+            var age = ageYears ?? MedianAge;
+            var gender = genderValue ?? MedianGender;
 
+            // Feature order MUST match train_readmission.py:
+            // [age, gender, conditionCount, medicationCount, recentEncounterCount, procedureCount]
+            var inputTensor = new DenseTensor<float>(
+                new[] { age, gender, conditionCount, medicationCount, recentEncounterCount, procedureCount },
+                new[] { 1, 6 });
+            var inputs = new List<NamedOnnxValue>
+            {
+                NamedOnnxValue.CreateFromTensor(_inputName, inputTensor)
+            };
+
+            float? probability;
+            bool? label;
+            try
+            {
+                using IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = _session.Run(inputs);
+                (label, probability) = OnnxOutputParser.ParseOutputs(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Readmission model inference failed for patient {PatientId}.", normalizedPatientId);
+                return null;
+            }
+
+            // The model output IS the score — no hand-tuned boosts.
+            var score = Math.Clamp(probability ?? (label == true ? 0.5f : 0.1f), 0f, 1f);
+            var riskLevel = score >= 0.65f ? "High" : score >= 0.35f ? "Medium" : "Low";
+            var isHighRisk = score >= _options.HighRiskThreshold;
+
+            // Informational factors describing the model's inputs (not score contributors).
+            var riskFactors = new List<string>();
             if (hasChronicConditions)
             {
-                composite += 0.18f;
                 riskFactors.Add("Chronic condition on record");
             }
             if (medicationCount >= 10)
             {
-                composite += 0.25f;
                 riskFactors.Add($"Severe polypharmacy ({medicationCount} active medications)");
             }
             else if (medicationCount >= 5)
             {
-                composite += 0.15f;
                 riskFactors.Add($"Polypharmacy ({medicationCount} active medications)");
-            }
-            else if (medicationCount >= 3)
-            {
-                composite += 0.06f;
             }
             if (recentEncounterCount >= 4)
             {
-                composite += 0.12f;
                 riskFactors.Add($"High encounter frequency ({recentEncounterCount} recent visits)");
-            }
-            else if (recentEncounterCount >= 2)
-            {
-                composite += 0.05f;
             }
             if (conditionCount >= 3)
             {
-                composite += 0.06f;
                 riskFactors.Add($"Multiple conditions ({conditionCount} on record)");
             }
-            if (ageYears.Value >= 65)
+            if (procedureCount >= 3)
             {
-                composite += 0.08f;
+                riskFactors.Add($"Multiple procedures ({procedureCount} on record)");
+            }
+            if (age >= 65)
+            {
                 riskFactors.Add("Age ≥ 65");
             }
-            else if (ageYears.Value >= 50)
-            {
-                composite += 0.03f;
-            }
-
-            composite = Math.Clamp(composite, 0f, 1f);
-
-            var riskLevel = composite >= 0.65f ? "High" : composite >= 0.35f ? "Medium" : "Low";
-            var isHighRisk = composite >= _options.HighRiskThreshold;
-
             if (riskFactors.Count == 0)
             {
-                riskFactors.Add("Demographic baseline only");
+                riskFactors.Add("No major utilization factors");
             }
 
             return new HighUtilizationRiskAssessment(
                 normalizedPatientId,
-                ageYears.Value,
-                genderValue.Value,
+                age,
+                gender,
                 isHighRisk,
                 probability,
                 _modelName,
                 DateTimeOffset.UtcNow,
-                true,
+                featuresComplete,
                 conditionCount,
                 medicationCount,
                 recentEncounterCount,
                 hasChronicConditions,
-                composite,
+                score,
                 riskLevel,
                 riskFactors.ToArray());
         }
@@ -216,14 +217,12 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         {
             foreach (var condition in conditions)
             {
-                // Check coding codes
                 var codes = condition.Code?.Coding?.Select(c => c.Code) ?? [];
                 if (codes.Any(code => !string.IsNullOrWhiteSpace(code) && ChronicSnomedCodes.Contains(code!)))
                 {
                     return true;
                 }
 
-                // Check display text and condition text
                 var texts = new[]
                 {
                     condition.Code?.Text,
@@ -249,7 +248,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 
         public void Dispose()
         {
-            _session.Dispose();
+            _session?.Dispose();
         }
 
         private static float? ToGenderFeature(AdministrativeGender? gender)
