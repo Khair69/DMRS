@@ -34,6 +34,8 @@ public sealed class PatientChartFeatureService
         var appointmentsTask = _fhirApiService.SearchResourcesAsync<Appointment>(query);
         var serviceRequestsTask = _fhirApiService.SearchResourcesAsync<ServiceRequest>(query);
         var riskTask = _fhirApiService.GetApiJsonAsync<HighUtilizationRiskAssessmentModel>($"cds/risk/high-utilization/{patientId}");
+        var diabetesRiskTask = SafeGetAsync<DiabetesRiskAssessmentModel>($"cds/risk/diabetes/{patientId}");
+        var cardiovascularRiskTask = SafeGetAsync<CardiovascularRiskAssessmentModel>($"cds/risk/cardiovascular/{patientId}");
 
         await Task.WhenAll(
             allergiesTask,
@@ -43,12 +45,16 @@ public sealed class PatientChartFeatureService
             encountersTask,
             appointmentsTask,
             serviceRequestsTask,
-            riskTask);
+            riskTask,
+            diabetesRiskTask,
+            cardiovascularRiskTask);
 
         return new PatientChartSnapshotModel
         {
             Patient = patient,
             Risk = riskTask.Result,
+            DiabetesRisk = diabetesRiskTask.Result,
+            CardiovascularRisk = cardiovascularRiskTask.Result,
             Allergies = allergiesTask.Result.Take(6).ToList(),
             Conditions = conditionsTask.Result.Take(6).ToList(),
             Observations = observationsTask.Result.Take(6).ToList(),
@@ -57,5 +63,19 @@ public sealed class PatientChartFeatureService
             Appointments = appointmentsTask.Result.Take(6).ToList(),
             ServiceRequests = serviceRequestsTask.Result.Take(6).ToList()
         };
+    }
+
+    // The newer AI models may not be trained/deployed yet; never let a failed risk call break the
+    // whole patient chart load.
+    private async Task<T?> SafeGetAsync<T>(string path)
+    {
+        try
+        {
+            return await _fhirApiService.GetApiJsonAsync<T>(path);
+        }
+        catch
+        {
+            return default;
+        }
     }
 }

@@ -254,6 +254,61 @@ else
                         }
                     </div>
                     <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Diabetes Risk</div>
+                        @if (diabetesRisk is null)
+                        {
+                            <p class="mb-0">Model not available yet.</p>
+                        }
+                        else
+                        {
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="progress flex-grow-1" style="height:8px">
+                                    <div class="progress-bar @RiskBarClass(diabetesRisk.RiskLevel)"
+                                         style="@($"width:{((diabetesRisk.Probability ?? 0) * 100).ToString("0")}%")"></div>
+                                </div>
+                                <strong>@(((diabetesRisk.Probability ?? 0) * 100).ToString("0"))%</strong>
+                            </div>
+                            <p class="mb-1">Risk level: <strong>@diabetesRisk.RiskLevel</strong></p>
+                            <ul class="mb-1 small text-muted ps-3">
+                                <li>Glucose: @diabetesRisk.Glucose.ToString("0") mg/dL</li>
+                                <li>Diastolic BP: @diabetesRisk.BloodPressure.ToString("0") mm Hg</li>
+                                <li>BMI: @diabetesRisk.Bmi.ToString("0.0")</li>
+                            </ul>
+                            @if (!diabetesRisk.FeaturesComplete)
+                            {
+                                <div class="small text-warning mb-0">Estimated — imputed: @string.Join(", ", diabetesRisk.ImputedFeatures)</div>
+                            }
+                        }
+                    </div>
+                    <div class="dmrs-note-card">
+                        <div class="dmrs-note-card__title">Cardiovascular Risk</div>
+                        @if (cardiovascularRisk is null)
+                        {
+                            <p class="mb-0">Model not available yet.</p>
+                        }
+                        else
+                        {
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="progress flex-grow-1" style="height:8px">
+                                    <div class="progress-bar @RiskBarClass(cardiovascularRisk.RiskLevel)"
+                                         style="@($"width:{((cardiovascularRisk.Probability ?? 0) * 100).ToString("0")}%")"></div>
+                                </div>
+                                <strong>@(((cardiovascularRisk.Probability ?? 0) * 100).ToString("0"))%</strong>
+                            </div>
+                            <p class="mb-1">Risk level: <strong>@cardiovascularRisk.RiskLevel</strong></p>
+                            <ul class="mb-1 small text-muted ps-3">
+                                <li>Resting BP: @cardiovascularRisk.RestingBloodPressure.ToString("0") mm Hg</li>
+                                <li>Cholesterol: @cardiovascularRisk.Cholesterol.ToString("0") mg/dL</li>
+                                <li>Max heart rate: @cardiovascularRisk.MaxHeartRate.ToString("0") bpm</li>
+                                <li>Fasting glucose &gt; 120: @(cardiovascularRisk.FastingBloodSugar >= 1 ? "Yes" : "No")</li>
+                            </ul>
+                            @if (!cardiovascularRisk.FeaturesComplete)
+                            {
+                                <div class="small text-warning mb-0">Estimated — imputed: @string.Join(", ", cardiovascularRisk.ImputedFeatures)</div>
+                            }
+                        }
+                    </div>
+                    <div class="dmrs-note-card">
                         <div class="dmrs-note-card__title">Clinical Data Points</div>
                         @if (riskAssessment?.FeaturesComplete == true)
                         {
@@ -390,6 +445,8 @@ else
     private Hl7.Fhir.Model.Patient? patient;
     private PatientChartSnapshotModel? chart;
     private HighUtilizationRiskAssessmentModel? riskAssessment;
+    private DiabetesRiskAssessmentModel? diabetesRisk;
+    private CardiovascularRiskAssessmentModel? cardiovascularRisk;
     private bool isBusy;
     private string? errorMessage;
     private bool isLinkedToAccount;
@@ -443,6 +500,8 @@ else
             chart = chartTask.Result;
             patient = chart?.Patient;
             riskAssessment = chart?.Risk;
+            diabetesRisk = chart?.DiabetesRisk;
+            cardiovascularRisk = chart?.CardiovascularRisk;
 
             if (patient is null)
             {

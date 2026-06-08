@@ -35,6 +35,12 @@
     <Content Include="Ai\high_risk_predictor.onnx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Ai\diabetes_predictor.onnx" Condition="Exists('Ai\diabetes_predictor.onnx')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Ai\cardiovascular_predictor.onnx" Condition="Exists('Ai\cardiovascular_predictor.onnx')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

@@ -105,6 +105,8 @@ builder.Services.AddSingleton<IFhirValidatorService, FhirValidatorService>();
 builder.Services.Configure<RxNormOptions>(builder.Configuration.GetSection("Cds:Knowledge:RxNorm"));
 builder.Services.Configure<MockMedicineApiOptions>(builder.Configuration.GetSection("Cds:Knowledge:MockMedicineApi"));
 builder.Services.Configure<AiRiskPredictorOptions>(builder.Configuration.GetSection("Cds:Ai:HighUtilizationRisk"));
+builder.Services.Configure<DiabetesRiskPredictorOptions>(builder.Configuration.GetSection("Cds:Ai:DiabetesRisk"));
+builder.Services.Configure<CardiovascularRiskPredictorOptions>(builder.Configuration.GetSection("Cds:Ai:CardiovascularRisk"));
 
 builder.Services.AddSingleton<ICdsServiceRegistry, CdsServiceRegistry>();
 builder.Services.AddSingleton<CdsAlertFeed>();
@@ -123,6 +125,9 @@ builder.Services.AddScoped<IMedicineKnowledgeService, MedicineKnowledgeService>(
 builder.Services.AddScoped<IClinicalKnowledgeService, ClinicalKnowledgeService>();
 builder.Services.AddScoped<IMedicationRequestKnowledgeWarmup, MedicationRequestKnowledgeWarmup>();
 builder.Services.AddScoped<IHighUtilizationRiskService, HighUtilizationRiskService>();
+builder.Services.AddScoped<ObservationFeatureExtractor>();
+builder.Services.AddScoped<IDiabetesRiskService, DiabetesRiskService>();
+builder.Services.AddScoped<ICardiovascularRiskService, CardiovascularRiskService>();
 builder.Services.AddScoped<IPatientDocumentService, PatientDocumentService>();
 
 if (builder.Environment.IsDevelopment())

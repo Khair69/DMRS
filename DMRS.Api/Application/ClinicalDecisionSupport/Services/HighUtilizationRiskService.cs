@@ -101,7 +101,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             };
 
             using IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = _session.Run(inputs);
-            var (label, probability) = ParseOutputs(results);
+            var (label, probability) = OnnxOutputParser.ParseOutputs(results);
 
             // Cap the ONNX base contribution at 0.50 so that clinical signals are always
             // required to push a patient into the High tier (≥ 0.65).  When the model cannot
@@ -250,110 +250,6 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         public void Dispose()
         {
             _session.Dispose();
-        }
-
-        private static (bool? label, float? probability) ParseOutputs(IEnumerable<DisposableNamedOnnxValue> outputs)
-        {
-            bool? label = null;
-            float? probability = null;
-
-            foreach (var output in outputs)
-            {
-                if (TryReadLabel(output, out var parsedLabel))
-                {
-                    label ??= parsedLabel;
-                }
-
-                if (TryReadProbability(output, out var parsedProbability))
-                {
-                    probability ??= parsedProbability;
-                }
-            }
-
-            return (label, probability);
-        }
-
-        private static bool TryReadLabel(DisposableNamedOnnxValue output, out bool label)
-        {
-            label = false;
-
-            try
-            {
-                if (output.AsTensor<long>() is Tensor<long> longTensor && longTensor.Length > 0)
-                {
-                    label = longTensor.ToArray()[0] != 0;
-                    return true;
-                }
-            }
-            catch
-            {
-            }
-
-            try
-            {
-                if (output.AsTensor<int>() is Tensor<int> intTensor && intTensor.Length > 0)
-                {
-                    label = intTensor.ToArray()[0] != 0;
-                    return true;
-                }
-            }
-            catch
-            {
-            }
-
-            return false;
-        }
-
-        private static bool TryReadProbability(DisposableNamedOnnxValue output, out float probability)
-        {
-            probability = 0;
-
-            try
-            {
-                if (output.AsTensor<float>() is Tensor<float> floatTensor && floatTensor.Length > 0)
-                {
-                    var values = floatTensor.ToArray();
-                    probability = values.Length == 1 ? values[0] : values[^1];
-                    return true;
-                }
-            }
-            catch
-            {
-            }
-
-            try
-            {
-                var enumerable = output.AsEnumerable<Dictionary<long, float>>();
-                var map = enumerable.FirstOrDefault();
-                if (map != null)
-                {
-                    probability = map.TryGetValue(1, out var positiveProbability)
-                        ? positiveProbability
-                        : map.Values.DefaultIfEmpty(0).Max();
-                    return true;
-                }
-            }
-            catch
-            {
-            }
-
-            try
-            {
-                var enumerable = output.AsEnumerable<Dictionary<int, float>>();
-                var map = enumerable.FirstOrDefault();
-                if (map != null)
-                {
-                    probability = map.TryGetValue(1, out var positiveProbability)
-                        ? positiveProbability
-                        : map.Values.DefaultIfEmpty(0).Max();
-                    return true;
-                }
-            }
-            catch
-            {
-            }
-
-            return false;
         }
 
         private static float? ToGenderFeature(AdministrativeGender? gender)

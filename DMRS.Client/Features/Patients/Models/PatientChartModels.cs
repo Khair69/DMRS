@@ -7,6 +7,8 @@ public sealed class PatientChartSnapshotModel
 {
     public Patient? Patient { get; set; }
     public HighUtilizationRiskAssessmentModel? Risk { get; set; }
+    public DiabetesRiskAssessmentModel? DiabetesRisk { get; set; }
+    public CardiovascularRiskAssessmentModel? CardiovascularRisk { get; set; }
     public IReadOnlyList<AllergyIntolerance> Allergies { get; set; } = [];
     public IReadOnlyList<Condition> Conditions { get; set; } = [];
     public IReadOnlyList<Observation> Observations { get; set; } = [];
