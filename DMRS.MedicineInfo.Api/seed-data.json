@@ -1,210 +1,962 @@
-﻿[
+[
   {
     "rxCui": "161",
     "name": "Acetaminophen (Tylenol)",
-    "dosing": {
-      "maxDailyMg": 4000,
-      "maxSingleMg": 1000,
-      "warningThreshold": 3000
-    },
-    "safety": {
-      "pregnancyCategory": "B",
-      "isControlled": false
-    },
-    "ingredients": [
-      {
-        "code": "UNII-L960UP28W1",
-        "name": "Acetaminophen"
-      }
-    ],
+    "dosing": { "maxDailyMg": 4000, "maxSingleMg": 1000, "warningThreshold": 3000 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-L960UP28W1", "name": "Acetaminophen" } ],
     "indications": [ "ICD10-R50.9", "ICD10-M79.1" ]
   },
   {
     "rxCui": "5640",
     "name": "Ibuprofen (Advil)",
-    "dosing": {
-      "maxDailyMg": 3200,
-      "maxSingleMg": 800,
-      "warningThreshold": 2400
-    },
-    "safety": {
-      "pregnancyCategory": "C",
-      "isControlled": false
-    },
-    "ingredients": [
-      {
-        "code": "UNII-WK2XYI10QM",
-        "name": "Ibuprofen"
-      }
-    ],
+    "dosing": { "maxDailyMg": 3200, "maxSingleMg": 800, "warningThreshold": 2400 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-WK2XYI10QM", "name": "Ibuprofen" } ],
     "indications": [ "ICD10-M25.5", "ICD10-R51.9" ]
   },
   {
     "rxCui": "723",
     "name": "Amoxicillin",
-    "dosing": {
-      "maxDailyMg": 3000,
-      "maxSingleMg": 1000,
-      "warningThreshold": 2000
-    },
-    "safety": {
-      "pregnancyCategory": "B",
-      "isControlled": false
-    },
-    "ingredients": [
-      {
-        "code": "UNII-804826J2HU",
-        "name": "Amoxicillin"
-      }
-    ],
+    "dosing": { "maxDailyMg": 3000, "maxSingleMg": 1000, "warningThreshold": 2000 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-804826J2HU", "name": "Amoxicillin" } ],
     "indications": [ "ICD10-J01.9", "ICD10-A54.9" ]
   },
   {
     "rxCui": "214182",
     "name": "Percocet (Oxycodone/Acetaminophen)",
-    "dosing": {
-      "maxDailyMg": 4000,
-      "maxSingleMg": 1000,
-      "warningThreshold": 2500
-    },
-    "safety": {
-      "pregnancyCategory": "C",
-      "isControlled": true
-    },
-    "ingredients": [
-      {
-        "code": "UNII-CDH51W4452",
-        "name": "Oxycodone"
-      },
-      {
-        "code": "UNII-L960UP28W1",
-        "name": "Acetaminophen"
-      }
-    ],
+    "dosing": { "maxDailyMg": 4000, "maxSingleMg": 1000, "warningThreshold": 2500 },
+    "safety": { "pregnancyCategory": "C", "isControlled": true },
+    "ingredients": [ { "code": "UNII-CDH51W4452", "name": "Oxycodone" }, { "code": "UNII-L960UP28W1", "name": "Acetaminophen" } ],
     "indications": [ "ICD10-G89.2", "ICD10-M54.5" ]
   },
   {
     "rxCui": "29046",
     "name": "Lisinopril (Zestril)",
-    "dosing": {
-      "maxDailyMg": 80,
-      "maxSingleMg": 40,
-      "warningThreshold": 40
-    },
-    "safety": {
-      "pregnancyCategory": "D",
-      "isControlled": false
-    },
-    "ingredients": [
-      {
-        "code": "UNII-E7QM0DX79F",
-        "name": "Lisinopril"
-      }
-    ],
+    "dosing": { "maxDailyMg": 80, "maxSingleMg": 40, "warningThreshold": 40 },
+    "safety": { "pregnancyCategory": "D", "isControlled": false },
+    "ingredients": [ { "code": "UNII-E7QM0DX79F", "name": "Lisinopril" } ],
     "indications": [ "ICD10-I10", "ICD10-I50.9" ]
   },
   {
     "rxCui": "83367",
     "name": "Atorvastatin (Lipitor)",
-    "dosing": {
-      "maxDailyMg": 80,
-      "maxSingleMg": 80,
-      "warningThreshold": 40
-    },
-    "safety": {
-      "pregnancyCategory": "X",
-      "isControlled": false
-    },
-    "ingredients": [
-      {
-        "code": "UNII-A0H25606NV",
-        "name": "Atorvastatin"
-      }
-    ],
+    "dosing": { "maxDailyMg": 80, "maxSingleMg": 80, "warningThreshold": 40 },
+    "safety": { "pregnancyCategory": "X", "isControlled": false },
+    "ingredients": [ { "code": "UNII-A0H25606NV", "name": "Atorvastatin" } ],
     "indications": [ "ICD10-E78.0", "ICD10-I25.1" ]
   },
   {
     "rxCui": "6809",
     "name": "Metformin",
-    "dosing": {
-      "maxDailyMg": 2550,
-      "maxSingleMg": 1000,
-      "warningThreshold": 2000
-    },
-    "safety": {
-      "pregnancyCategory": "B",
-      "isControlled": false
-    },
-    "ingredients": [
-      {
-        "code": "UNII-9100L32L2X",
-        "name": "Metformin"
-      }
-    ],
+    "dosing": { "maxDailyMg": 2550, "maxSingleMg": 1000, "warningThreshold": 2000 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-9100L32L2X", "name": "Metformin" } ],
     "indications": [ "ICD10-E11.9" ]
   },
   {
     "rxCui": "211516",
     "name": "Augmentin (Amoxicillin/Clavulanate)",
-    "dosing": {
-      "maxDailyMg": 4000,
-      "maxSingleMg": 2000,
-      "warningThreshold": 2000
-    },
-    "safety": {
-      "pregnancyCategory": "B",
-      "isControlled": false
-    },
-    "ingredients": [
-      {
-        "code": "UNII-804826J2HU",
-        "name": "Amoxicillin"
-      },
-      {
-        "code": "UNII-O63896NA07",
-        "name": "Clavulanic Acid"
-      }
-    ],
+    "dosing": { "maxDailyMg": 4000, "maxSingleMg": 2000, "warningThreshold": 2000 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-804826J2HU", "name": "Amoxicillin" }, { "code": "UNII-O63896NA07", "name": "Clavulanic Acid" } ],
     "indications": [ "ICD10-J18.9", "ICD10-N39.0" ]
   },
   {
     "rxCui": "8640",
     "name": "Prednisone",
-    "dosing": {
-      "maxDailyMg": 80,
-      "maxSingleMg": 60,
-      "warningThreshold": 40
-    },
-    "safety": {
-      "pregnancyCategory": "C",
-      "isControlled": false
-    },
-    "ingredients": [
-      {
-        "code": "UNII-VB0R961HZT",
-        "name": "Prednisone"
-      }
-    ],
+    "dosing": { "maxDailyMg": 80, "maxSingleMg": 60, "warningThreshold": 40 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-VB0R961HZT", "name": "Prednisone" } ],
     "indications": [ "ICD10-M06.9", "ICD10-J45.909" ]
   },
   {
     "rxCui": "25480",
     "name": "Gabapentin (Neurontin)",
-    "dosing": {
-      "maxDailyMg": 3600,
-      "maxSingleMg": 1200,
-      "warningThreshold": 1800
-    },
-    "safety": {
-      "pregnancyCategory": "C",
-      "isControlled": false
-    },
-    "ingredients": [
-      {
-        "code": "UNII-6CW7F3G59X",
-        "name": "Gabapentin"
-      }
-    ],
+    "dosing": { "maxDailyMg": 3600, "maxSingleMg": 1200, "warningThreshold": 1800 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-6CW7F3G59X", "name": "Gabapentin" } ],
     "indications": [ "ICD10-G50.0", "ICD10-G40.909" ]
+  },
+  {
+    "rxCui": "17767",
+    "name": "Amlodipine (Norvasc)",
+    "dosing": { "maxDailyMg": 10, "maxSingleMg": 10, "warningThreshold": 10 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-1J444QC288", "name": "Amlodipine" } ],
+    "indications": [ "ICD10-I10", "ICD10-I20.9" ]
+  },
+  {
+    "rxCui": "52175",
+    "name": "Losartan (Cozaar)",
+    "dosing": { "maxDailyMg": 100, "maxSingleMg": 100, "warningThreshold": 100 },
+    "safety": { "pregnancyCategory": "D", "isControlled": false },
+    "ingredients": [ { "code": "UNII-JMS50MPO89", "name": "Losartan" } ],
+    "indications": [ "ICD10-I10", "ICD10-N18.9" ]
+  },
+  {
+    "rxCui": "5487",
+    "name": "Hydrochlorothiazide (HCTZ)",
+    "dosing": { "maxDailyMg": 50, "maxSingleMg": 50, "warningThreshold": 50 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-0J48LPH2TH", "name": "Hydrochlorothiazide" } ],
+    "indications": [ "ICD10-I10", "ICD10-R60.9" ]
+  },
+  {
+    "rxCui": "6918",
+    "name": "Metoprolol (Lopressor)",
+    "dosing": { "maxDailyMg": 400, "maxSingleMg": 200, "warningThreshold": 300 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-GEB06NHM23", "name": "Metoprolol" } ],
+    "indications": [ "ICD10-I10", "ICD10-I48.91" ]
+  },
+  {
+    "rxCui": "20352",
+    "name": "Carvedilol (Coreg)",
+    "dosing": { "maxDailyMg": 50, "maxSingleMg": 25, "warningThreshold": 50 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-0K47UL67F2", "name": "Carvedilol" } ],
+    "indications": [ "ICD10-I50.9", "ICD10-I10" ]
+  },
+  {
+    "rxCui": "1202",
+    "name": "Atenolol (Tenormin)",
+    "dosing": { "maxDailyMg": 100, "maxSingleMg": 100, "warningThreshold": 100 },
+    "safety": { "pregnancyCategory": "D", "isControlled": false },
+    "ingredients": [ { "code": "UNII-50VV3VW0TI", "name": "Atenolol" } ],
+    "indications": [ "ICD10-I10", "ICD10-I20.9" ]
+  },
+  {
+    "rxCui": "4603",
+    "name": "Furosemide (Lasix)",
+    "dosing": { "maxDailyMg": 600, "maxSingleMg": 200, "warningThreshold": 320 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-7LXU5N7ZO5", "name": "Furosemide" } ],
+    "indications": [ "ICD10-I50.9", "ICD10-R60.9" ]
+  },
+  {
+    "rxCui": "9997",
+    "name": "Spironolactone (Aldactone)",
+    "dosing": { "maxDailyMg": 400, "maxSingleMg": 200, "warningThreshold": 200 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-27O7W4T232", "name": "Spironolactone" } ],
+    "indications": [ "ICD10-I50.9", "ICD10-E26.9" ]
+  },
+  {
+    "rxCui": "32968",
+    "name": "Clopidogrel (Plavix)",
+    "dosing": { "maxDailyMg": 75, "maxSingleMg": 300, "warningThreshold": 150 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-A74586SNO7", "name": "Clopidogrel" } ],
+    "indications": [ "ICD10-I25.1", "ICD10-I63.9" ]
+  },
+  {
+    "rxCui": "11289",
+    "name": "Warfarin (Coumadin)",
+    "dosing": { "maxDailyMg": 15, "maxSingleMg": 10, "warningThreshold": 10 },
+    "safety": { "pregnancyCategory": "X", "isControlled": false },
+    "ingredients": [ { "code": "UNII-5Q7ZVV76EI", "name": "Warfarin" } ],
+    "indications": [ "ICD10-I48.91", "ICD10-I82.409" ]
+  },
+  {
+    "rxCui": "1364430",
+    "name": "Apixaban (Eliquis)",
+    "dosing": { "maxDailyMg": 10, "maxSingleMg": 5, "warningThreshold": 10 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-3Z9Y7UWC1J", "name": "Apixaban" } ],
+    "indications": [ "ICD10-I48.91", "ICD10-I26.99" ]
+  },
+  {
+    "rxCui": "1114195",
+    "name": "Rivaroxaban (Xarelto)",
+    "dosing": { "maxDailyMg": 20, "maxSingleMg": 20, "warningThreshold": 20 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-9NDF7JZ4M3", "name": "Rivaroxaban" } ],
+    "indications": [ "ICD10-I48.91", "ICD10-I82.409" ]
+  },
+  {
+    "rxCui": "301542",
+    "name": "Rosuvastatin (Crestor)",
+    "dosing": { "maxDailyMg": 40, "maxSingleMg": 40, "warningThreshold": 20 },
+    "safety": { "pregnancyCategory": "X", "isControlled": false },
+    "ingredients": [ { "code": "UNII-413KH5ZJ73", "name": "Rosuvastatin" } ],
+    "indications": [ "ICD10-E78.0", "ICD10-I25.1" ]
+  },
+  {
+    "rxCui": "36567",
+    "name": "Simvastatin (Zocor)",
+    "dosing": { "maxDailyMg": 40, "maxSingleMg": 40, "warningThreshold": 40 },
+    "safety": { "pregnancyCategory": "X", "isControlled": false },
+    "ingredients": [ { "code": "UNII-AGG2FN16EV", "name": "Simvastatin" } ],
+    "indications": [ "ICD10-E78.5", "ICD10-I25.1" ]
+  },
+  {
+    "rxCui": "42463",
+    "name": "Pravastatin (Pravachol)",
+    "dosing": { "maxDailyMg": 80, "maxSingleMg": 80, "warningThreshold": 40 },
+    "safety": { "pregnancyCategory": "X", "isControlled": false },
+    "ingredients": [ { "code": "UNII-KXO2KT9N0G", "name": "Pravastatin" } ],
+    "indications": [ "ICD10-E78.0", "ICD10-E78.5" ]
+  },
+  {
+    "rxCui": "3443",
+    "name": "Diltiazem (Cardizem)",
+    "dosing": { "maxDailyMg": 360, "maxSingleMg": 120, "warningThreshold": 360 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-EE92BBP03H", "name": "Diltiazem" } ],
+    "indications": [ "ICD10-I48.91", "ICD10-I10" ]
+  },
+  {
+    "rxCui": "69749",
+    "name": "Valsartan (Diovan)",
+    "dosing": { "maxDailyMg": 320, "maxSingleMg": 320, "warningThreshold": 320 },
+    "safety": { "pregnancyCategory": "D", "isControlled": false },
+    "ingredients": [ { "code": "UNII-80M03YXJ7I", "name": "Valsartan" } ],
+    "indications": [ "ICD10-I10", "ICD10-I50.9" ]
+  },
+  {
+    "rxCui": "3827",
+    "name": "Enalapril (Vasotec)",
+    "dosing": { "maxDailyMg": 40, "maxSingleMg": 20, "warningThreshold": 40 },
+    "safety": { "pregnancyCategory": "D", "isControlled": false },
+    "ingredients": [ { "code": "UNII-69PN84IO1A", "name": "Enalapril" } ],
+    "indications": [ "ICD10-I10", "ICD10-I50.9" ]
+  },
+  {
+    "rxCui": "35208",
+    "name": "Ramipril (Altace)",
+    "dosing": { "maxDailyMg": 20, "maxSingleMg": 10, "warningThreshold": 20 },
+    "safety": { "pregnancyCategory": "D", "isControlled": false },
+    "ingredients": [ { "code": "UNII-L35JN3I7SJ", "name": "Ramipril" } ],
+    "indications": [ "ICD10-I10", "ICD10-I25.1" ]
+  },
+  {
+    "rxCui": "5470",
+    "name": "Hydralazine",
+    "dosing": { "maxDailyMg": 300, "maxSingleMg": 100, "warningThreshold": 200 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-26NAK24LS8", "name": "Hydralazine" } ],
+    "indications": [ "ICD10-I10", "ICD10-I50.9" ]
+  },
+  {
+    "rxCui": "3407",
+    "name": "Digoxin (Lanoxin)",
+    "dosing": { "maxDailyMg": 0.25, "maxSingleMg": 0.25, "warningThreshold": 0.25 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-73K4184T59", "name": "Digoxin" } ],
+    "indications": [ "ICD10-I50.9", "ICD10-I48.91" ]
+  },
+  {
+    "rxCui": "7407",
+    "name": "Isosorbide Mononitrate (Imdur)",
+    "dosing": { "maxDailyMg": 120, "maxSingleMg": 120, "warningThreshold": 120 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-LX1OH63030", "name": "Isosorbide Mononitrate" } ],
+    "indications": [ "ICD10-I20.9", "ICD10-I25.1" ]
+  },
+  {
+    "rxCui": "341248",
+    "name": "Ezetimibe (Zetia)",
+    "dosing": { "maxDailyMg": 10, "maxSingleMg": 10, "warningThreshold": 10 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-EOR26LQQ24", "name": "Ezetimibe" } ],
+    "indications": [ "ICD10-E78.0", "ICD10-E78.5" ]
+  },
+  {
+    "rxCui": "4124",
+    "name": "Fenofibrate (Tricor)",
+    "dosing": { "maxDailyMg": 145, "maxSingleMg": 145, "warningThreshold": 145 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-U202363UOS", "name": "Fenofibrate" } ],
+    "indications": [ "ICD10-E78.1", "ICD10-E78.2" ]
+  },
+  {
+    "rxCui": "847232",
+    "name": "Insulin Glargine (Lantus)",
+    "dosing": { "maxDailyMg": 1, "maxSingleMg": 1, "warningThreshold": 1 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-2ZM8CX04RZ", "name": "Insulin Glargine" } ],
+    "indications": [ "ICD10-E10.9", "ICD10-E11.9" ]
+  },
+  {
+    "rxCui": "4821",
+    "name": "Glipizide (Glucotrol)",
+    "dosing": { "maxDailyMg": 40, "maxSingleMg": 20, "warningThreshold": 40 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-X7WDT95HKp", "name": "Glipizide" } ],
+    "indications": [ "ICD10-E11.9" ]
+  },
+  {
+    "rxCui": "25789",
+    "name": "Glimepiride (Amaryl)",
+    "dosing": { "maxDailyMg": 8, "maxSingleMg": 8, "warningThreshold": 8 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-G2S0NKO64Y", "name": "Glimepiride" } ],
+    "indications": [ "ICD10-E11.9" ]
+  },
+  {
+    "rxCui": "4815",
+    "name": "Glyburide (DiaBeta)",
+    "dosing": { "maxDailyMg": 20, "maxSingleMg": 10, "warningThreshold": 20 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-SX6K58TVWC", "name": "Glyburide" } ],
+    "indications": [ "ICD10-E11.9" ]
+  },
+  {
+    "rxCui": "593411",
+    "name": "Sitagliptin (Januvia)",
+    "dosing": { "maxDailyMg": 100, "maxSingleMg": 100, "warningThreshold": 100 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-TS63EW8X6F", "name": "Sitagliptin" } ],
+    "indications": [ "ICD10-E11.9" ]
+  },
+  {
+    "rxCui": "1545653",
+    "name": "Empagliflozin (Jardiance)",
+    "dosing": { "maxDailyMg": 25, "maxSingleMg": 25, "warningThreshold": 25 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-HDC1R2M35U", "name": "Empagliflozin" } ],
+    "indications": [ "ICD10-E11.9", "ICD10-I50.9" ]
+  },
+  {
+    "rxCui": "1488564",
+    "name": "Dapagliflozin (Farxiga)",
+    "dosing": { "maxDailyMg": 10, "maxSingleMg": 10, "warningThreshold": 10 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-1ULL0QJ8UC", "name": "Dapagliflozin" } ],
+    "indications": [ "ICD10-E11.9", "ICD10-N18.9" ]
+  },
+  {
+    "rxCui": "33738",
+    "name": "Pioglitazone (Actos)",
+    "dosing": { "maxDailyMg": 45, "maxSingleMg": 45, "warningThreshold": 45 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-X4OV71U42S", "name": "Pioglitazone" } ],
+    "indications": [ "ICD10-E11.9" ]
+  },
+  {
+    "rxCui": "1991302",
+    "name": "Semaglutide (Ozempic)",
+    "dosing": { "maxDailyMg": 0.5, "maxSingleMg": 1, "warningThreshold": 1 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-53AxS3PjHb", "name": "Semaglutide" } ],
+    "indications": [ "ICD10-E11.9", "ICD10-E66.9" ]
+  },
+  {
+    "rxCui": "7646",
+    "name": "Omeprazole (Prilosec)",
+    "dosing": { "maxDailyMg": 40, "maxSingleMg": 40, "warningThreshold": 40 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-KG60484QX9", "name": "Omeprazole" } ],
+    "indications": [ "ICD10-K21.9", "ICD10-K25.9" ]
+  },
+  {
+    "rxCui": "40790",
+    "name": "Pantoprazole (Protonix)",
+    "dosing": { "maxDailyMg": 80, "maxSingleMg": 40, "warningThreshold": 80 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-6V9V2RYJ8N", "name": "Pantoprazole" } ],
+    "indications": [ "ICD10-K21.9", "ICD10-K27.9" ]
+  },
+  {
+    "rxCui": "283742",
+    "name": "Esomeprazole (Nexium)",
+    "dosing": { "maxDailyMg": 40, "maxSingleMg": 40, "warningThreshold": 40 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-N3PA6559FT", "name": "Esomeprazole" } ],
+    "indications": [ "ICD10-K21.9", "ICD10-K22.11" ]
+  },
+  {
+    "rxCui": "4278",
+    "name": "Famotidine (Pepcid)",
+    "dosing": { "maxDailyMg": 80, "maxSingleMg": 40, "warningThreshold": 80 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-5QZO15J2Z8", "name": "Famotidine" } ],
+    "indications": [ "ICD10-K21.9", "ICD10-K25.9" ]
+  },
+  {
+    "rxCui": "32937",
+    "name": "Ondansetron (Zofran)",
+    "dosing": { "maxDailyMg": 24, "maxSingleMg": 8, "warningThreshold": 16 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-4AF302ESOS", "name": "Ondansetron" } ],
+    "indications": [ "ICD10-R11.2", "ICD10-R11.10" ]
+  },
+  {
+    "rxCui": "6915",
+    "name": "Metoclopramide (Reglan)",
+    "dosing": { "maxDailyMg": 40, "maxSingleMg": 10, "warningThreshold": 30 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-L4YEB44I46", "name": "Metoclopramide" } ],
+    "indications": [ "ICD10-K30", "ICD10-R11.2" ]
+  },
+  {
+    "rxCui": "18631",
+    "name": "Azithromycin (Zithromax)",
+    "dosing": { "maxDailyMg": 500, "maxSingleMg": 500, "warningThreshold": 500 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-J2KLZ20U1M", "name": "Azithromycin" } ],
+    "indications": [ "ICD10-J18.9", "ICD10-J20.9" ]
+  },
+  {
+    "rxCui": "2551",
+    "name": "Ciprofloxacin (Cipro)",
+    "dosing": { "maxDailyMg": 1500, "maxSingleMg": 750, "warningThreshold": 1000 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-5E8K9I0O4U", "name": "Ciprofloxacin" } ],
+    "indications": [ "ICD10-N39.0", "ICD10-A09" ]
+  },
+  {
+    "rxCui": "82122",
+    "name": "Levofloxacin (Levaquin)",
+    "dosing": { "maxDailyMg": 750, "maxSingleMg": 750, "warningThreshold": 750 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-6GNT3Y5LMF", "name": "Levofloxacin" } ],
+    "indications": [ "ICD10-J18.9", "ICD10-N39.0" ]
+  },
+  {
+    "rxCui": "3640",
+    "name": "Doxycycline",
+    "dosing": { "maxDailyMg": 200, "maxSingleMg": 100, "warningThreshold": 200 },
+    "safety": { "pregnancyCategory": "D", "isControlled": false },
+    "ingredients": [ { "code": "UNII-N12000U13O", "name": "Doxycycline" } ],
+    "indications": [ "ICD10-A77.9", "ICD10-L70.0" ]
+  },
+  {
+    "rxCui": "2231",
+    "name": "Cephalexin (Keflex)",
+    "dosing": { "maxDailyMg": 4000, "maxSingleMg": 1000, "warningThreshold": 3000 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-5SFF1W6677", "name": "Cephalexin" } ],
+    "indications": [ "ICD10-L03.90", "ICD10-N39.0" ]
+  },
+  {
+    "rxCui": "2193",
+    "name": "Ceftriaxone (Rocephin)",
+    "dosing": { "maxDailyMg": 4000, "maxSingleMg": 2000, "warningThreshold": 2000 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-75J73V1629", "name": "Ceftriaxone" } ],
+    "indications": [ "ICD10-J18.9", "ICD10-A54.9" ]
+  },
+  {
+    "rxCui": "6922",
+    "name": "Metronidazole (Flagyl)",
+    "dosing": { "maxDailyMg": 2250, "maxSingleMg": 750, "warningThreshold": 1500 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-140QMO216E", "name": "Metronidazole" } ],
+    "indications": [ "ICD10-A07.1", "ICD10-N76.0" ]
+  },
+  {
+    "rxCui": "10180",
+    "name": "Sulfamethoxazole/Trimethoprim (Bactrim)",
+    "dosing": { "maxDailyMg": 3200, "maxSingleMg": 1600, "warningThreshold": 1600 },
+    "safety": { "pregnancyCategory": "D", "isControlled": false },
+    "ingredients": [ { "code": "UNII-JE42381TNV", "name": "Sulfamethoxazole" }, { "code": "UNII-AN164J8Y0X", "name": "Trimethoprim" } ],
+    "indications": [ "ICD10-N39.0", "ICD10-J18.9" ]
+  },
+  {
+    "rxCui": "7454",
+    "name": "Nitrofurantoin (Macrobid)",
+    "dosing": { "maxDailyMg": 400, "maxSingleMg": 100, "warningThreshold": 400 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-927AH8112L", "name": "Nitrofurantoin" } ],
+    "indications": [ "ICD10-N39.0", "ICD10-N30.00" ]
+  },
+  {
+    "rxCui": "2582",
+    "name": "Clindamycin (Cleocin)",
+    "dosing": { "maxDailyMg": 1800, "maxSingleMg": 450, "warningThreshold": 1800 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-3U02EL437C", "name": "Clindamycin" } ],
+    "indications": [ "ICD10-L03.90", "ICD10-J02.0" ]
+  },
+  {
+    "rxCui": "4450",
+    "name": "Fluconazole (Diflucan)",
+    "dosing": { "maxDailyMg": 800, "maxSingleMg": 400, "warningThreshold": 400 },
+    "safety": { "pregnancyCategory": "D", "isControlled": false },
+    "ingredients": [ { "code": "UNII-8VZV102JFY", "name": "Fluconazole" } ],
+    "indications": [ "ICD10-B37.3", "ICD10-B37.9" ]
+  },
+  {
+    "rxCui": "281",
+    "name": "Acyclovir (Zovirax)",
+    "dosing": { "maxDailyMg": 4000, "maxSingleMg": 800, "warningThreshold": 4000 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-X4HES1O11F", "name": "Acyclovir" } ],
+    "indications": [ "ICD10-B02.9", "ICD10-B00.9" ]
+  },
+  {
+    "rxCui": "37801",
+    "name": "Valacyclovir (Valtrex)",
+    "dosing": { "maxDailyMg": 3000, "maxSingleMg": 1000, "warningThreshold": 3000 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-MZ1IW7Q79D", "name": "Valacyclovir" } ],
+    "indications": [ "ICD10-B02.9", "ICD10-A60.00" ]
+  },
+  {
+    "rxCui": "260101",
+    "name": "Oseltamivir (Tamiflu)",
+    "dosing": { "maxDailyMg": 150, "maxSingleMg": 75, "warningThreshold": 150 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-20O93L6F9H", "name": "Oseltamivir" } ],
+    "indications": [ "ICD10-J11.1", "ICD10-J10.1" ]
+  },
+  {
+    "rxCui": "435",
+    "name": "Albuterol (ProAir / Ventolin)",
+    "dosing": { "maxDailyMg": 0.72, "maxSingleMg": 0.18, "warningThreshold": 0.72 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-QF8SVZ843E", "name": "Albuterol" } ],
+    "indications": [ "ICD10-J45.909", "ICD10-J44.9" ]
+  },
+  {
+    "rxCui": "88249",
+    "name": "Montelukast (Singulair)",
+    "dosing": { "maxDailyMg": 10, "maxSingleMg": 10, "warningThreshold": 10 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-U1O3J18SFL", "name": "Montelukast" } ],
+    "indications": [ "ICD10-J45.909", "ICD10-J30.9" ]
+  },
+  {
+    "rxCui": "41126",
+    "name": "Fluticasone (Flonase)",
+    "dosing": { "maxDailyMg": 0.2, "maxSingleMg": 0.1, "warningThreshold": 0.2 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-CUT2W21N7U", "name": "Fluticasone" } ],
+    "indications": [ "ICD10-J30.9", "ICD10-J45.909" ]
+  },
+  {
+    "rxCui": "896271",
+    "name": "Fluticasone/Salmeterol (Advair)",
+    "dosing": { "maxDailyMg": 1, "maxSingleMg": 0.5, "warningThreshold": 1 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-CUT2W21N7U", "name": "Fluticasone" }, { "code": "UNII-6EW8Q962A5", "name": "Salmeterol" } ],
+    "indications": [ "ICD10-J44.9", "ICD10-J45.909" ]
+  },
+  {
+    "rxCui": "20610",
+    "name": "Cetirizine (Zyrtec)",
+    "dosing": { "maxDailyMg": 10, "maxSingleMg": 10, "warningThreshold": 10 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-YO7261ME24", "name": "Cetirizine" } ],
+    "indications": [ "ICD10-J30.9", "ICD10-L50.9" ]
+  },
+  {
+    "rxCui": "28889",
+    "name": "Loratadine (Claritin)",
+    "dosing": { "maxDailyMg": 10, "maxSingleMg": 10, "warningThreshold": 10 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-7AJO3BO7QN", "name": "Loratadine" } ],
+    "indications": [ "ICD10-J30.9", "ICD10-L50.9" ]
+  },
+  {
+    "rxCui": "3498",
+    "name": "Diphenhydramine (Benadryl)",
+    "dosing": { "maxDailyMg": 300, "maxSingleMg": 50, "warningThreshold": 200 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-8GTS82S83M", "name": "Diphenhydramine" } ],
+    "indications": [ "ICD10-J30.9", "ICD10-T78.40XA" ]
+  },
+  {
+    "rxCui": "70361",
+    "name": "Fexofenadine (Allegra)",
+    "dosing": { "maxDailyMg": 180, "maxSingleMg": 180, "warningThreshold": 180 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-E6582LOH6V", "name": "Fexofenadine" } ],
+    "indications": [ "ICD10-J30.9", "ICD10-L50.9" ]
+  },
+  {
+    "rxCui": "36437",
+    "name": "Sertraline (Zoloft)",
+    "dosing": { "maxDailyMg": 200, "maxSingleMg": 200, "warningThreshold": 200 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-QUC7NX6WMB", "name": "Sertraline" } ],
+    "indications": [ "ICD10-F32.9", "ICD10-F41.1" ]
+  },
+  {
+    "rxCui": "321988",
+    "name": "Escitalopram (Lexapro)",
+    "dosing": { "maxDailyMg": 20, "maxSingleMg": 20, "warningThreshold": 20 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-4O63GA37Rj", "name": "Escitalopram" } ],
+    "indications": [ "ICD10-F32.9", "ICD10-F41.1" ]
+  },
+  {
+    "rxCui": "4493",
+    "name": "Fluoxetine (Prozac)",
+    "dosing": { "maxDailyMg": 80, "maxSingleMg": 80, "warningThreshold": 60 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-01K63SUP8D", "name": "Fluoxetine" } ],
+    "indications": [ "ICD10-F32.9", "ICD10-F42.2" ]
+  },
+  {
+    "rxCui": "2556",
+    "name": "Citalopram (Celexa)",
+    "dosing": { "maxDailyMg": 40, "maxSingleMg": 40, "warningThreshold": 40 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-0DHU5B8D6V", "name": "Citalopram" } ],
+    "indications": [ "ICD10-F32.9", "ICD10-F41.9" ]
+  },
+  {
+    "rxCui": "42347",
+    "name": "Bupropion (Wellbutrin)",
+    "dosing": { "maxDailyMg": 450, "maxSingleMg": 200, "warningThreshold": 400 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-01ZG3TPX31", "name": "Bupropion" } ],
+    "indications": [ "ICD10-F32.9", "ICD10-F17.200" ]
+  },
+  {
+    "rxCui": "72625",
+    "name": "Duloxetine (Cymbalta)",
+    "dosing": { "maxDailyMg": 120, "maxSingleMg": 60, "warningThreshold": 120 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-9044SC542W", "name": "Duloxetine" } ],
+    "indications": [ "ICD10-F32.9", "ICD10-M54.5" ]
+  },
+  {
+    "rxCui": "39786",
+    "name": "Venlafaxine (Effexor)",
+    "dosing": { "maxDailyMg": 375, "maxSingleMg": 225, "warningThreshold": 300 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-GRZ5RCB1QG", "name": "Venlafaxine" } ],
+    "indications": [ "ICD10-F32.9", "ICD10-F41.1" ]
+  },
+  {
+    "rxCui": "10737",
+    "name": "Trazodone (Desyrel)",
+    "dosing": { "maxDailyMg": 400, "maxSingleMg": 150, "warningThreshold": 300 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-6E8ZO8LRNE", "name": "Trazodone" } ],
+    "indications": [ "ICD10-F32.9", "ICD10-G47.00" ]
+  },
+  {
+    "rxCui": "596",
+    "name": "Alprazolam (Xanax)",
+    "dosing": { "maxDailyMg": 4, "maxSingleMg": 2, "warningThreshold": 4 },
+    "safety": { "pregnancyCategory": "D", "isControlled": true },
+    "ingredients": [ { "code": "UNII-1C4KO29MVV", "name": "Alprazolam" } ],
+    "indications": [ "ICD10-F41.0", "ICD10-F41.1" ]
+  },
+  {
+    "rxCui": "6470",
+    "name": "Lorazepam (Ativan)",
+    "dosing": { "maxDailyMg": 10, "maxSingleMg": 4, "warningThreshold": 6 },
+    "safety": { "pregnancyCategory": "D", "isControlled": true },
+    "ingredients": [ { "code": "UNII-O26FZP769L", "name": "Lorazepam" } ],
+    "indications": [ "ICD10-F41.1", "ICD10-G40.909" ]
+  },
+  {
+    "rxCui": "2598",
+    "name": "Clonazepam (Klonopin)",
+    "dosing": { "maxDailyMg": 4, "maxSingleMg": 2, "warningThreshold": 4 },
+    "safety": { "pregnancyCategory": "D", "isControlled": true },
+    "ingredients": [ { "code": "UNII-5PE9FDE8GB", "name": "Clonazepam" } ],
+    "indications": [ "ICD10-F41.0", "ICD10-G40.909" ]
+  },
+  {
+    "rxCui": "3322",
+    "name": "Diazepam (Valium)",
+    "dosing": { "maxDailyMg": 40, "maxSingleMg": 10, "warningThreshold": 30 },
+    "safety": { "pregnancyCategory": "D", "isControlled": true },
+    "ingredients": [ { "code": "UNII-Q3JTX2Q7TU", "name": "Diazepam" } ],
+    "indications": [ "ICD10-F41.1", "ICD10-M62.838" ]
+  },
+  {
+    "rxCui": "39998",
+    "name": "Zolpidem (Ambien)",
+    "dosing": { "maxDailyMg": 10, "maxSingleMg": 10, "warningThreshold": 10 },
+    "safety": { "pregnancyCategory": "C", "isControlled": true },
+    "ingredients": [ { "code": "UNII-7K383OQI23", "name": "Zolpidem" } ],
+    "indications": [ "ICD10-G47.00", "ICD10-F51.01" ]
+  },
+  {
+    "rxCui": "704",
+    "name": "Amitriptyline (Elavil)",
+    "dosing": { "maxDailyMg": 150, "maxSingleMg": 75, "warningThreshold": 150 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-1806D8D52K", "name": "Amitriptyline" } ],
+    "indications": [ "ICD10-F32.9", "ICD10-G89.4" ]
+  },
+  {
+    "rxCui": "51272",
+    "name": "Quetiapine (Seroquel)",
+    "dosing": { "maxDailyMg": 800, "maxSingleMg": 400, "warningThreshold": 600 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-2S3PL1B6UJ", "name": "Quetiapine" } ],
+    "indications": [ "ICD10-F31.9", "ICD10-F20.9" ]
+  },
+  {
+    "rxCui": "89013",
+    "name": "Aripiprazole (Abilify)",
+    "dosing": { "maxDailyMg": 30, "maxSingleMg": 30, "warningThreshold": 30 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-82VFR53I78", "name": "Aripiprazole" } ],
+    "indications": [ "ICD10-F20.9", "ICD10-F31.9" ]
+  },
+  {
+    "rxCui": "35636",
+    "name": "Risperidone (Risperdal)",
+    "dosing": { "maxDailyMg": 16, "maxSingleMg": 8, "warningThreshold": 12 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-L6UH7ZF8HC", "name": "Risperidone" } ],
+    "indications": [ "ICD10-F20.9", "ICD10-F29" ]
+  },
+  {
+    "rxCui": "28439",
+    "name": "Lamotrigine (Lamictal)",
+    "dosing": { "maxDailyMg": 400, "maxSingleMg": 200, "warningThreshold": 400 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-U3H27498KS", "name": "Lamotrigine" } ],
+    "indications": [ "ICD10-G40.909", "ICD10-F31.9" ]
+  },
+  {
+    "rxCui": "114477",
+    "name": "Levetiracetam (Keppra)",
+    "dosing": { "maxDailyMg": 3000, "maxSingleMg": 1500, "warningThreshold": 3000 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-44YRR34555", "name": "Levetiracetam" } ],
+    "indications": [ "ICD10-G40.909" ]
+  },
+  {
+    "rxCui": "38404",
+    "name": "Topiramate (Topamax)",
+    "dosing": { "maxDailyMg": 400, "maxSingleMg": 200, "warningThreshold": 400 },
+    "safety": { "pregnancyCategory": "D", "isControlled": false },
+    "ingredients": [ { "code": "UNII-0H73WJJ391", "name": "Topiramate" } ],
+    "indications": [ "ICD10-G40.909", "ICD10-G43.909" ]
+  },
+  {
+    "rxCui": "187832",
+    "name": "Pregabalin (Lyrica)",
+    "dosing": { "maxDailyMg": 600, "maxSingleMg": 300, "warningThreshold": 450 },
+    "safety": { "pregnancyCategory": "C", "isControlled": true },
+    "ingredients": [ { "code": "UNII-55JG375S6M", "name": "Pregabalin" } ],
+    "indications": [ "ICD10-M79.7", "ICD10-G62.9" ]
+  },
+  {
+    "rxCui": "6901",
+    "name": "Methylphenidate (Ritalin)",
+    "dosing": { "maxDailyMg": 60, "maxSingleMg": 20, "warningThreshold": 60 },
+    "safety": { "pregnancyCategory": "C", "isControlled": true },
+    "ingredients": [ { "code": "UNII-207ZZ9Qz49", "name": "Methylphenidate" } ],
+    "indications": [ "ICD10-F90.9" ]
+  },
+  {
+    "rxCui": "311354",
+    "name": "Lisdexamfetamine (Vyvanse)",
+    "dosing": { "maxDailyMg": 70, "maxSingleMg": 70, "warningThreshold": 70 },
+    "safety": { "pregnancyCategory": "C", "isControlled": true },
+    "ingredients": [ { "code": "UNII-H645GUL8KJ", "name": "Lisdexamfetamine" } ],
+    "indications": [ "ICD10-F90.9" ]
+  },
+  {
+    "rxCui": "10689",
+    "name": "Tramadol (Ultram)",
+    "dosing": { "maxDailyMg": 400, "maxSingleMg": 100, "warningThreshold": 300 },
+    "safety": { "pregnancyCategory": "C", "isControlled": true },
+    "ingredients": [ { "code": "UNII-39J1LGJ30J", "name": "Tramadol" } ],
+    "indications": [ "ICD10-G89.29", "ICD10-M54.5" ]
+  },
+  {
+    "rxCui": "857005",
+    "name": "Hydrocodone/Acetaminophen (Norco)",
+    "dosing": { "maxDailyMg": 4000, "maxSingleMg": 1000, "warningThreshold": 3000 },
+    "safety": { "pregnancyCategory": "C", "isControlled": true },
+    "ingredients": [ { "code": "UNII-NO70W886KK", "name": "Hydrocodone" }, { "code": "UNII-L960UP28W1", "name": "Acetaminophen" } ],
+    "indications": [ "ICD10-G89.29", "ICD10-M54.5" ]
+  },
+  {
+    "rxCui": "7052",
+    "name": "Morphine (MS Contin)",
+    "dosing": { "maxDailyMg": 120, "maxSingleMg": 30, "warningThreshold": 90 },
+    "safety": { "pregnancyCategory": "C", "isControlled": true },
+    "ingredients": [ { "code": "UNII-76I7G6D29C", "name": "Morphine" } ],
+    "indications": [ "ICD10-G89.3", "ICD10-G89.29" ]
+  },
+  {
+    "rxCui": "2670",
+    "name": "Codeine/Acetaminophen (Tylenol #3)",
+    "dosing": { "maxDailyMg": 4000, "maxSingleMg": 1000, "warningThreshold": 3000 },
+    "safety": { "pregnancyCategory": "C", "isControlled": true },
+    "ingredients": [ { "code": "UNII-Q830PW7520", "name": "Codeine" }, { "code": "UNII-L960UP28W1", "name": "Acetaminophen" } ],
+    "indications": [ "ICD10-R05", "ICD10-G89.29" ]
+  },
+  {
+    "rxCui": "7258",
+    "name": "Naproxen (Aleve)",
+    "dosing": { "maxDailyMg": 1500, "maxSingleMg": 500, "warningThreshold": 1100 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-57Y76R9ATQ", "name": "Naproxen" } ],
+    "indications": [ "ICD10-M25.5", "ICD10-M54.5" ]
+  },
+  {
+    "rxCui": "41493",
+    "name": "Meloxicam (Mobic)",
+    "dosing": { "maxDailyMg": 15, "maxSingleMg": 15, "warningThreshold": 15 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-VG2QF83CGL", "name": "Meloxicam" } ],
+    "indications": [ "ICD10-M19.90", "ICD10-M06.9" ]
+  },
+  {
+    "rxCui": "140587",
+    "name": "Celecoxib (Celebrex)",
+    "dosing": { "maxDailyMg": 400, "maxSingleMg": 200, "warningThreshold": 400 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-JCX84Q7J1L", "name": "Celecoxib" } ],
+    "indications": [ "ICD10-M19.90", "ICD10-M06.9" ]
+  },
+  {
+    "rxCui": "1116",
+    "name": "Aspirin",
+    "dosing": { "maxDailyMg": 4000, "maxSingleMg": 1000, "warningThreshold": 3000 },
+    "safety": { "pregnancyCategory": "D", "isControlled": false },
+    "ingredients": [ { "code": "UNII-R16CO5Y76E", "name": "Aspirin" } ],
+    "indications": [ "ICD10-I25.1", "ICD10-R51.9" ]
+  },
+  {
+    "rxCui": "21193",
+    "name": "Cyclobenzaprine (Flexeril)",
+    "dosing": { "maxDailyMg": 30, "maxSingleMg": 10, "warningThreshold": 30 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-69O5WQQ5TI", "name": "Cyclobenzaprine" } ],
+    "indications": [ "ICD10-M62.838", "ICD10-M54.5" ]
+  },
+  {
+    "rxCui": "1292",
+    "name": "Baclofen",
+    "dosing": { "maxDailyMg": 80, "maxSingleMg": 20, "warningThreshold": 80 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-H789N3FKE8", "name": "Baclofen" } ],
+    "indications": [ "ICD10-M62.838", "ICD10-G35" ]
+  },
+  {
+    "rxCui": "10582",
+    "name": "Levothyroxine (Synthroid)",
+    "dosing": { "maxDailyMg": 0.3, "maxSingleMg": 0.3, "warningThreshold": 0.2 },
+    "safety": { "pregnancyCategory": "A", "isControlled": false },
+    "ingredients": [ { "code": "UNII-Q51BO43MG4", "name": "Levothyroxine" } ],
+    "indications": [ "ICD10-E03.9" ]
+  },
+  {
+    "rxCui": "4179",
+    "name": "Estradiol",
+    "dosing": { "maxDailyMg": 2, "maxSingleMg": 2, "warningThreshold": 2 },
+    "safety": { "pregnancyCategory": "X", "isControlled": false },
+    "ingredients": [ { "code": "UNII-4TI98Z838E", "name": "Estradiol" } ],
+    "indications": [ "ICD10-N95.1", "ICD10-E28.310" ]
+  },
+  {
+    "rxCui": "4337",
+    "name": "Finasteride (Proscar)",
+    "dosing": { "maxDailyMg": 5, "maxSingleMg": 5, "warningThreshold": 5 },
+    "safety": { "pregnancyCategory": "X", "isControlled": false },
+    "ingredients": [ { "code": "UNII-57GNO57U7G", "name": "Finasteride" } ],
+    "indications": [ "ICD10-N40.0", "ICD10-L65.9" ]
+  },
+  {
+    "rxCui": "519",
+    "name": "Allopurinol (Zyloprim)",
+    "dosing": { "maxDailyMg": 800, "maxSingleMg": 300, "warningThreshold": 600 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-63CZ7GJN5I", "name": "Allopurinol" } ],
+    "indications": [ "ICD10-M10.9", "ICD10-E79.0" ]
+  },
+  {
+    "rxCui": "2683",
+    "name": "Colchicine (Colcrys)",
+    "dosing": { "maxDailyMg": 1.8, "maxSingleMg": 1.2, "warningThreshold": 1.8 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-SML2Y3J35T", "name": "Colchicine" } ],
+    "indications": [ "ICD10-M10.9" ]
+  },
+  {
+    "rxCui": "77492",
+    "name": "Tamsulosin (Flomax)",
+    "dosing": { "maxDailyMg": 0.8, "maxSingleMg": 0.4, "warningThreshold": 0.8 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-G3P28OML5I", "name": "Tamsulosin" } ],
+    "indications": [ "ICD10-N40.0" ]
+  },
+  {
+    "rxCui": "7715",
+    "name": "Oxybutynin (Ditropan)",
+    "dosing": { "maxDailyMg": 20, "maxSingleMg": 5, "warningThreshold": 15 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-K9P6MC7092", "name": "Oxybutynin" } ],
+    "indications": [ "ICD10-N32.81" ]
+  },
+  {
+    "rxCui": "136411",
+    "name": "Sildenafil (Viagra)",
+    "dosing": { "maxDailyMg": 100, "maxSingleMg": 100, "warningThreshold": 100 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-BW9B0ZE037", "name": "Sildenafil" } ],
+    "indications": [ "ICD10-N52.9", "ICD10-I27.0" ]
+  },
+  {
+    "rxCui": "358263",
+    "name": "Tadalafil (Cialis)",
+    "dosing": { "maxDailyMg": 20, "maxSingleMg": 20, "warningThreshold": 20 },
+    "safety": { "pregnancyCategory": "B", "isControlled": false },
+    "ingredients": [ { "code": "UNII-742SXX0ICT", "name": "Tadalafil" } ],
+    "indications": [ "ICD10-N52.9", "ICD10-N40.0" ]
+  },
+  {
+    "rxCui": "5553",
+    "name": "Hydroxyzine (Vistaril)",
+    "dosing": { "maxDailyMg": 400, "maxSingleMg": 100, "warningThreshold": 300 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-30S50YM8OG", "name": "Hydroxyzine" } ],
+    "indications": [ "ICD10-F41.1", "ICD10-L29.9" ]
+  },
+  {
+    "rxCui": "6851",
+    "name": "Methotrexate",
+    "dosing": { "maxDailyMg": 25, "maxSingleMg": 25, "warningThreshold": 20 },
+    "safety": { "pregnancyCategory": "X", "isControlled": false },
+    "ingredients": [ { "code": "UNII-YL5FZ2Y5U1", "name": "Methotrexate" } ],
+    "indications": [ "ICD10-M06.9", "ICD10-L40.0" ]
+  },
+  {
+    "rxCui": "5521",
+    "name": "Hydroxychloroquine (Plaquenil)",
+    "dosing": { "maxDailyMg": 400, "maxSingleMg": 200, "warningThreshold": 400 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-4QWG6N8QKH", "name": "Hydroxychloroquine" } ],
+    "indications": [ "ICD10-M32.9", "ICD10-M06.9" ]
+  },
+  {
+    "rxCui": "4511",
+    "name": "Folic Acid",
+    "dosing": { "maxDailyMg": 1, "maxSingleMg": 1, "warningThreshold": 1 },
+    "safety": { "pregnancyCategory": "A", "isControlled": false },
+    "ingredients": [ { "code": "UNII-935E97BOY8", "name": "Folic Acid" } ],
+    "indications": [ "ICD10-D52.9", "ICD10-Z34.90" ]
+  },
+  {
+    "rxCui": "2418",
+    "name": "Cholecalciferol (Vitamin D3)",
+    "dosing": { "maxDailyMg": 0.1, "maxSingleMg": 0.05, "warningThreshold": 0.1 },
+    "safety": { "pregnancyCategory": "A", "isControlled": false },
+    "ingredients": [ { "code": "UNII-1C6V77QF41", "name": "Cholecalciferol" } ],
+    "indications": [ "ICD10-E55.9", "ICD10-M81.0" ]
+  },
+  {
+    "rxCui": "4321",
+    "name": "Ferrous Sulfate",
+    "dosing": { "maxDailyMg": 325, "maxSingleMg": 325, "warningThreshold": 325 },
+    "safety": { "pregnancyCategory": "A", "isControlled": false },
+    "ingredients": [ { "code": "UNII-2Q2Y3R6JU2", "name": "Ferrous Sulfate" } ],
+    "indications": [ "ICD10-D50.9" ]
+  },
+  {
+    "rxCui": "8591",
+    "name": "Potassium Chloride (K-Dur)",
+    "dosing": { "maxDailyMg": 100, "maxSingleMg": 40, "warningThreshold": 80 },
+    "safety": { "pregnancyCategory": "C", "isControlled": false },
+    "ingredients": [ { "code": "UNII-660YQ98I10", "name": "Potassium Chloride" } ],
+    "indications": [ "ICD10-E87.6" ]
   }
 ]
