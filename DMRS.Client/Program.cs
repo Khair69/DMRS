@@ -19,10 +19,6 @@ using Hl7.Fhir.Serialization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-//using System.IdentityModel.Tokens.Jwt;
-//if not remember to delete nugut package
-//JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
-//Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");

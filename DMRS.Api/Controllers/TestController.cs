@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DMRS.Api.Controllers
 {
+    // Internal diagnostics only — hidden from Swagger so it doesn't appear in the API surface during demos.
     [ApiController]
     [Route("api/test")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class TestController : ControllerBase
     {
         [HttpGet]
