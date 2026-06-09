@@ -149,6 +149,7 @@ AI Insights page.
 ## Documentation
 
 - **[API reference](docs/api-reference.md)** — full HTTP endpoint documentation (FHIR resources, CDS, AI risk, documents, onboarding, admin) for anyone integrating with the API. Interactive Swagger UI is also available at `https://localhost:7029/swagger` in development.
+- [User & admin guide](docs/user-guide.md) — walkthrough of the app for clinicians and admins (charts, AI risk cards, CDS, onboarding, rule authoring).
 - [Architecture & data model](docs/architecture-and-data-model.md) — system, AI-pipeline, and CDS diagrams plus ERDs for both databases.
 - [AI models](docs/ai-models.md) — how the three risk models work, their features, datasets, and limitations.
 - [AI training scripts](docs/ai-training/README.md) — how to (re)train and export the models in Google Colab.
