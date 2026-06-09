@@ -146,6 +146,14 @@ Training scripts, datasets, and the export/verification workflow are documented 
 `DMRS.Api/Application/ClinicalDecisionSupport/Services/` and surfaced on the patient chart and the
 AI Insights page.
 
+## Documentation
+
+- **[API reference](docs/api-reference.md)** — full HTTP endpoint documentation (FHIR resources, CDS, AI risk, documents, onboarding, admin) for anyone integrating with the API. Interactive Swagger UI is also available at `https://localhost:7029/swagger` in development.
+- [Architecture & data model](docs/architecture-and-data-model.md) — system, AI-pipeline, and CDS diagrams plus ERDs for both databases.
+- [AI models](docs/ai-models.md) — how the three risk models work, their features, datasets, and limitations.
+- [AI training scripts](docs/ai-training/README.md) — how to (re)train and export the models in Google Colab.
+- API internals: [FHIR](DMRS.Api/docs/fhir.md) · [authentication](DMRS.Api/docs/authentication.md) · [authorization](DMRS.Api/docs/authorization.md) · [CDS system](DMRS.Api/docs/cds-system.md) · [deployment](DMRS.Api/docs/deployment.md)
+
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
