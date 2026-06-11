@@ -155,9 +155,12 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 return null;
             }
 
-            // The model output IS the score — no hand-tuned boosts.
+            // The model output IS the score — no hand-tuned boosts. The High/Medium
+            // cut-points are config-driven (Cds:Ai:HighUtilizationRisk) so a retrained
+            // model's thresholds can be applied without recompiling — see train_readmission.py.
             var score = Math.Clamp(probability ?? (label == true ? 0.5f : 0.1f), 0f, 1f);
-            var riskLevel = score >= 0.65f ? "High" : score >= 0.35f ? "Medium" : "Low";
+            var riskLevel = score >= _options.HighRiskThreshold ? "High"
+                : score >= _options.MediumRiskThreshold ? "Medium" : "Low";
             var isHighRisk = score >= _options.HighRiskThreshold;
 
             // Informational factors describing the model's inputs (not score contributors).
