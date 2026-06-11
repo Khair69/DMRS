@@ -50,25 +50,31 @@ else
                     </div>
                     @{
                         var _total = snapshot.HighRiskCount + snapshot.MediumRiskCount + snapshot.LowRiskCount;
-                        const float _r = 36f;
+                        const float _r = 34f; // r + half stroke (5) must stay within the 40-unit viewBox radius
                         const float _c = 2f * MathF.PI * _r;
                         float _hd = _total > 0 ? (snapshot.HighRiskCount   / (float)_total) * _c : 0f;
                         float _md = _total > 0 ? (snapshot.MediumRiskCount / (float)_total) * _c : 0f;
                         float _ld = _total > 0 ? (snapshot.LowRiskCount    / (float)_total) * _c : 0f;
-                        string Fmt(float v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                        string Fmt(float v) => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
                     }
                     <div class="d-flex align-items-center gap-3">
                         <svg width="76" height="76" viewBox="0 0 80 80" aria-hidden="true">
                             <g transform="rotate(-90 40 40)">
                                 <circle cx="40" cy="40" r="@Fmt(_r)" fill="none" stroke="#e5e7eb" stroke-width="10"/>
-                                @if (_total > 0)
+                                @if (snapshot.HighRiskCount > 0)
                                 {
                                     <circle cx="40" cy="40" r="@Fmt(_r)" fill="none" stroke="#ef4444" stroke-width="10"
                                             stroke-dasharray="@Fmt(_hd) @Fmt(_c)"
                                             stroke-dashoffset="0"/>
+                                }
+                                @if (snapshot.MediumRiskCount > 0)
+                                {
                                     <circle cx="40" cy="40" r="@Fmt(_r)" fill="none" stroke="#f59e0b" stroke-width="10"
                                             stroke-dasharray="@Fmt(_md) @Fmt(_c)"
                                             stroke-dashoffset="@Fmt(-_hd)"/>
+                                }
+                                @if (snapshot.LowRiskCount > 0)
+                                {
                                     <circle cx="40" cy="40" r="@Fmt(_r)" fill="none" stroke="#22c55e" stroke-width="10"
                                             stroke-dasharray="@Fmt(_ld) @Fmt(_c)"
                                             stroke-dashoffset="@Fmt(-(_hd + _md))"/>
