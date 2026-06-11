@@ -68,7 +68,7 @@ public class FhirApiService
         var resourceType = typeof(T).Name;
         var query = new Dictionary<string, string>
         {
-            { searchParam, value }
+            { searchParam, NormalizeSearchValue(searchParam, value) }
         };
 
         var queryString = QueryHelpers.AddQueryString($"fhir/{resourceType}", query.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value));
@@ -246,6 +246,24 @@ public class FhirApiService
     }
 
     public string GetDownloadUrl(string path) => $"{_httpClient.BaseAddress}{path}";
+
+    // Reference search params (e.g. patient, organization) expect a typed reference
+    // like "Patient/123". Let users enter just the bare id and prepend the type here.
+    private static string NormalizeSearchValue(string searchParam, string value)
+    {
+        var trimmed = value?.Trim() ?? string.Empty;
+        if (trimmed.Length == 0 || trimmed.Contains('/'))
+            return trimmed;
+
+        var referenceType = searchParam switch
+        {
+            "patient" => "Patient",
+            "organization" => "Organization",
+            _ => null
+        };
+
+        return referenceType is null ? trimmed : $"{referenceType}/{trimmed}";
+    }
 
     private IReadOnlyList<T> DeserializeResourceList<T>(string json) where T : Resource
     {

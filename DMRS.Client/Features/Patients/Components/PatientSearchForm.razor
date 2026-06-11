@@ -13,7 +13,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Search Value</label>
-                    <InputText @bind-Value="SearchValue" class="form-control" placeholder="e.g. Smith" />
+                    <InputText @bind-Value="SearchValue" class="form-control" placeholder="@Placeholder" />
                 </div>
                 <div class="col-md-2 d-grid">
                     <button class="btn btn-primary" disabled="@IsBusy" type="submit">Search</button>
@@ -29,6 +29,15 @@
 
     [Parameter]
     public string SearchValue { get; set; } = string.Empty;
+
+    private string Placeholder => SearchParam switch
+    {
+        "family" => "e.g. Smith",
+        "given" => "e.g. John",
+        "identifier" => "e.g. 12345",
+        "organization" => "e.g. 7 (organization id)",
+        _ => "Search value"
+    };
 
     [Parameter]
     public bool IsBusy { get; set; }

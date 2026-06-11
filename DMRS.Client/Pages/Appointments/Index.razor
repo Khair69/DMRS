@@ -23,7 +23,7 @@
                 </div>
                 <div class="col-md-7">
                     <label class="form-label">Search Value</label>
-                    <InputText @bind-Value="searchValue" class="form-control" placeholder="e.g. Patient/123" />
+                    <InputText @bind-Value="searchValue" class="form-control" placeholder="@SearchPlaceholder" />
                 </div>
                 <div class="col-md-2 d-grid">
                     <button class="btn btn-primary" disabled="@isBusy" type="submit">Search</button>
@@ -75,6 +75,13 @@ else
     private bool isBusy;
     private string? errorMessage;
     private IReadOnlyList<AppointmentSummaryViewModel> appointments = [];
+
+    private string SearchPlaceholder => searchParam switch
+    {
+        "patient" => "e.g. 123 (patient id)",
+        "date" => "e.g. 2026-06-11",
+        _ => "Search value"
+    };
 
     private async Task HandleSubmit()
     {
