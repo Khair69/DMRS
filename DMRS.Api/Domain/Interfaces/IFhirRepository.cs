@@ -19,5 +19,19 @@ namespace DMRS.Api.Domain.Interfaces
         /// due to deserialization errors, and fail closed when the counts diverge.
         /// </summary>
         Task<int> SearchCountAsync<T>(Dictionary<string, string> queryParams) where T : Resource;
+
+        /// <summary>
+        /// Returns the number of non-deleted resources of a given type with a single SQL COUNT —
+        /// no resources are loaded or deserialized. Used by dashboard/analytics tiles that only
+        /// need a total, not the resources themselves.
+        /// </summary>
+        Task<int> CountByTypeAsync(string resourceType, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Returns a map of patient id → number of non-deleted resources of the given type that
+        /// reference that patient, computed with a single grouped COUNT over the search index
+        /// (no resources are deserialized). Used to score the whole cohort's risk in one pass.
+        /// </summary>
+        Task<Dictionary<string, int>> CountByPatientAsync(string resourceType, CancellationToken cancellationToken = default);
     }
 }

@@ -255,6 +255,34 @@ namespace DMRS.Api.Infrastructure
             return resource;
         }
 
+        public Task<int> CountByTypeAsync(string resourceType, CancellationToken cancellationToken = default)
+        {
+            return _context.FhirResources
+                .CountAsync(r => r.ResourceType == resourceType && !r.IsDeleted, cancellationToken);
+        }
+
+        public async Task<Dictionary<string, int>> CountByPatientAsync(string resourceType, CancellationToken cancellationToken = default)
+        {
+            // Each resource contributes exactly one "patient" index row (value: "patient/<id>"),
+            // so grouping the index by that value yields the per-patient resource count.
+            var rows = await _context.ResourceIndices
+                .Where(i => i.ResourceType == resourceType && i.SearchParamCode == "patient")
+                .GroupBy(i => i.Value)
+                .Select(g => new { Patient = g.Key, Count = g.Count() })
+                .ToListAsync(cancellationToken);
+
+            var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (var row in rows)
+            {
+                var id = row.Patient.StartsWith("patient/", StringComparison.OrdinalIgnoreCase)
+                    ? row.Patient["patient/".Length..]
+                    : row.Patient;
+                result[id] = row.Count;
+            }
+
+            return result;
+        }
+
         public async Task<int> SearchCountAsync<T>(Dictionary<string, string> queryParams) where T : Resource
         {
             var typeName = typeof(T).Name;

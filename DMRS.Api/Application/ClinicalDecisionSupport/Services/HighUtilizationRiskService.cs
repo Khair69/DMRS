@@ -17,7 +17,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
     /// assessment as the model's inputs / informational factors, and the type/CDS-variable names are
     /// kept as "HighUtilization" so existing CDS rules that reference them keep working.
     /// </summary>
-    public sealed class HighUtilizationRiskService : IHighUtilizationRiskService, IDisposable
+    public sealed class HighUtilizationRiskService : IHighUtilizationRiskService
     {
         // Medians used only when age/gender are missing on the Patient (counts always come from FHIR).
         // Update from train_readmission.py's "Imputation medians" printout if they differ.
@@ -57,6 +57,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             IFhirRepository fhirRepository,
             IOptions<AiRiskPredictorOptions> options,
             IWebHostEnvironment environment,
+            OnnxModelPool modelPool,
             ILogger<HighUtilizationRiskService> logger)
         {
             _fhirRepository = fhirRepository;
@@ -70,9 +71,12 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             _modelName = Path.GetFileName(modelPath);
 
             // Degrade gracefully when the model file has not been trained/placed yet.
+            // The session is loaded once and shared via the singleton pool (see OnnxModelPool):
+            // this service is scoped, so creating the session here per request would reload the
+            // model from disk on every call.
             if (File.Exists(modelPath))
             {
-                _session = new InferenceSession(modelPath);
+                _session = modelPool.GetOrLoad(modelPath);
                 _inputName = _session.InputMetadata.Keys.FirstOrDefault() ?? _options.InputName;
             }
             else
@@ -102,30 +106,129 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             // Fetch clinical data sequentially — EF Core's scoped DbContext does not support
             // concurrent async operations on the same instance, so Task.WhenAll is not safe here.
             var patientRef = $"Patient/{normalizedPatientId}";
+
+            // Conditions ARE deserialized — we need their codes/text for chronic-condition detection.
             var conditions = await _fhirRepository.SearchAsync<Condition>(new Dictionary<string, string> { ["patient"] = patientRef });
+            // Medications ARE deserialized — we need each one's status to count active prescriptions.
             var medications = await _fhirRepository.SearchAsync<MedicationRequest>(new Dictionary<string, string> { ["patient"] = patientRef });
-            var encounters = await _fhirRepository.SearchAsync<Encounter>(new Dictionary<string, string> { ["patient"] = patientRef });
-            var procedures = await _fhirRepository.SearchAsync<Procedure>(new Dictionary<string, string> { ["patient"] = patientRef });
+            // Encounters and procedures are only needed as COUNTS, so use a cheap indexed count
+            // instead of loading + deserializing every resource (a patient can have 100+ encounters).
+            var encounterCount = await _fhirRepository.SearchCountAsync<Encounter>(new Dictionary<string, string> { ["patient"] = patientRef });
+            var procedureCount = await _fhirRepository.SearchCountAsync<Procedure>(new Dictionary<string, string> { ["patient"] = patientRef });
 
             var conditionCount = conditions.Count;
             var medicationCount = medications.Count(m =>
                 m.Status == MedicationRequest.MedicationrequestStatus.Active ||
                 m.Status == MedicationRequest.MedicationrequestStatus.OnHold);
 
-            var sixMonthsAgo = DateTimeOffset.UtcNow.AddMonths(-6);
-            var recentEncounterCount = encounters.Count(e =>
-            {
-                var start = e.ActualPeriod?.Start;
-                return start != null && DateTimeOffset.TryParse(start, out var dt) && dt >= sixMonthsAgo;
-            });
-            if (recentEncounterCount == 0)
-            {
-                recentEncounterCount = encounters.Count;
-            }
-
-            var procedureCount = procedures.Count;
+            // The Synthea seed encounters carry no R5 ActualPeriod (they store the R4 'period'),
+            // so the previous "encounters in the last 6 months, else fall back to total" logic
+            // always fell back to the total anyway. Using the total count is the identical result
+            // for this data without deserializing every encounter.
+            var recentEncounterCount = encounterCount;
             var hasChronicConditions = DetectChronicConditions(conditions);
 
+            return BuildAssessment(
+                normalizedPatientId,
+                patient,
+                conditionCount,
+                medicationCount,
+                recentEncounterCount,
+                procedureCount,
+                hasChronicConditions);
+        }
+
+        /// <summary>
+        /// Scores the whole cohort in one pass. The browser caps concurrent connections, so 100
+        /// per-patient HTTP calls serialize badly; this lets the dashboard make a single request.
+        /// Per-patient encounter/procedure counts come from grouped index queries (no deserialization);
+        /// conditions and medications are deserialized once for the whole cohort (needed for chronic
+        /// detection and active-medication status) rather than per patient.
+        /// </summary>
+        public async Task<IReadOnlyList<HighUtilizationRiskAssessment>> AssessAllAsync(CancellationToken cancellationToken)
+        {
+            if (_session is null)
+            {
+                return [];
+            }
+
+            var noFilter = new Dictionary<string, string>();
+            var patients = await _fhirRepository.SearchAsync<Patient>(noFilter);
+            var conditions = await _fhirRepository.SearchAsync<Condition>(noFilter);
+            var medications = await _fhirRepository.SearchAsync<MedicationRequest>(noFilter);
+            var encounterCounts = await _fhirRepository.CountByPatientAsync("Encounter", cancellationToken);
+            var procedureCounts = await _fhirRepository.CountByPatientAsync("Procedure", cancellationToken);
+
+            var conditionsByPatient = conditions
+                .GroupBy(c => ExtractPatientId(c.Subject?.Reference))
+                .Where(g => g.Key is not null)
+                .ToDictionary(g => g.Key!, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+            var medicationsByPatient = medications
+                .GroupBy(m => ExtractPatientId(m.Subject?.Reference))
+                .Where(g => g.Key is not null)
+                .ToDictionary(g => g.Key!, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+            var results = new List<HighUtilizationRiskAssessment>(patients.Count);
+            foreach (var patient in patients)
+            {
+                // Same eligibility gate the dashboard used to apply client-side: needs age + gender.
+                if (string.IsNullOrWhiteSpace(patient.Id)
+                    || string.IsNullOrWhiteSpace(patient.BirthDate)
+                    || (patient.Gender != AdministrativeGender.Male && patient.Gender != AdministrativeGender.Female))
+                {
+                    continue;
+                }
+
+                var id = patient.Id;
+                var patientConditions = conditionsByPatient.GetValueOrDefault(id) ?? [];
+                var patientMedications = medicationsByPatient.GetValueOrDefault(id) ?? [];
+
+                var medicationCount = patientMedications.Count(m =>
+                    m.Status == MedicationRequest.MedicationrequestStatus.Active ||
+                    m.Status == MedicationRequest.MedicationrequestStatus.OnHold);
+
+                var assessment = BuildAssessment(
+                    id,
+                    patient,
+                    patientConditions.Count,
+                    medicationCount,
+                    encounterCounts.GetValueOrDefault(id),
+                    procedureCounts.GetValueOrDefault(id),
+                    DetectChronicConditions(patientConditions));
+
+                if (assessment is not null)
+                {
+                    results.Add(assessment);
+                }
+            }
+
+            return results;
+        }
+
+        private static string? ExtractPatientId(string? reference)
+        {
+            if (string.IsNullOrWhiteSpace(reference))
+            {
+                return null;
+            }
+
+            var slash = reference.IndexOf('/');
+            return slash >= 0 && slash < reference.Length - 1 ? reference[(slash + 1)..] : reference;
+        }
+
+        /// <summary>
+        /// Runs the model and packages the assessment from already-computed feature counts.
+        /// Shared by the single-patient and whole-cohort paths so the scoring lives in one place.
+        /// </summary>
+        private HighUtilizationRiskAssessment? BuildAssessment(
+            string patientId,
+            Patient patient,
+            int conditionCount,
+            int medicationCount,
+            int recentEncounterCount,
+            int procedureCount,
+            bool hasChronicConditions)
+        {
             var ageYears = CalculateAgeYears(patient.BirthDate);
             var genderValue = ToGenderFeature(patient.Gender);
             var featuresComplete = ageYears.HasValue && genderValue.HasValue;
@@ -151,7 +254,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Readmission model inference failed for patient {PatientId}.", normalizedPatientId);
+                _logger.LogWarning(ex, "Readmission model inference failed for patient {PatientId}.", patientId);
                 return null;
             }
 
@@ -199,7 +302,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             }
 
             return new HighUtilizationRiskAssessment(
-                normalizedPatientId,
+                patientId,
                 age,
                 gender,
                 isHighRisk,
@@ -247,11 +350,6 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             }
 
             return false;
-        }
-
-        public void Dispose()
-        {
-            _session?.Dispose();
         }
 
         private static float? ToGenderFeature(AdministrativeGender? gender)

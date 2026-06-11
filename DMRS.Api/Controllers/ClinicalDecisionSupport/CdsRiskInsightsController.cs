@@ -23,6 +23,15 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
             _cardiovascularRiskService = cardiovascularRiskService;
         }
 
+        // Scores every eligible patient in one request. The dashboard uses this instead of calling
+        // the per-patient endpoint 100 times (the browser caps concurrent connections).
+        [HttpGet("high-utilization/batch")]
+        public async Task<IActionResult> GetHighUtilizationRiskBatch(CancellationToken cancellationToken)
+        {
+            var results = await _riskService.AssessAllAsync(cancellationToken);
+            return Ok(results);
+        }
+
         // Returns 200 with a null body when the model is unavailable so the patient chart, which
         // loads all risk scores together, never fails just because the model has not been trained yet.
         [HttpGet("high-utilization/{patientId}")]

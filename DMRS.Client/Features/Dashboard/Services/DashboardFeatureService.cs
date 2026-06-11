@@ -17,12 +17,12 @@ public sealed class DashboardFeatureService
 
     public async Task<DashboardSnapshotModel> GetSnapshotAsync()
     {
+        // Metric-tile totals come from a single cheap COUNT endpoint instead of fetching
+        // entire collections (Encounters/Conditions/etc.) just to call .Count on them.
         var patientsTask = _fhirApiService.SearchResourcesAsync<Patient>();
         var appointmentsTask = _fhirApiService.SearchResourcesAsync<Appointment>();
         var medicationRequestsTask = _fhirApiService.SearchResourcesAsync<MedicationRequest>();
-        var encountersTask = _fhirApiService.SearchResourcesAsync<Encounter>();
-        var serviceRequestsTask = _fhirApiService.SearchResourcesAsync<ServiceRequest>();
-        var conditionsTask = _fhirApiService.SearchResourcesAsync<Condition>();
+        var summaryTask = _fhirApiService.GetApiJsonAsync<DashboardSummaryModel>("analytics/dashboard-summary");
         var rulesTask = _fhirApiService.GetApiJsonAsync<List<CdsRuleSummary>>("cds/rules");
         var alertsTask = _fhirApiService.GetApiJsonAsync<List<CdsAlertEventModel>>("cds/alerts");
 
@@ -30,18 +30,14 @@ public sealed class DashboardFeatureService
             patientsTask,
             appointmentsTask,
             medicationRequestsTask,
-            encountersTask,
-            serviceRequestsTask,
-            conditionsTask,
+            summaryTask,
             rulesTask,
             alertsTask);
 
         var patients = patientsTask.Result;
         var appointments = appointmentsTask.Result;
         var medicationRequests = medicationRequestsTask.Result;
-        var encounters = encountersTask.Result;
-        var serviceRequests = serviceRequestsTask.Result;
-        var conditions = conditionsTask.Result;
+        var summary = summaryTask.Result ?? new DashboardSummaryModel();
         var rules = rulesTask.Result ?? [];
 
         var today = DateTimeOffset.UtcNow;
@@ -56,75 +52,53 @@ public sealed class DashboardFeatureService
             .Take(5)
             .ToList();
 
-        var assessablePatients = patients
-            .Where(p => !string.IsNullOrWhiteSpace(p.Id)
-                && !string.IsNullOrWhiteSpace(p.BirthDate)
-                && (p.Gender == AdministrativeGender.Male || p.Gender == AdministrativeGender.Female))
-            .ToList();
+        // Score the whole cohort in ONE request. The server loads everyone's data once and runs
+        // the model per patient; doing it as 100 separate calls is throttled by the browser's
+        // per-host connection cap, so it was the dashboard's biggest cost.
+        var assessments = await _fhirApiService.GetApiJsonAsync<List<HighUtilizationRiskAssessmentModel>>(
+            "cds/risk/high-utilization/batch") ?? [];
 
-        // Assess every eligible patient, but cap how many risk requests are in flight
-        // at once. Each request opens a DB connection server-side; firing all ~100 in
-        // parallel exhausts PostgreSQL's max_connections ("too many clients already").
-        const int maxConcurrentAssessments = 8;
-        using var assessmentGate = new SemaphoreSlim(maxConcurrentAssessments);
+        // Patient display names come from the patients we already fetched, joined by id.
+        var patientNameById = patients
+            .Where(p => !string.IsNullOrWhiteSpace(p.Id))
+            .ToDictionary(p => p.Id!, FormatPatientName);
 
-        var riskTasks = assessablePatients
-            .Select(async patient =>
-            {
-                await assessmentGate.WaitAsync();
-                try
-                {
-                    var risk = await _fhirApiService.GetApiJsonAsync<HighUtilizationRiskAssessmentModel>(
-                        $"cds/risk/high-utilization/{Uri.EscapeDataString(patient.Id!)}");
-                    return (patient, risk);
-                }
-                finally
-                {
-                    assessmentGate.Release();
-                }
-            })
-            .ToList();
+        var highRiskCount   = assessments.Count(a => a.RiskLevel == "High");
+        var mediumRiskCount = assessments.Count(a => a.RiskLevel == "Medium");
+        var lowRiskCount    = assessments.Count(a => a.RiskLevel == "Low");
 
-        var allAssessed = (await Task.WhenAll(riskTasks))
-            .Where(x => x.risk is not null)
-            .ToList();
-
-        var highRiskCount   = allAssessed.Count(x => x.risk!.RiskLevel == "High");
-        var mediumRiskCount = allAssessed.Count(x => x.risk!.RiskLevel == "Medium");
-        var lowRiskCount    = allAssessed.Count(x => x.risk!.RiskLevel == "Low");
-
-        var watchlist = allAssessed
-            .OrderByDescending(x => x.risk!.CompositeScore)
-            .ThenByDescending(x => x.risk!.Probability ?? 0)
+        var watchlist = assessments
+            .OrderByDescending(a => a.CompositeScore)
+            .ThenByDescending(a => a.Probability ?? 0)
             .Take(5)
-            .Select(x => new DashboardWatchlistItemModel(
-                x.patient.Id ?? string.Empty,
-                FormatPatientName(x.patient),
-                x.risk!.FeaturesComplete
-                    ? BuildWatchlistSummary(x.risk)
+            .Select(a => new DashboardWatchlistItemModel(
+                a.PatientId,
+                patientNameById.GetValueOrDefault(a.PatientId, $"Patient {a.PatientId}"),
+                a.FeaturesComplete
+                    ? BuildWatchlistSummary(a)
                     : "Missing age or gender for prediction",
-                $"/patients/{x.patient.Id}",
-                x.risk.IsHighRisk,
-                x.risk.Probability,
-                x.risk.RiskLevel,
-                x.risk.CompositeScore,
-                x.risk.ConditionCount,
-                x.risk.MedicationCount,
-                x.risk.RecentEncounterCount,
-                x.risk.HasChronicConditions,
-                x.risk.TopRiskFactors))
+                $"/patients/{a.PatientId}",
+                a.IsHighRisk,
+                a.Probability,
+                a.RiskLevel,
+                a.CompositeScore,
+                a.ConditionCount,
+                a.MedicationCount,
+                a.RecentEncounterCount,
+                a.HasChronicConditions,
+                a.TopRiskFactors))
             .ToList();
 
         return new DashboardSnapshotModel
         {
             Metrics =
             [
-                new("Patients", patients.Count.ToString(), "Registered people in the workspace", "metric-ocean", "/patients"),
+                new("Patients", summary.Patients.ToString(), "Registered people in the workspace", "metric-ocean", "/patients"),
                 new("Appointments", upcomingAppointments.Count.ToString(), "Upcoming scheduled visits", "metric-sky", "/appointments"),
-                new("Active Meds", medicationRequests.Count(m => m.Status == MedicationRequest.MedicationrequestStatus.Active).ToString(), "Medication requests on file", "metric-gold", "/medication-requests"),
-                new("Encounters", encounters.Count.ToString(), "Documented clinical visits", "metric-emerald", "/encounters"),
-                new("Service Requests", serviceRequests.Count.ToString(), "Orders and follow-up requests", "metric-ink", "/service-requests"),
-                new("Conditions", conditions.Count.ToString(), "Tracked problem list items", "metric-rose", "/conditions")
+                new("Active Meds", summary.ActiveMedications.ToString(), "Medication requests on file", "metric-gold", "/medication-requests"),
+                new("Encounters", summary.Encounters.ToString(), "Documented clinical visits", "metric-emerald", "/encounters"),
+                new("Service Requests", summary.ServiceRequests.ToString(), "Orders and follow-up requests", "metric-ink", "/service-requests"),
+                new("Conditions", summary.Conditions.ToString(), "Tracked problem list items", "metric-rose", "/conditions")
             ],
             HighRiskPatients = watchlist,
             UpcomingAppointments = upcomingAppointments.Select(MapAppointment).ToList(),

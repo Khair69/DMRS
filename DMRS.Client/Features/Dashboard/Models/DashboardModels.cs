@@ -28,6 +28,15 @@ public sealed record DashboardActivityItemModel(
     string Meta,
     string Href);
 
+public sealed class DashboardSummaryModel
+{
+    public int Patients { get; set; }
+    public int Encounters { get; set; }
+    public int ActiveMedications { get; set; }
+    public int Conditions { get; set; }
+    public int ServiceRequests { get; set; }
+}
+
 public sealed class DashboardSnapshotModel
 {
     public List<DashboardMetricModel> Metrics { get; set; } = [];

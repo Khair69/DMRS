@@ -18,6 +18,24 @@ namespace DMRS.Api.Controllers
         }
 
         /// <summary>
+        /// Returns workspace-wide totals for the dashboard metric tiles using cheap SQL COUNTs,
+        /// so the dashboard no longer has to fetch entire resource collections just to count them.
+        /// </summary>
+        [HttpGet("dashboard-summary")]
+        public async Task<IActionResult> GetDashboardSummary(CancellationToken cancellationToken)
+        {
+            var patients = await _fhirRepository.CountByTypeAsync("Patient", cancellationToken);
+            var encounters = await _fhirRepository.CountByTypeAsync("Encounter", cancellationToken);
+            var conditions = await _fhirRepository.CountByTypeAsync("Condition", cancellationToken);
+            var serviceRequests = await _fhirRepository.CountByTypeAsync("ServiceRequest", cancellationToken);
+            var activeMedications = await _fhirRepository.SearchCountAsync<MedicationRequest>(
+                new Dictionary<string, string> { ["status"] = "active" });
+
+            return Ok(new DashboardSummaryResponse(
+                patients, encounters, activeMedications, conditions, serviceRequests));
+        }
+
+        /// <summary>
         /// Returns the top 10 most common active conditions across all patients.
         /// </summary>
         [HttpGet("condition-prevalence")]
@@ -41,4 +59,12 @@ namespace DMRS.Api.Controllers
             return Ok(prevalence);
         }
     }
+
+    /// <summary>Workspace-wide totals for the dashboard metric tiles.</summary>
+    public sealed record DashboardSummaryResponse(
+        int Patients,
+        int Encounters,
+        int ActiveMedications,
+        int Conditions,
+        int ServiceRequests);
 }

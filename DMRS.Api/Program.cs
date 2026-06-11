@@ -124,6 +124,7 @@ builder.Services.AddSingleton<ICdsVariableCatalog, CdsVariableCatalog>();
 builder.Services.AddScoped<IMedicineKnowledgeService, MedicineKnowledgeService>();
 builder.Services.AddScoped<IClinicalKnowledgeService, ClinicalKnowledgeService>();
 builder.Services.AddScoped<IMedicationRequestKnowledgeWarmup, MedicationRequestKnowledgeWarmup>();
+builder.Services.AddSingleton<OnnxModelPool>();
 builder.Services.AddScoped<IHighUtilizationRiskService, HighUtilizationRiskService>();
 builder.Services.AddScoped<ObservationFeatureExtractor>();
 builder.Services.AddScoped<IDiabetesRiskService, DiabetesRiskService>();
