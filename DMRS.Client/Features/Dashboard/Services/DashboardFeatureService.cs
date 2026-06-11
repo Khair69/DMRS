@@ -60,22 +60,32 @@ public sealed class DashboardFeatureService
             .Where(p => !string.IsNullOrWhiteSpace(p.Id)
                 && !string.IsNullOrWhiteSpace(p.BirthDate)
                 && (p.Gender == AdministrativeGender.Male || p.Gender == AdministrativeGender.Female))
-            .Take(8)
             .ToList();
+
+        // Assess every eligible patient, but cap how many risk requests are in flight
+        // at once. Each request opens a DB connection server-side; firing all ~100 in
+        // parallel exhausts PostgreSQL's max_connections ("too many clients already").
+        const int maxConcurrentAssessments = 8;
+        using var assessmentGate = new SemaphoreSlim(maxConcurrentAssessments);
 
         var riskTasks = assessablePatients
             .Select(async patient =>
             {
-                var risk = await _fhirApiService.GetApiJsonAsync<HighUtilizationRiskAssessmentModel>(
-                    $"cds/risk/high-utilization/{Uri.EscapeDataString(patient.Id!)}");
-                return (patient, risk);
+                await assessmentGate.WaitAsync();
+                try
+                {
+                    var risk = await _fhirApiService.GetApiJsonAsync<HighUtilizationRiskAssessmentModel>(
+                        $"cds/risk/high-utilization/{Uri.EscapeDataString(patient.Id!)}");
+                    return (patient, risk);
+                }
+                finally
+                {
+                    assessmentGate.Release();
+                }
             })
             .ToList();
 
-        await Task.WhenAll(riskTasks);
-
-        var allAssessed = riskTasks
-            .Select(task => task.Result)
+        var allAssessed = (await Task.WhenAll(riskTasks))
             .Where(x => x.risk is not null)
             .ToList();
 
