@@ -15,40 +15,28 @@ public sealed class StaffFeatureService
 
     public async Task<IReadOnlyList<StaffSummaryViewModel>> GetByOrganizationAsync(string organizationId, string? roleCodeFilter, string? textFilter)
     {
-        var roles = await _fhirApiService.SearchAsync<PractitionerRole>("organization", $"Organization/{organizationId}");
-        var summaries = new List<StaffSummaryViewModel>();
+        // One request to the server, which resolves PractitionerRoles + Practitioners DB-side and
+        // returns the whole roster. This replaced an N+1 (a Practitioner GET per role) that was
+        // throttled by the browser's per-host connection cap.
+        var dtos = await _fhirApiService.GetApiJsonAsync<List<StaffSummaryApiModel>>(
+            $"api/staff/by-organization/{Uri.EscapeDataString(organizationId)}") ?? [];
 
-        foreach (var role in roles)
-        {
-            if (!MatchesRoleFilter(role, roleCodeFilter))
-            {
-                continue;
-            }
-
-            var practitionerId = ParseReferenceId(role.Practitioner?.Reference, "Practitioner");
-            if (string.IsNullOrWhiteSpace(practitionerId))
-            {
-                continue;
-            }
-
-            var practitioner = await _fhirApiService.GetResourceAsync<Practitioner>(practitionerId);
-            if (practitioner is null || string.IsNullOrWhiteSpace(practitioner.Id))
-            {
-                continue;
-            }
-
-            var summary = MapSummary(practitioner, role);
-            if (!MatchesTextFilter(summary, textFilter))
-            {
-                continue;
-            }
-
-            summaries.Add(summary);
-        }
-
-        return summaries
+        var summaries = dtos
+            .Select(d => new StaffSummaryViewModel(
+                d.PractitionerId,
+                d.PractitionerRoleId,
+                d.DisplayName,
+                d.Email,
+                d.Phone,
+                d.Active,
+                d.RoleCode,
+                d.RoleDisplay,
+                d.HasLoginAccount))
+            .Where(summary => MatchesSummaryRoleFilter(summary, roleCodeFilter) && MatchesTextFilter(summary, textFilter))
             .OrderBy(s => s.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToList();
+
+        return summaries;
     }
 
     public Task<Practitioner?> GetPractitionerAsync(string practitionerId)
@@ -135,15 +123,14 @@ public sealed class StaffFeatureService
         return new StaffClaimResult(response.PractitionerId);
     }
 
-    private static bool MatchesRoleFilter(PractitionerRole role, string? roleCodeFilter)
+    private static bool MatchesSummaryRoleFilter(StaffSummaryViewModel summary, string? roleCodeFilter)
     {
         if (string.IsNullOrWhiteSpace(roleCodeFilter) || roleCodeFilter == "ALL")
         {
             return true;
         }
 
-        return role.Code.SelectMany(c => c.Coding)
-            .Any(c => string.Equals(c.Code, roleCodeFilter, StringComparison.OrdinalIgnoreCase));
+        return string.Equals(summary.RoleCode, roleCodeFilter, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool MatchesTextFilter(StaffSummaryViewModel summary, string? textFilter)
@@ -160,55 +147,6 @@ public sealed class StaffFeatureService
                || summary.RoleDisplay.Contains(text, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static StaffSummaryViewModel MapSummary(Practitioner practitioner, PractitionerRole role)
-    {
-        var name = practitioner.Name.FirstOrDefault();
-        var displayName = string.Join(" ", new[] { name?.Given?.FirstOrDefault(), name?.Family }.Where(v => !string.IsNullOrWhiteSpace(v)));
-        if (string.IsNullOrWhiteSpace(displayName))
-        {
-            displayName = practitioner.Id ?? "(no-name)";
-        }
-
-        var email = practitioner.Telecom.FirstOrDefault(t => t.System == ContactPoint.ContactPointSystem.Email)?.Value ?? string.Empty;
-        var phone = practitioner.Telecom.FirstOrDefault(t => t.System == ContactPoint.ContactPointSystem.Phone)?.Value;
-
-        var coding = role.Code.SelectMany(c => c.Coding).FirstOrDefault();
-        var roleCode = coding?.Code ?? "UNKNOWN";
-        var roleDisplay = coding?.Display ?? role.Code.FirstOrDefault()?.Text ?? roleCode;
-
-        // A linked Keycloak account is recorded as an identifier whose system ends with "/users"
-        // (see StaffClaimController / StaffProvisionController).
-        var hasLoginAccount = practitioner.Identifier?.Any(i =>
-            !string.IsNullOrWhiteSpace(i.System)
-            && i.System.EndsWith("/users", StringComparison.OrdinalIgnoreCase)) == true;
-
-        return new StaffSummaryViewModel(
-            practitioner.Id ?? "(no-id)",
-            role.Id ?? "(no-role-id)",
-            displayName,
-            email,
-            phone,
-            practitioner.Active ?? false,
-            roleCode,
-            roleDisplay,
-            hasLoginAccount);
-    }
-
-    private static string? ParseReferenceId(string? reference, string expectedType)
-    {
-        if (string.IsNullOrWhiteSpace(reference))
-        {
-            return null;
-        }
-
-        var prefix = $"{expectedType}/";
-        if (!reference.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        return reference[prefix.Length..];
-    }
 }
 
 public sealed record StaffInviteResult(
@@ -227,6 +165,19 @@ public sealed record StaffProvisionResult(
     string Username,
     string Password,
     string AssignedRealmRole);
+
+internal sealed class StaffSummaryApiModel
+{
+    public string PractitionerId { get; set; } = string.Empty;
+    public string PractitionerRoleId { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public bool Active { get; set; }
+    public string RoleCode { get; set; } = string.Empty;
+    public string RoleDisplay { get; set; } = string.Empty;
+    public bool HasLoginAccount { get; set; }
+}
 
 internal sealed class StaffClaimRequest
 {

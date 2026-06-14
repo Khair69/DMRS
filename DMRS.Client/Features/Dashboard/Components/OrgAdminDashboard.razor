@@ -222,11 +222,16 @@ else
                 return;
             }
 
-            await LoadOrgHeadingAsync();
+            // These three loads are independent. Running them concurrently (rather than awaiting
+            // each in turn) stops the snapshot, staff roster, and org-header latencies from stacking
+            // additively — the snapshot's own internal calls are already parallelized. The aggregate
+            // endpoints are scoped server-side to this admin's organization(s).
+            var snapshotTask = DashboardService.GetSnapshotAsync();
+            var headingTask = LoadOrgHeadingAsync();
+            var rosterTask = LoadRosterAsync();
+            await Task.WhenAll(snapshotTask, headingTask, rosterTask);
 
-            // The aggregate endpoints are scoped server-side to this admin's organization(s),
-            // so the shared snapshot already returns only their data.
-            var snapshot = await DashboardService.GetSnapshotAsync();
+            var snapshot = await snapshotTask;
             summary = new DashboardSummaryModel
             {
                 Patients = CountMetric(snapshot, "Patients"),
@@ -241,8 +246,6 @@ else
             highRiskCount = snapshot.HighRiskCount;
             mediumRiskCount = snapshot.MediumRiskCount;
             lowRiskCount = snapshot.LowRiskCount;
-
-            await LoadRosterAsync();
         }
         catch (Exception ex)
         {

@@ -97,16 +97,14 @@ namespace DMRS.Api.Controllers
                 Type = Bundle.BundleType.Searchset
             };
 
-            foreach (var resource in resources)
+            var accessibleResources = await FilterReadableAsync(resources);
+            foreach (var resource in accessibleResources)
             {
-                if (await CanAccessResource(resource, "read"))
+                bundle.Entry.Add(new Bundle.EntryComponent
                 {
-                    bundle.Entry.Add(new Bundle.EntryComponent
-                    {
-                        Resource = resource,
-                        FullUrl = $"{Request.Scheme}://{Request.Host}/fhir/{typeof(T).Name}/{resource.Id}"
-                    });
-                }
+                    Resource = resource,
+                    FullUrl = $"{Request.Scheme}://{Request.Host}/fhir/{typeof(T).Name}/{resource.Id}"
+                });
             }
 
             bundle.Total = bundle.Entry.Count;
@@ -495,6 +493,104 @@ namespace DMRS.Api.Controllers
 
             var indices = _searchIndexer.Extract(existingResource);
             return _authorizationService.IsResourceOwnedByPatient(existingResource, patientId, indices);
+        }
+
+        /// <summary>
+        /// Filters a search result set to the resources the caller may read. For org-scoped (User)
+        /// callers this resolves the accessible patient-id set ONCE and checks ownership in-memory via
+        /// the search index, instead of reloading each resource (and its patient) from the database per
+        /// row — that N+1 made org-admin searches of large collections take tens of seconds.
+        /// Semantics are unchanged: a patient-owned resource is accessible iff its patient's managing
+        /// organization is one of the caller's, which is exactly membership in the accessible-patient set.
+        /// </summary>
+        private async Task<List<T>> FilterReadableAsync(IReadOnlyList<T> resources)
+        {
+            var accessLevel = _authorizationService.GetAccessLevel(User, typeof(T).Name, "read");
+
+            if (accessLevel == SmartAccessLevel.None)
+            {
+                return [];
+            }
+
+            if (accessLevel == SmartAccessLevel.System)
+            {
+                return resources.ToList();
+            }
+
+            if (accessLevel == SmartAccessLevel.User)
+            {
+                var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
+                if (organizationIds.Count == 0)
+                {
+                    return [];
+                }
+
+                var accessiblePatientIds = await _authorizationService.ResolveAccessiblePatientIdsAsync(User) ?? [];
+                var patientIdSet = accessiblePatientIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                var result = new List<T>();
+                foreach (var resource in resources)
+                {
+                    var indices = _searchIndexer.Extract(resource);
+
+                    // Direct org ownership: Organization (by id), PractitionerRole, Location,
+                    // Patient (managingOrganization) — all carry an in-memory "organization" index.
+                    if (_authorizationService.IsResourceOwnedByOrganizations(resource, indices, organizationIds))
+                    {
+                        result.Add(resource);
+                        continue;
+                    }
+
+                    // Patient-owned resources (clinical + appointments) index their patient under
+                    // "patient"; membership in the accessible-patient set is equivalent to org ownership.
+                    if (indices.Any(i => i.SearchParamCode == "patient" && patientIdSet.Contains(ExtractReferenceId(i.Value))))
+                    {
+                        result.Add(resource);
+                        continue;
+                    }
+
+                    // Types whose org ownership isn't resolvable in-memory (e.g. Practitioner via
+                    // PractitionerRole) fall back to the authoritative DB check. These collections are
+                    // small, so the per-row cost is acceptable.
+                    if (!string.IsNullOrWhiteSpace(resource.Id)
+                        && await _authorizationService.IsResourceOwnedByOrganizationsAsync(typeof(T).Name, resource.Id, organizationIds))
+                    {
+                        result.Add(resource);
+                    }
+                }
+
+                return result;
+            }
+
+            // Patient-level caller: keep the existing in-memory patient-ownership check.
+            var patientId = _authorizationService.ResolvePatientId(User);
+            if (string.IsNullOrWhiteSpace(patientId))
+            {
+                return [];
+            }
+
+            var patientResult = new List<T>();
+            foreach (var resource in resources)
+            {
+                var indices = _searchIndexer.Extract(resource);
+                if (_authorizationService.IsResourceOwnedByPatient(resource, patientId, indices))
+                {
+                    patientResult.Add(resource);
+                }
+            }
+
+            return patientResult;
+        }
+
+        private static string ExtractReferenceId(string? reference)
+        {
+            if (string.IsNullOrWhiteSpace(reference))
+            {
+                return string.Empty;
+            }
+
+            var slash = reference.IndexOf('/');
+            return slash >= 0 && slash < reference.Length - 1 ? reference[(slash + 1)..] : reference;
         }
 
         protected async Task<bool> CanAccessResource(T resource, string action, bool useResourceOwnership = false)
