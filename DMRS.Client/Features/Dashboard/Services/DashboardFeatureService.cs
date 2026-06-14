@@ -41,11 +41,13 @@ public sealed class DashboardFeatureService
         var rules = rulesTask.Result ?? [];
 
         var today = DateTimeOffset.UtcNow;
-        var upcomingAppointments = appointments
+        var upcoming = appointments
             .Where(a => TryGetDateTimeOffset(a.StartElement?.Value, out var start) && start >= today)
             .OrderBy(a => TryGetDateTimeOffset(a.StartElement?.Value, out var start) ? start : DateTimeOffset.MaxValue)
-            .Take(5)
             .ToList();
+        // Tile shows the true number of upcoming visits; the preview panel below only lists the next 5.
+        var upcomingCount = upcoming.Count;
+        var upcomingAppointments = upcoming.Take(5).ToList();
 
         var recentMedicationRequests = medicationRequests
             .OrderByDescending(m => TryGetDateTimeOffset(m.AuthoredOnElement?.Value, out var authoredOn) ? authoredOn : DateTimeOffset.MinValue)
@@ -94,7 +96,7 @@ public sealed class DashboardFeatureService
             Metrics =
             [
                 new("Patients", summary.Patients.ToString(), "Registered people in the workspace", "metric-ocean", "/patients"),
-                new("Appointments", upcomingAppointments.Count.ToString(), "Upcoming scheduled visits", "metric-sky", "/appointments"),
+                new("Appointments", upcomingCount.ToString(), "Upcoming scheduled visits", "metric-sky", "/appointments"),
                 new("Active Meds", summary.ActiveMedications.ToString(), "Medication requests on file", "metric-gold", "/medication-requests"),
                 new("Encounters", summary.Encounters.ToString(), "Documented clinical visits", "metric-emerald", "/encounters"),
                 new("Service Requests", summary.ServiceRequests.ToString(), "Orders and follow-up requests", "metric-ink", "/service-requests"),
