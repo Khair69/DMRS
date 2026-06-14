@@ -16,7 +16,12 @@ else if (!string.IsNullOrWhiteSpace(errorMessage))
 }
 else
 {
-    <StaffDetailsView Practitioner="@practitioner" Roles="@roles" />
+    <StaffDetailsView Practitioner="@practitioner"
+                      Roles="@roles"
+                      OnProvisionAccount="ProvisionAccountAsync"
+                      IsProvisioning="@isProvisioning"
+                      ProvisionedCredentials="@provisionedCredentials"
+                      ProvisionError="@provisionError" />
 }
 
 @code {
@@ -30,6 +35,9 @@ else
     private IReadOnlyList<Hl7.Fhir.Model.PractitionerRole> roles = [];
     private bool isBusy;
     private string? errorMessage;
+    private bool isProvisioning;
+    private string? provisionError;
+    private DMRS.Client.Features.Staff.Services.StaffProvisionResult? provisionedCredentials;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -59,6 +67,29 @@ else
         finally
         {
             isBusy = false;
+        }
+    }
+
+    private async Task ProvisionAccountAsync()
+    {
+        isProvisioning = true;
+        provisionError = null;
+        provisionedCredentials = null;
+
+        try
+        {
+            provisionedCredentials = await StaffService.ProvisionAccountAsync(OrganizationId, PractitionerId);
+
+            // Reload so the linked-account state reflects the new identifier.
+            practitioner = await StaffService.GetPractitionerAsync(PractitionerId);
+        }
+        catch (Exception ex)
+        {
+            provisionError = $"Failed to create login account: {ex.Message}";
+        }
+        finally
+        {
+            isProvisioning = false;
         }
     }
 }

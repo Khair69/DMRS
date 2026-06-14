@@ -1,4 +1,5 @@
 @using Hl7.Fhir.Model
+@using DMRS.Client.Features.Staff.Services
 
 @if (Practitioner is null)
 {
@@ -64,6 +65,57 @@ else
             }
         </div>
     </div>
+
+    var linkedUsername = GetLinkedUsername();
+    var hasAccount = HasLinkedAccount();
+
+    <div class="card mt-3">
+        <div class="card-header">Login Account</div>
+        <div class="card-body">
+            @if (ProvisionedCredentials is not null)
+            {
+                <div class="alert alert-success mb-0">
+                    <div class="fw-semibold mb-1">Login account created.</div>
+                    <div>Username: <code>@ProvisionedCredentials.Username</code></div>
+                    <div>Password: <code>@ProvisionedCredentials.Password</code></div>
+                    <div class="small text-muted mt-1">Role: @ProvisionedCredentials.AssignedRealmRole</div>
+                </div>
+            }
+            else if (hasAccount)
+            {
+                <div class="alert alert-success mb-0">
+                    <span class="fw-semibold">Account linked.</span>
+                    @if (!string.IsNullOrWhiteSpace(linkedUsername))
+                    {
+                        <span> Username: <code>@linkedUsername</code></span>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-muted">This person has no login account yet. Create one to demonstrate logging in as them.</p>
+
+                @if (!string.IsNullOrWhiteSpace(ProvisionError))
+                {
+                    <div class="alert alert-danger">@ProvisionError</div>
+                }
+
+                <AuthorizeView Roles="ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN">
+                    <button type="button" class="btn btn-primary" disabled="@IsProvisioning" @onclick="OnProvisionAccount">
+                        @if (IsProvisioning)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            <span>Creating account…</span>
+                        }
+                        else
+                        {
+                            <span>Create login account</span>
+                        }
+                    </button>
+                </AuthorizeView>
+            }
+        </div>
+    </div>
 }
 
 @code {
@@ -72,4 +124,31 @@ else
 
     [Parameter, EditorRequired]
     public IReadOnlyList<PractitionerRole> Roles { get; set; } = [];
+
+    [Parameter]
+    public EventCallback OnProvisionAccount { get; set; }
+
+    [Parameter]
+    public bool IsProvisioning { get; set; }
+
+    [Parameter]
+    public StaffProvisionResult? ProvisionedCredentials { get; set; }
+
+    [Parameter]
+    public string? ProvisionError { get; set; }
+
+    private bool HasLinkedAccount()
+    {
+        return Practitioner?.Identifier?.Any(i =>
+            !string.IsNullOrWhiteSpace(i.System)
+            && i.System.EndsWith("/users", StringComparison.OrdinalIgnoreCase)) == true;
+    }
+
+    private string? GetLinkedUsername()
+    {
+        return Practitioner?.Identifier?
+            .FirstOrDefault(i => !string.IsNullOrWhiteSpace(i.System)
+                && i.System.EndsWith("/users/username", StringComparison.OrdinalIgnoreCase))?
+            .Value;
+    }
 }

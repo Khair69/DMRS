@@ -12,11 +12,6 @@ namespace DMRS.Api.Controllers.Security;
 [Authorize]
 public sealed class StaffClaimController : ControllerBase
 {
-    private const string InviteCodeIdentifierSystem = "https://dmrs.local/invites/practitioner";
-    private const string OrganizationAdminRoleCode = "ORG_ADMIN";
-    private const string DoctorRoleCode = "DOCTOR";
-    private const string KeycloakIdentifierSystemFallback = "https://keycloak.local/users";
-
     private readonly IFhirRepository _repository;
     private readonly PractitionerIndexer _practitionerIndexer;
     private readonly IKeycloakAdminService _keycloakAdminService;
@@ -49,7 +44,7 @@ public sealed class StaffClaimController : ControllerBase
 
         var inviteParams = new Dictionary<string, string>
         {
-            ["identifier"] = $"{InviteCodeIdentifierSystem}|{request.InviteCode.Trim()}"
+            ["identifier"] = $"{StaffAccountLinking.InviteCodeIdentifierSystem}|{request.InviteCode.Trim()}"
         };
 
         var practitionerMatches = await _repository.SearchAsync<Practitioner>(inviteParams);
@@ -80,7 +75,7 @@ public sealed class StaffClaimController : ControllerBase
         }
 
         // Prevent linking one Keycloak account to multiple practitioners.
-        var keycloakIdentifierSystem = BuildKeycloakIdentifierSystem(_configuration["Keycloak:Authority"]);
+        var keycloakIdentifierSystem = StaffAccountLinking.BuildKeycloakIdentifierSystem(_configuration["Keycloak:Authority"]);
         var linkedParams = new Dictionary<string, string>
         {
             ["identifier"] = $"{keycloakIdentifierSystem}|{request.KeycloakUserId.Trim()}"
@@ -107,19 +102,19 @@ public sealed class StaffClaimController : ControllerBase
             ["practitioner"] = $"Practitioner/{practitioner.Id}"
         });
 
-        var realmRoleToAssign = ResolveRealmRole(practitionerRoles);
+        var realmRoleToAssign = StaffAccountLinking.ResolveRealmRole(practitionerRoles);
         await _keycloakAdminService.AssignRealmRoleAsync(request.KeycloakUserId.Trim(), realmRoleToAssign, cancellationToken);
 
         practitioner.Identifier ??= [];
         practitioner.Identifier = practitioner.Identifier
-            .Where(i => !string.Equals(i.System, InviteCodeIdentifierSystem, StringComparison.OrdinalIgnoreCase))
+            .Where(i => !string.Equals(i.System, StaffAccountLinking.InviteCodeIdentifierSystem, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        AddOrReplaceIdentifier(practitioner.Identifier, keycloakIdentifierSystem, request.KeycloakUserId.Trim());
+        StaffAccountLinking.AddOrReplaceIdentifier(practitioner.Identifier, keycloakIdentifierSystem, request.KeycloakUserId.Trim());
 
         if (!string.IsNullOrWhiteSpace(request.KeycloakUsername))
         {
-            AddOrReplaceIdentifier(practitioner.Identifier, $"{keycloakIdentifierSystem}/username", request.KeycloakUsername.Trim());
+            StaffAccountLinking.AddOrReplaceIdentifier(practitioner.Identifier, $"{keycloakIdentifierSystem}/username", request.KeycloakUsername.Trim());
         }
 
         await _repository.UpdateAsync(practitioner.Id, practitioner, _practitionerIndexer);
@@ -129,55 +124,6 @@ public sealed class StaffClaimController : ControllerBase
             PractitionerId = practitioner.Id,
             AssignedRealmRole = realmRoleToAssign
         });
-    }
-
-    private static string ResolveRealmRole(IReadOnlyList<PractitionerRole> roles)
-    {
-        var roleCodes = roles
-            .SelectMany(r => r.Code)
-            .SelectMany(c => c.Coding)
-            .Select(c => c.Code)
-            .Where(c => !string.IsNullOrWhiteSpace(c))
-            .Select(c => c!.Trim().ToUpperInvariant())
-            .ToHashSet();
-
-        if (roleCodes.Contains(OrganizationAdminRoleCode))
-        {
-            return "ROLE_ORG_ADMIN";
-        }
-
-        if (roleCodes.Contains(DoctorRoleCode))
-        {
-            return "ROLE_PRACTITIONER";
-        }
-
-        return "ROLE_PRACTITIONER";
-    }
-
-    private static void AddOrReplaceIdentifier(List<Identifier> identifiers, string system, string value)
-    {
-        var existing = identifiers.FirstOrDefault(i => string.Equals(i.System, system, StringComparison.OrdinalIgnoreCase));
-        if (existing is null)
-        {
-            identifiers.Add(new Identifier
-            {
-                System = system,
-                Value = value
-            });
-            return;
-        }
-
-        existing.Value = value;
-    }
-
-    private static string BuildKeycloakIdentifierSystem(string? keycloakAuthority)
-    {
-        if (string.IsNullOrWhiteSpace(keycloakAuthority))
-        {
-            return KeycloakIdentifierSystemFallback;
-        }
-
-        return $"{keycloakAuthority.TrimEnd('/')}/users";
     }
 
     public sealed class StaffClaimRequest

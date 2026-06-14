@@ -94,6 +94,29 @@ public sealed class StaffFeatureService
             response.RegistrationLink);
     }
 
+    public async Task<StaffProvisionResult> ProvisionAccountAsync(string organizationId, string practitionerId)
+    {
+        var response = await _fhirApiService.PostApiJsonAsync<ProvisionAccountRequest, ProvisionAccountResponse>(
+            "api/staff/provision-account",
+            new ProvisionAccountRequest
+            {
+                OrganizationId = organizationId,
+                PractitionerId = practitionerId
+            });
+
+        if (response is null || string.IsNullOrWhiteSpace(response.KeycloakUserId))
+        {
+            throw new InvalidOperationException("Account provisioning failed: empty response from API.");
+        }
+
+        return new StaffProvisionResult(
+            response.PractitionerId,
+            response.KeycloakUserId,
+            response.Username,
+            response.Password,
+            response.AssignedRealmRole);
+    }
+
     public async Task<StaffClaimResult> ClaimInviteAsync(string inviteCode, string keycloakUserId, string? keycloakUsername)
     {
         var response = await _fhirApiService.PostApiJsonAsync<StaffClaimRequest, StaffClaimApiResponse>("api/staff/claim-invite",
@@ -191,6 +214,13 @@ public sealed record StaffInviteResult(
 public sealed record StaffClaimResult(
     string PractitionerId);
 
+public sealed record StaffProvisionResult(
+    string PractitionerId,
+    string KeycloakUserId,
+    string Username,
+    string Password,
+    string AssignedRealmRole);
+
 internal sealed class StaffClaimRequest
 {
     public string InviteCode { get; set; } = string.Empty;
@@ -227,4 +257,19 @@ internal sealed class CreateStaffInviteResponse
     public string InviteCode { get; set; } = string.Empty;
     public string ClaimLink { get; set; } = string.Empty;
     public string RegistrationLink { get; set; } = string.Empty;
+}
+
+internal sealed class ProvisionAccountRequest
+{
+    public string PractitionerId { get; set; } = string.Empty;
+    public string OrganizationId { get; set; } = string.Empty;
+}
+
+internal sealed class ProvisionAccountResponse
+{
+    public string PractitionerId { get; set; } = string.Empty;
+    public string KeycloakUserId { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string AssignedRealmRole { get; set; } = string.Empty;
 }

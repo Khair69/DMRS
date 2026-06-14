@@ -25,6 +25,18 @@ Bring the stack up in order and confirm each is reachable:
 
 Have two browser profiles/accounts ready if you want to show roles: a **practitioner** and a **system admin** (or one admin account that sees everything).
 
+> **Provisioning staff logins for the demo.** The seeded doctors and org admins are FHIR
+> `Practitioner` records with no login account. To log in *as* one of them, open their **Staff
+> Details** page (Organization → Manage Staff → a person) and click **Create login account** in the
+> *Login Account* card. It creates a Keycloak user (username = their email), assigns the right role
+> (`ROLE_PRACTITIONER` / `ROLE_ORG_ADMIN`), links it to the resource, and shows the password
+> (`Demo123!` by default — override with `Keycloak:DemoUserPassword`). The button only appears when
+> the person has no account yet; afterwards it shows the linked username. Do this for one doctor and
+> one org admin *before* you present so the credentials are ready.
+>
+> *This is a demo shortcut* — the production-correct path is the invite + self-registration flow,
+> which is unchanged. Mention this if asked: an admin minting passwords is for demonstration only.
+
 ### Reset / re-seed (repeatable)
 To start from a clean, known state:
 - Clear data: `DELETE /dev/seed` (or the UI seeding control).
