@@ -11,20 +11,28 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 {
     /// <summary>
     /// Cardiovascular (heart disease) risk predictor. Builds the model's 6-feature vector
-    /// [age, sex, trestbps, chol, thalach, fbs] from the patient's FHIR data, imputing the
-    /// training-set median for any feature the patient lacks, then runs the ONNX classifier.
+    /// [age, sex, trestbps, chol, thalach, fbs] from the patient's FHIR data, then runs the ONNX
+    /// classifier (trained on the authentic UCI Cleveland dataset — see train_cardiovascular.py).
     /// Note: sex is encoded male=1 / female=0 to match the UCI Heart Disease dataset (the opposite
     /// of the high-utilization model's encoding).
+    ///
+    /// Imputation: missing clinical features are filled with age/sex-appropriate HEALTHY-NORMAL
+    /// values rather than training-set medians. The medians come from a clinical-referral cohort
+    /// (~46% with disease) where the "average" patient already has borderline-high cholesterol/BP,
+    /// so imputing them made a record-less young patient read as high risk. Treating an unrecorded
+    /// value as normal ("absence of a documented abnormality => assume normal") yields a sensible
+    /// demographic-only estimate instead.
     /// </summary>
     public sealed class CardiovascularRiskService : ICardiovascularRiskService, IDisposable
     {
-        // Training-set medians (from train_cardiovascular.py). Update if the notebook prints different values.
+        // Fallback for the rare patient with no usable birth date.
         private const float MedianAge = 56f;
         private const float MedianSex = 1f;
-        private const float MedianRestingBp = 130f;
-        private const float MedianCholesterol = 240f;
-        private const float MedianMaxHeartRate = 152f;
-        private const float MedianFastingBloodSugar = 0f;
+
+        // Healthy-normal values imputed when a clinical feature is missing (see class summary).
+        private const float HealthyRestingBp = 120f;          // normal resting systolic BP (mm Hg)
+        private const float HealthyCholesterol = 180f;        // desirable total cholesterol (< 200 mg/dL)
+        private const float HealthyFastingBloodSugar = 0f;    // assume fasting glucose <= 120 mg/dL
 
         private const string SystolicBpCode = "8480-6";
         private const string TotalCholesterolCode = "2093-3";
@@ -169,9 +177,11 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 imputed.Add("sex");
             }
 
-            var restingBp = Resolve(ObservationFeatureExtractor.LatestValue(observations, SystolicBpCode), MedianRestingBp, "trestbps", imputed);
-            var cholesterol = Resolve(ObservationFeatureExtractor.LatestValue(observations, TotalCholesterolCode), MedianCholesterol, "chol", imputed);
-            var maxHeartRate = Resolve(ObservationFeatureExtractor.LatestValue(observations, HeartRateCode), MedianMaxHeartRate, "thalach", imputed);
+            var restingBp = Resolve(ObservationFeatureExtractor.LatestValue(observations, SystolicBpCode), HealthyRestingBp, "trestbps", imputed);
+            var cholesterol = Resolve(ObservationFeatureExtractor.LatestValue(observations, TotalCholesterolCode), HealthyCholesterol, "chol", imputed);
+            // Healthy default for max heart rate is the age-predicted maximum (220 - age), so it scales
+            // with the patient rather than assuming a single cohort median.
+            var maxHeartRate = Resolve(ObservationFeatureExtractor.LatestValue(observations, HeartRateCode), 220f - age, "thalach", imputed);
 
             // fbs = fasting blood sugar > 120 mg/dL (1/0), derived from the latest glucose Observation.
             var glucose = ObservationFeatureExtractor.LatestValue(observations, GlucoseCodes);
@@ -182,7 +192,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             }
             else
             {
-                fastingBloodSugar = MedianFastingBloodSugar;
+                fastingBloodSugar = HealthyFastingBloodSugar;
                 imputed.Add("fbs");
             }
 

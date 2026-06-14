@@ -11,16 +11,24 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 {
     /// <summary>
     /// Diabetes risk predictor. Builds the model's 4-feature vector
-    /// [Glucose, BloodPressure(diastolic), BMI, Age] from the patient's FHIR Observations, imputing
-    /// the training-set median for any feature the patient lacks, then runs the ONNX classifier.
+    /// [Glucose, BloodPressure(diastolic), BMI, Age] from the patient's FHIR Observations, then runs
+    /// the ONNX classifier.
+    ///
+    /// Imputation: missing clinical features are filled with HEALTHY-NORMAL values rather than
+    /// training-set medians. The Pima medians describe an already at-risk cohort (median BMI 32.3 is
+    /// obese, median glucose 117 is pre-diabetic), so imputing them made a record-less patient read
+    /// as elevated risk. Treating an unrecorded value as normal yields a sensible demographic-only
+    /// estimate instead.
     /// </summary>
     public sealed class DiabetesRiskService : IDiabetesRiskService, IDisposable
     {
-        // Training-set medians (from train_diabetes.py). Update if the notebook prints different values.
-        private const float MedianGlucose = 117f;
-        private const float MedianBloodPressure = 72f;
-        private const float MedianBmi = 32.3f;
+        // Fallback for the rare patient with no usable birth date.
         private const float MedianAge = 29f;
+
+        // Healthy-normal values imputed when a clinical feature is missing (see class summary).
+        private const float HealthyGlucose = 90f;          // normal fasting glucose (mg/dL)
+        private const float HealthyBloodPressure = 75f;    // normal diastolic BP (mm Hg)
+        private const float HealthyBmi = 23f;              // mid normal-weight BMI
 
         // LOINC codes for blood glucose (blood, serum, fasting, capillary).
         private static readonly string[] GlucoseCodes = { "2339-0", "2345-7", "1558-6", "41653-7" };
@@ -152,9 +160,9 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         {
             var imputed = new List<string>();
 
-            var glucose = Resolve(ObservationFeatureExtractor.LatestValue(observations, GlucoseCodes), MedianGlucose, "Glucose", imputed);
-            var bloodPressure = Resolve(ObservationFeatureExtractor.LatestValue(observations, DiastolicBpCode), MedianBloodPressure, "BloodPressure", imputed);
-            var bmi = Resolve(ObservationFeatureExtractor.LatestValue(observations, BmiCode), MedianBmi, "BMI", imputed);
+            var glucose = Resolve(ObservationFeatureExtractor.LatestValue(observations, GlucoseCodes), HealthyGlucose, "Glucose", imputed);
+            var bloodPressure = Resolve(ObservationFeatureExtractor.LatestValue(observations, DiastolicBpCode), HealthyBloodPressure, "BloodPressure", imputed);
+            var bmi = Resolve(ObservationFeatureExtractor.LatestValue(observations, BmiCode), HealthyBmi, "BMI", imputed);
 
             var ageYears = CalculateAgeYears(patient.BirthDate);
             var age = ageYears ?? MedianAge;

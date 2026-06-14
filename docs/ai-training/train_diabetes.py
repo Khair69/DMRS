@@ -1,44 +1,55 @@
 """
-DMRS — Diabetes Risk Model training (Google Colab friendly).
+DMRS — Diabetes Risk Model training.
 
-Trains a scikit-learn classifier on the Pima Indians Diabetes dataset using ONLY the features that
-DMRS can recover from a patient's FHIR Observations at inference time, then exports to ONNX via
-skl2onnx with the input tensor named "float_input" (matching the existing high-utilization model so
-the C# OnnxOutputParser consumes it unchanged).
+IMPORTANT (2026-06-15 re-export): the previous version trained a RandomForest and
+exported it via skl2onnx, which produced a DEGENERATE `probabilities` output —
+the two columns came out as negatives of each other (e.g. [-0.011, 0.011]) and
+summed to 0 instead of 1, rather than a valid 2-class distribution. It only
+"worked" because the C# parser reads column 1, whose value happened to track
+P(diabetes) in [0, 1] for the inputs seen so far — fragile, since a future input
+could push column 1 outside [0, 1].
+
+This version trains a GradientBoostingClassifier (same family as the readmission
+and cardiovascular models) and exports with `options={id(model):{"zipmap":False}}`,
+which produces a clean [N, 2] float tensor of REAL probabilities (column 1 =
+P(diabetes)) that sum to ~1. The model's clinical behaviour is unchanged in
+spirit (high glucose/BMI -> higher risk); this re-export is purely about making
+the ONNX output format robust.
 
 Reduced feature set (ORDER MUST MATCH the C# DiabetesRiskService feature vector):
     [Glucose, BloodPressure (diastolic), BMI, Age]
 
-Run order in Colab:
-    1. Run the pip install cell.
-    2. Provide the dataset (Kaggle API or manual CSV upload — see README).
-    3. Run the rest; copy the printed medians into DiabetesRiskService.cs.
-    4. Download diabetes_predictor.onnx into DMRS.Api/Ai/.
+Run locally (no Kaggle account needed) or in Colab:
+    python train_diabetes.py
+It fetches the canonical Pima Indians Diabetes dataset directly, writes
+diabetes_predictor.onnx into ../../DMRS.Api/Ai/ when run from docs/ai-training/,
+and prints the imputation medians (reference only) plus an export sanity check.
 """
 
-# --- Cell 1: dependencies (run once in Colab) -------------------------------
-# !pip install -q scikit-learn skl2onnx onnxruntime pandas kaggle
+import io
+import os
+import urllib.request
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
 
-# --- Cell 2: load the dataset -----------------------------------------------
-# Option A — Kaggle API (upload kaggle.json first):
-#   from google.colab import files; files.upload()   # pick kaggle.json
-#   !mkdir -p ~/.kaggle && cp kaggle.json ~/.kaggle/ && chmod 600 ~/.kaggle/kaggle.json
-#   !kaggle datasets download -d uciml/pima-indians-diabetes-database --unzip
-#   CSV_PATH = "diabetes.csv"
-#
-# Option B — upload diabetes.csv manually via the Colab file panel, then:
-CSV_PATH = "diabetes.csv"
+# --- Cell 1: dependencies (Colab) -------------------------------------------
+# !pip install -q scikit-learn skl2onnx onnxruntime pandas
 
-df = pd.read_csv(CSV_PATH)
+# --- Cell 2: load the canonical Pima Indians Diabetes dataset ---------------
+# 768 rows, no header. Columns (in file order):
+#   Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin,
+#   BMI, DiabetesPedigreeFunction, Age, Outcome
+PIMA_URL = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv"
+COLUMNS = ["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin",
+           "BMI", "DiabetesPedigreeFunction", "Age", "Outcome"]
 
-# Pima columns: Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin,
-#               BMI, DiabetesPedigreeFunction, Age, Outcome
+raw = urllib.request.urlopen(PIMA_URL, timeout=30).read().decode()
+df = pd.read_csv(io.StringIO(raw), header=None, names=COLUMNS)
+
 FEATURES = ["Glucose", "BloodPressure", "BMI", "Age"]
 TARGET = "Outcome"
 
@@ -52,14 +63,18 @@ df[FEATURES] = df[FEATURES].fillna(medians)
 
 X = df[FEATURES].astype(np.float32).values
 y = df[TARGET].astype(np.int64).values
+print(f"Rows: {len(df)}   positive rate: {y.mean():.3f}")
 
 # --- Cell 3: train ----------------------------------------------------------
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-model = RandomForestClassifier(
-    n_estimators=200, max_depth=6, min_samples_leaf=5, random_state=42
+# GradientBoosting (like the readmission/cardiovascular models) exports a clean
+# [N, 2] probability tensor via skl2onnx; it avoids the symmetric/degenerate
+# proba output the old RandomForest export produced.
+model = GradientBoostingClassifier(
+    n_estimators=200, max_depth=3, learning_rate=0.05, random_state=42
 )
 model.fit(X_train, y_train)
 
@@ -69,72 +84,66 @@ print("Accuracy :", round(accuracy_score(y_test, pred), 4))
 print("ROC-AUC  :", round(roc_auc_score(y_test, proba), 4))
 print(classification_report(y_test, pred, digits=3))
 
-# --- Cell 4: PRINT MEDIANS (copy into DiabetesRiskService.cs) ----------------
-print("\n=== Imputation medians (feature order: Glucose, BloodPressure, BMI, Age) ===")
+# --- Cell 4: PRINT MEDIANS (reference only) ---------------------------------
+# NOTE: DiabetesRiskService no longer imputes these training medians for missing
+# features — it imputes HEALTHY-NORMAL values instead ("absence of a recorded
+# abnormality => assume normal"), so a record-less patient reads LOW rather than
+# median-of-an-at-risk-cohort. Printed for reference / sanity only.
+print("\n=== Training medians (reference; NOT used for imputation) ===")
 for f in FEATURES:
     print(f"  {f:14s} = {float(medians[f]):.3f}")
 
-# --- Cell 5: export to ONNX (force name 'float_input' + real probabilities) --
+# --- Cell 5: export to ONNX (real probabilities, input 'float_input') -------
 from skl2onnx import to_onnx
 from skl2onnx.common.data_types import FloatTensorType
 
-# Two things matter here so the C# app can use the model:
+# Two things matter so the C# app can use the model:
 #   1. initial_types names the input "float_input" (what DMRS sends).
 #   2. zipmap=False makes the 2nd output a plain [N, 2] float tensor of REAL
-#      probabilities (column 1 = P(diabetes)), instead of a list of dicts.
+#      probabilities (column 1 = P(diabetes)) that sum to ~1, instead of the old
+#      symmetric/degenerate [-x, +x] tensor or a list of dicts.
 onnx_model = to_onnx(
     model,
     initial_types=[("float_input", FloatTensorType([None, X_train.shape[1]]))],
     options={id(model): {"zipmap": False}},
     target_opset=12,
 )
-with open("diabetes_predictor.onnx", "wb") as f:
+OUT = os.path.join(os.path.dirname(__file__), "..", "..", "DMRS.Api", "Ai",
+                   "diabetes_predictor.onnx")
+OUT = os.path.normpath(OUT)
+with open(OUT, "wb") as f:
     f.write(onnx_model.SerializeToString())
-print("\nWrote diabetes_predictor.onnx")
+print("\nWrote", OUT)
 
-# --- Cell 6: sanity check — ONNX must match sklearn and sit in [0, 1] --------
+# --- Cell 6: sanity check — REAL probabilities (sum to ~1), correct direction -
 import onnxruntime as ort
 
-sess = ort.InferenceSession("diabetes_predictor.onnx")
+sess = ort.InferenceSession(OUT)
 input_name = sess.get_inputs()[0].name
 print("ONNX input name:", input_name, "(must be: float_input)")
 
+
+def risk(vec):
+    out = sess.run(None, {input_name: np.array([vec], dtype=np.float32)})
+    return float(out[1][0][1])
+
+
+# The two proba columns must sum to ~1 (not the old symmetric [-x, +x]), and the
+# ONNX P(pos) must match sklearn. Feature order: [Glucose, BloodPressure, BMI, Age].
 sample = X_test[:3].astype(np.float32)
 onnx_label, onnx_proba = sess.run(None, {input_name: sample})
-print("ONNX label    :", onnx_label)
-print("ONNX  P(pos)  :", onnx_proba[:, 1])               # probability of diabetes
+print("proba rows (each must sum to ~1):")
+for row in onnx_proba:
+    print("  ", row, " sum=", round(float(row.sum()), 6))
+print("ONNX  P(pos):", onnx_proba[:, 1])
 print("sklearn P(pos):", model.predict_proba(sample)[:, 1])
-# The two P(pos) rows should match and be between 0 and 1. If they do, you're done.
 
-# In Colab, download the file:
-#   from google.colab import files; files.download("diabetes_predictor.onnx")
-
-"""
-THE RESULTS
-
-THE RESULTS
- Accuracy : 0.7338
-ROC-AUC  : 0.8157
-              precision    recall  f1-score   support
-
-           0      0.776     0.830     0.802       100
-           1      0.638     0.556     0.594        54
-
-    accuracy                          0.734       154
-   macro avg      0.707     0.693     0.698       154
-weighted avg      0.728     0.734     0.729       154
-
-
-=== Imputation medians (feature order: Glucose, BloodPressure, BMI, Age) ===
-  Glucose        = 117.000
-  BloodPressure  = 72.000
-  BMI            = 32.300
-  Age            = 29.000
-
-Wrote diabetes_predictor.onnx
-ONNX input name: float_input (must be: float_input)
-ONNX label    : [1 1 1]
-ONNX  P(pos)  : [0.6957152  0.19275025 0.16971387]
-sklearn P(pos): [0.69571565 0.19275027 0.16971386]
-'\nTHE RESULTS\nAccuracy : 0.7338\nROC-AUC  : 0.8157\n              precision    recall  f1-score   support\n\n           0      0.776     0.830     0.802       100\n           1      0.638     0.556     0.594        54\n\n    accuracy                          0.734       154\n   macro avg      0.707     0.693     0.698       154\nweighted avg      0.728     0.734     0.729       154\n\n\n=== Imputation medians (feature order: Glucose, BloodPressure, BMI, Age) ===\n  Glucose        = 117.000\n  BloodPressure  = 72.000\n  BMI            = 32.300\n  Age            = 29.000\n\nWrote diabetes_predictor.onnx\nONNX input name: X (expected: float_input)\nONNX label output : [1 1 1]\nONNX proba output : [{0: -0.6957151889801025, 1: 0.6957151889801025}, {0: -0.1927502453327179, 1: 0.1927502453327179}, {0: -0.16971386969089508, 1: 0.16971386969089508}]\n'
-"""
+# Directionality: healthy young patient LOW, glucose/BMI-heavy patient HIGH.
+print("HEALTHY young [90,75,23,25]  P(diabetes):", round(risk([90, 75, 23, 25]) * 100, 1), "%")
+print("AT-RISK      [185,90,40,55]  P(diabetes):", round(risk([185, 90, 40, 55]) * 100, 1), "%")
+print("higher glucose must RAISE risk:",
+      round(risk([100, 75, 25, 40]) * 100, 1), "->",
+      round(risk([180, 75, 25, 40]) * 100, 1), "%")
+print("higher BMI must RAISE risk:",
+      round(risk([110, 75, 22, 40]) * 100, 1), "->",
+      round(risk([110, 75, 42, 40]) * 100, 1), "%")

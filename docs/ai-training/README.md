@@ -10,12 +10,19 @@ existing C# inference code (`HighUtilizationRiskService` / `OnnxOutputParser`) c
 | Script | Dataset | Reduced feature set (order matters) | Output file |
 |---|---|---|---|
 | `train_diabetes.py` | Pima Indians Diabetes (`uciml/pima-indians-diabetes-database`) | `[Glucose, BloodPressure(diastolic), BMI, Age]` | `diabetes_predictor.onnx` |
-| `train_cardiovascular.py` | UCI Heart Disease (`johnsmith88/heart-disease-dataset`) | `[age, sex, trestbps, chol, thalach, fbs]` | `cardiovascular_predictor.onnx` |
+| `train_cardiovascular.py` | **Authentic UCI Cleveland Heart Disease** (fetched from the UCI archive — 303 unique rows; NOT the duplicated Kaggle `johnsmith88/heart-disease-dataset`, whose leakage/flipped labels made the model score healthy patients as high-risk) | `[age, sex, trestbps, chol, thalach, fbs]` | `cardiovascular_predictor.onnx` |
 
 We deliberately train on a **reduced** feature set — only the columns we can recover from each
 patient's FHIR Observations at inference time — so the deployed models score real patient data. See
 the feature → LOINC mapping in `DMRS.Api/Application/ClinicalDecisionSupport/Services/`
 (`DiabetesRiskService`, `CardiovascularRiskService`).
+
+> **Note:** `train_cardiovascular.py` is self-contained — it fetches the authentic UCI Cleveland
+> data directly from the UCI archive and writes `cardiovascular_predictor.onnx` straight into
+> `DMRS.Api/Ai/`. Just run `python train_cardiovascular.py` (no Kaggle token, no manual CSV). The
+> Colab steps below apply to `train_diabetes.py`. It also imputes **healthy-normal** values for
+> missing features at inference, so the printed training medians are reference-only (not copied into
+> the C# services).
 
 ## How to run (Colab)
 

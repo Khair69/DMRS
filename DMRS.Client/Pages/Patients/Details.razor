@@ -276,7 +276,7 @@ else
                             </ul>
                             @if (!diabetesRisk.FeaturesComplete)
                             {
-                                <div class="small text-warning mb-0">Estimated — imputed: @string.Join(", ", diabetesRisk.ImputedFeatures)</div>
+                                <div class="small text-warning mb-0">Demographic estimate — no clinical data on file (assumed healthy-normal: @string.Join(", ", diabetesRisk.ImputedFeatures))</div>
                             }
                         }
                     </div>
@@ -304,7 +304,7 @@ else
                             </ul>
                             @if (!cardiovascularRisk.FeaturesComplete)
                             {
-                                <div class="small text-warning mb-0">Estimated — imputed: @string.Join(", ", cardiovascularRisk.ImputedFeatures)</div>
+                                <div class="small text-warning mb-0">Demographic estimate — no clinical data on file (assumed healthy-normal: @string.Join(", ", cardiovascularRisk.ImputedFeatures))</div>
                             }
                         }
                     </div>
