@@ -89,6 +89,56 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             }
 
             var observations = await _extractor.GetObservationsAsync(normalizedPatientId);
+            return BuildAssessment(normalizedPatientId, patient, observations);
+        }
+
+        /// <summary>
+        /// Scores every patient with a birth date in a single pass. All Observations are loaded once
+        /// and grouped by patient (rather than one search per patient), then each patient's feature
+        /// vector is built and run through the model — mirroring the readmission cohort path.
+        /// </summary>
+        public async Task<IReadOnlyList<CardiovascularRiskAssessment>> AssessAllAsync(CancellationToken cancellationToken)
+        {
+            if (_session is null)
+            {
+                return [];
+            }
+
+            var noFilter = new Dictionary<string, string>();
+            var patients = await _fhirRepository.SearchAsync<Patient>(noFilter);
+            var observations = await _fhirRepository.SearchAsync<Observation>(noFilter);
+
+            var observationsByPatient = observations
+                .GroupBy(o => ExtractPatientId(o.Subject?.Reference))
+                .Where(g => g.Key is not null)
+                .ToDictionary(g => g.Key!, g => (IReadOnlyList<Observation>)g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+            var results = new List<CardiovascularRiskAssessment>(patients.Count);
+            foreach (var patient in patients)
+            {
+                // Need a birth date for a real age feature; sex is imputed when gender is unset.
+                if (string.IsNullOrWhiteSpace(patient.Id) || string.IsNullOrWhiteSpace(patient.BirthDate))
+                {
+                    continue;
+                }
+
+                var patientObservations = observationsByPatient.GetValueOrDefault(patient.Id) ?? [];
+                var assessment = BuildAssessment(patient.Id, patient, patientObservations);
+                if (assessment is not null)
+                {
+                    results.Add(assessment);
+                }
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Builds the 6-feature vector from the patient's data (imputing the training median for any
+        /// missing feature) and runs the model. Shared by the single-patient and cohort paths.
+        /// </summary>
+        private CardiovascularRiskAssessment? BuildAssessment(string patientId, Patient patient, IReadOnlyList<Observation> observations)
+        {
             var imputed = new List<string>();
 
             var ageYears = CalculateAgeYears(patient.BirthDate);
@@ -130,15 +180,25 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 NamedOnnxValue.CreateFromTensor(_inputName, inputTensor)
             };
 
-            using IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = _session.Run(inputs);
-            var (label, probability) = OnnxOutputParser.ParseOutputs(results);
+            float? probability;
+            bool? label;
+            try
+            {
+                using IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = _session!.Run(inputs);
+                (label, probability) = OnnxOutputParser.ParseOutputs(results);
+            }
+            catch
+            {
+                // One bad patient must not fail the whole cohort scoring request.
+                return null;
+            }
 
             var score = probability ?? (label == true ? 1f : 0f);
             var isHighRisk = score >= _options.HighRiskThreshold;
             var riskLevel = score >= 0.65f ? "High" : score >= 0.35f ? "Medium" : "Low";
 
             return new CardiovascularRiskAssessment(
-                normalizedPatientId,
+                patientId,
                 age,
                 sex,
                 restingBp,
@@ -152,6 +212,17 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 imputed.ToArray(),
                 _modelName,
                 DateTimeOffset.UtcNow);
+        }
+
+        private static string? ExtractPatientId(string? reference)
+        {
+            if (string.IsNullOrWhiteSpace(reference))
+            {
+                return null;
+            }
+
+            var slash = reference.IndexOf('/');
+            return slash >= 0 && slash < reference.Length - 1 ? reference[(slash + 1)..] : reference;
         }
 
         private static float Resolve(double? value, float median, string name, List<string> imputed)

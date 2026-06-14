@@ -1,4 +1,5 @@
 using DMRS.Client;
+using DMRS.Client.Features.AiInsights.Services;
 using DMRS.Client.Features.AllergyIntolerances.Services;
 using DMRS.Client.Features.Appointments.Services;
 using DMRS.Client.Features.Conditions.Services;
@@ -53,6 +54,7 @@ builder.Services.AddSingleton<FhirJsonDeserializer>(new FhirJsonDeserializer(new
 builder.Services.AddScoped<PatientFeatureService>();
 builder.Services.AddScoped<PatientChartFeatureService>();
 builder.Services.AddScoped<DashboardFeatureService>();
+builder.Services.AddScoped<AiInsightsFeatureService>();
 builder.Services.AddScoped<OrganizationFeatureService>();
 builder.Services.AddScoped<OrganizationAdminFeatureService>();
 builder.Services.AddScoped<StaffFeatureService>();

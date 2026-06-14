@@ -64,10 +64,13 @@ and the API/UI simply show "not available" — the app never crashes because a m
 
 - **Patient chart** (`Pages/Patients/Details.razor`) — a card per model with the probability,
   tier, the feature values used, and an "estimated/imputed" note when inputs were missing.
-- **AI Insights page** — a population watchlist ranked by readmission risk plus a "How Scoring Works"
-  explainer.
-- **Endpoints** — `GET /cds/risk/diabetes/{id}`, `/cds/risk/cardiovascular/{id}`,
-  `/cds/risk/high-utilization/{id}` (readmission).
+- **AI Insights page** — a model catalog plus, for each of the three models, the cohort risk
+  distribution and a top-risk watchlist (scored via the per-model `/batch` endpoints), a shared
+  "How Scoring Works" explainer, and population-health condition prevalence.
+- **Endpoints** — per patient: `GET /cds/risk/diabetes/{id}`, `/cds/risk/cardiovascular/{id}`,
+  `/cds/risk/high-utilization/{id}` (readmission). Whole-cohort batch (one request, used by the AI
+  Insights page): `GET /cds/risk/diabetes/batch`, `/cds/risk/cardiovascular/batch`,
+  `/cds/risk/high-utilization/batch`.
 
 ## CDS integration
 

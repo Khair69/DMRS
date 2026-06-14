@@ -1,8 +1,7 @@
 @page "/ai-insights"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
-@using DMRS.Client.Features.Dashboard.Models
-@inject DMRS.Client.Features.Dashboard.Services.DashboardFeatureService DashboardService
-@inject DMRS.Client.Services.FhirApiService FhirApi
+@using DMRS.Client.Features.AiInsights.Models
+@inject DMRS.Client.Features.AiInsights.Services.AiInsightsFeatureService AiInsightsService
 
 <PageTitle>AI Insights</PageTitle>
 
@@ -10,7 +9,14 @@
     <div>
         <span class="workspace-eyebrow">Predictive Layer</span>
         <h1>AI Insights</h1>
-        <p>30-day readmission risk scored by a model trained on real hospital data, using each patient's FHIR record — age, conditions, medications, recent visits, and procedures.</p>
+        <p>
+            Three machine-learning models score every patient straight from their FHIR record —
+            <strong>type-2 diabetes</strong>, <strong>cardiovascular (heart disease)</strong>, and
+            <strong>30-day hospital readmission</strong> risk. Each ONNX classifier is trained on a public
+            clinical dataset and reads only the features DMRS can actually observe (age, vitals, labs,
+            conditions, medications and visits), imputing the training median when a value is missing.
+            Scores are decision support — illustrative, not clinically validated.
+        </p>
     </div>
 </div>
 
@@ -26,207 +32,221 @@ else if (!string.IsNullOrWhiteSpace(errorMessage))
 }
 else
 {
-    <!-- Risk distribution summary row -->
+    <!-- Model catalog -->
     <div class="dmrs-metrics-grid dmrs-metrics-grid--compact mb-4">
-        <div class="dmrs-metric-card metric-rose">
-            <div class="dmrs-metric-card__label">High Risk</div>
-            <div class="dmrs-metric-card__value">@snapshot.HighRiskPatients.Count(p => p.RiskLevel == "High")</div>
-            <div class="dmrs-metric-card__helper">Readmission risk ≥ 65%</div>
-        </div>
-        <div class="dmrs-metric-card metric-gold">
-            <div class="dmrs-metric-card__label">Medium Risk</div>
-            <div class="dmrs-metric-card__value">@snapshot.HighRiskPatients.Count(p => p.RiskLevel == "Medium")</div>
-            <div class="dmrs-metric-card__helper">Readmission risk 35–65%</div>
-        </div>
-        <div class="dmrs-metric-card metric-emerald">
-            <div class="dmrs-metric-card__label">Low Risk</div>
-            <div class="dmrs-metric-card__value">@snapshot.HighRiskPatients.Count(p => p.RiskLevel == "Low")</div>
-            <div class="dmrs-metric-card__helper">Readmission risk &lt; 35%</div>
-        </div>
-        <div class="dmrs-metric-card metric-ocean">
-            <div class="dmrs-metric-card__label">With Chronic Conditions</div>
-            <div class="dmrs-metric-card__value">@snapshot.HighRiskPatients.Count(p => p.HasChronicConditions)</div>
-            <div class="dmrs-metric-card__helper">Detected chronic illness</div>
-        </div>
+        @foreach (var model in snapshot.Models)
+        {
+            <div class="dmrs-metric-card @model.AccentClass">
+                <div class="dmrs-metric-card__label">@model.Title</div>
+                <div class="dmrs-metric-card__value">@model.Total</div>
+                <div class="dmrs-metric-card__helper">
+                    patients scored · acc @model.Accuracy · AUC @model.Auc
+                </div>
+            </div>
+        }
     </div>
 
-    <div class="row g-4">
-        <div class="col-12 col-xl-8">
-            <div class="dmrs-panel">
-                <div class="dmrs-panel__header">
-                    <div>
-                        <div class="dmrs-panel__title">Patient Risk Watchlist</div>
-                        <div class="dmrs-panel__subtitle">Ranked by the model's predicted 30-day readmission probability.</div>
+    @foreach (var model in snapshot.Models)
+    {
+        <div class="dmrs-panel mb-4">
+            <div class="dmrs-panel__header">
+                <div>
+                    <div class="dmrs-panel__title">@model.Title</div>
+                    <div class="dmrs-panel__subtitle">@model.Predicts</div>
+                </div>
+                <div class="text-end small text-muted">
+                    <div>Trained on @model.Dataset</div>
+                    <div>Accuracy @model.Accuracy · ROC-AUC @model.Auc</div>
+                </div>
+            </div>
+
+            @if (model.Total == 0)
+            {
+                <div class="dmrs-empty-state">
+                    No assessable patients yet. Import patients with a birth date to activate this model.
+                </div>
+            }
+            else
+            {
+                <!-- Risk distribution -->
+                <div class="d-flex flex-wrap align-items-center gap-4 mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="dmrs-pill dmrs-pill--danger">High</span>
+                        <strong>@model.HighCount</strong>
                     </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="dmrs-pill dmrs-pill--warning">Medium</span>
+                        <strong>@model.MediumCount</strong>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="dmrs-pill dmrs-pill--neutral">Low</span>
+                        <strong>@model.LowCount</strong>
+                    </div>
+                    @if (model.ImputedCount > 0)
+                    {
+                        <div class="ms-auto small text-muted">
+                            @model.ImputedCount of @model.Total scored with one or more imputed (estimated) features
+                        </div>
+                    }
                 </div>
 
-                @if (snapshot.HighRiskPatients.Count == 0)
-                {
-                    <div class="dmrs-empty-state">No assessable patients yet. Import sample patients with birth date and gender to activate the risk panel.</div>
-                }
-                else
-                {
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                            <thead>
+                <div class="progress mb-4" style="height:10px;">
+                    <div class="progress-bar bg-danger"
+                         style="@StackWidth(model.HighCount, model.Total)"></div>
+                    <div class="progress-bar bg-warning"
+                         style="@StackWidth(model.MediumCount, model.Total)"></div>
+                    <div class="progress-bar bg-success"
+                         style="@StackWidth(model.LowCount, model.Total)"></div>
+                </div>
+
+                <!-- Feature inputs -->
+                <div class="mb-3">
+                    <span class="small text-muted me-2">Model inputs:</span>
+                    @foreach (var feature in model.Features)
+                    {
+                        <span class="dmrs-pill dmrs-pill--neutral me-1 mb-1">@feature</span>
+                    }
+                </div>
+
+                <!-- Top-risk watchlist -->
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Risk Level</th>
+                                <th style="min-width:160px;">Score</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in model.Watchlist)
+                            {
                                 <tr>
-                                    <th>Patient</th>
-                                    <th>Risk Level</th>
-                                    <th>Score</th>
-                                    <th>Conditions</th>
-                                    <th>Active Meds</th>
-                                    <th>Recent Visits</th>
-                                    <th>Top Factors</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var p in snapshot.HighRiskPatients)
-                                {
-                                    <tr>
-                                        <td>
-                                            <a href="@p.Href" class="fw-semibold text-decoration-none">@p.DisplayName</a>
-                                        </td>
-                                        <td>
-                                            <span class="dmrs-pill @RiskLevelClass(p.RiskLevel)">@p.RiskLevel</span>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <div class="progress flex-grow-1" style="height:6px; min-width:60px">
-                                                    <div class="progress-bar @RiskBarClass(p.RiskLevel)"
-                                                         style="@($"width:{(p.CompositeScore * 100).ToString("0")}%")"></div>
-                                                </div>
-                                                <small class="text-muted">@((p.CompositeScore * 100).ToString("0"))%</small>
+                                    <td>
+                                        <a href="@row.Href" class="fw-semibold text-decoration-none">@row.DisplayName</a>
+                                        @if (!row.FeaturesComplete)
+                                        {
+                                            <span class="small text-warning ms-1" title="Some features were imputed">≈</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="dmrs-pill @RiskLevelClass(row.RiskLevel)">@row.RiskLevel</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress flex-grow-1" style="height:6px; min-width:60px">
+                                                <div class="progress-bar @RiskBarClass(row.RiskLevel)"
+                                                     style="@($"width:{(row.Score * 100).ToString("0")}%")"></div>
                                             </div>
-                                        </td>
-                                        <td>@p.ConditionCount</td>
-                                        <td>@p.MedicationCount</td>
-                                        <td>@p.RecentEncounterCount</td>
-                                        <td>
-                                            <small class="text-muted">@(p.TopRiskFactors?.FirstOrDefault() ?? "—")</small>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
+                                            <small class="text-muted">@((row.Score * 100).ToString("0"))%</small>
+                                        </div>
+                                    </td>
+                                    <td><small class="text-muted">@row.Detail</small></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- How scoring works -->
+    <div class="dmrs-panel mb-4">
+        <div class="dmrs-panel__header">
+            <div>
+                <div class="dmrs-panel__title">How Scoring Works</div>
+                <div class="dmrs-panel__subtitle">Shared design across all three models</div>
             </div>
         </div>
-
-        <div class="col-12 col-xl-4">
-            <div class="dmrs-panel">
-                <div class="dmrs-panel__header">
-                    <div>
-                        <div class="dmrs-panel__title">How Scoring Works</div>
-                        <div class="dmrs-panel__subtitle">Model-driven readmission predictor</div>
-                    </div>
-                </div>
-                <div class="dmrs-stack">
-                    <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">The Model</div>
-                        <p>An ONNX classifier trained on the UCI "130-US hospitals" dataset to predict the chance a patient is readmitted within 30 days. The model produces the score directly — no hand-tuned rules.</p>
-                    </div>
-                    <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Model Inputs</div>
-                        <p class="mb-1">Pulled from each patient's FHIR record:</p>
-                        <ul class="mb-0 small">
-                            <li>Age and gender</li>
-                            <li>Number of conditions</li>
-                            <li>Number of active medications</li>
-                            <li>Number of recent visits</li>
-                            <li>Number of procedures</li>
-                        </ul>
-                    </div>
-                    <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Risk Tiers</div>
-                        <ul class="mb-0 small">
-                            <li><strong>High</strong> — composite ≥ 65%</li>
-                            <li><strong>Medium</strong> — 35%–65%</li>
-                            <li><strong>Low</strong> — below 35%</li>
-                        </ul>
-                    </div>
-                </div>
+        <div class="dmrs-stack">
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">Trained offline, served online</div>
+                <p>Each model is a scikit-learn RandomForest trained in Google Colab, exported to ONNX, and
+                   run inside the API. The model output is the score directly — there are no hand-tuned rules.</p>
+            </div>
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">Features the system can observe</div>
+                <p>Models are trained on only the columns DMRS can recover from a real FHIR record, so training
+                   matches inference. A missing value is filled with the training-set median and the patient is
+                   flagged as estimated (shown with ≈).</p>
+            </div>
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">Risk tiers</div>
+                <ul class="mb-0 small">
+                    <li><strong>High</strong> — probability ≥ 65%</li>
+                    <li><strong>Medium</strong> — 35%–65%</li>
+                    <li><strong>Low</strong> — below 35%</li>
+                </ul>
+            </div>
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">Feeds clinical decision support</div>
+                <p>The readmission score is also exposed to the CDS rule engine (<code>ai.riskLevel</code>,
+                   <code>ai.compositeScore</code>, …), so authored rules can fire cards based on AI risk.</p>
             </div>
         </div>
     </div>
 
     <!-- Population Health -->
-    <div class="row g-4 mt-1">
-        <div class="col-12">
-            <div class="dmrs-panel">
-                <div class="dmrs-panel__header">
-                    <div>
-                        <div class="dmrs-panel__title">Population Health — Condition Prevalence</div>
-                        <div class="dmrs-panel__subtitle">Top conditions recorded across all patients in this workspace.</div>
-                    </div>
-                </div>
+    <div class="dmrs-panel">
+        <div class="dmrs-panel__header">
+            <div>
+                <div class="dmrs-panel__title">Population Health — Condition Prevalence</div>
+                <div class="dmrs-panel__subtitle">Top conditions recorded across all patients in this workspace.</div>
+            </div>
+        </div>
 
-                @if (conditionPrevalence.Count == 0)
+        @if (snapshot.ConditionPrevalence.Count == 0)
+        {
+            <div class="dmrs-empty-state">No condition data available yet. Add conditions to patient records to see prevalence.</div>
+        }
+        else
+        {
+            <div class="px-1 py-2">
+                @foreach (var item in snapshot.ConditionPrevalence)
                 {
-                    <div class="dmrs-empty-state">No condition data available yet. Add conditions to patient records to see prevalence.</div>
-                }
-                else
-                {
-                    <div class="px-1 py-2">
-                        @foreach (var item in conditionPrevalence)
-                        {
-                            var barPct = maxConditionCount > 0
-                                ? (int)((item.Count / (double)maxConditionCount) * 100)
-                                : 0;
-                            <div class="d-flex align-items-center gap-3 mb-2">
-                                <div style="width:200px; font-size:0.82rem; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0;"
-                                     title="@item.Name">
-                                    @item.Name
-                                </div>
-                                <div class="flex-grow-1" style="background:#f3f4f6; border-radius:4px; height:22px; overflow:hidden;">
-                                    <div style="width:@(barPct)%; background: linear-gradient(90deg,#6366f1,#8b5cf6); height:100%; border-radius:4px;
-                                                transition:width .4s ease; display:flex; align-items:center; padding-left:8px;">
-                                        @if (barPct > 15)
-                                        {
-                                            <span style="font-size:0.75rem; color:#fff; font-weight:600;">@item.Count</span>
-                                        }
-                                    </div>
-                                </div>
-                                @if (barPct <= 15)
+                    var barPct = maxConditionCount > 0
+                        ? (int)((item.Count / (double)maxConditionCount) * 100)
+                        : 0;
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div style="width:200px; font-size:0.82rem; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0;"
+                             title="@item.Name">
+                            @item.Name
+                        </div>
+                        <div class="flex-grow-1" style="background:#f3f4f6; border-radius:4px; height:22px; overflow:hidden;">
+                            <div style="width:@(barPct)%; background: linear-gradient(90deg,#6366f1,#8b5cf6); height:100%; border-radius:4px;
+                                        transition:width .4s ease; display:flex; align-items:center; padding-left:8px;">
+                                @if (barPct > 15)
                                 {
-                                    <span style="font-size:0.78rem; color:#6b7280; width:24px;">@item.Count</span>
+                                    <span style="font-size:0.75rem; color:#fff; font-weight:600;">@item.Count</span>
                                 }
                             </div>
+                        </div>
+                        @if (barPct <= 15)
+                        {
+                            <span style="font-size:0.78rem; color:#6b7280; width:24px;">@item.Count</span>
                         }
                     </div>
                 }
             </div>
-        </div>
+        }
     </div>
 }
 
 @code {
-    private sealed class ConditionPrevalenceItem
-    {
-        public string Name { get; set; } = string.Empty;
-        public int Count { get; set; }
-    }
-
     private bool isLoading = true;
     private string? errorMessage;
-    private DashboardSnapshotModel snapshot = new();
-    private List<ConditionPrevalenceItem> conditionPrevalence = [];
+    private AiInsightsSnapshot snapshot = new();
     private int maxConditionCount = 1;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var snapshotTask    = DashboardService.GetSnapshotAsync();
-            var prevalenceTask  = FhirApi.GetApiJsonAsync<List<ConditionPrevalenceItem>>(
-                "analytics/condition-prevalence");
-
-            await Task.WhenAll(snapshotTask, prevalenceTask);
-
-            snapshot             = snapshotTask.Result;
-            conditionPrevalence  = prevalenceTask.Result ?? [];
-            maxConditionCount    = conditionPrevalence.Count > 0
-                ? conditionPrevalence.Max(x => x.Count)
+            snapshot = await AiInsightsService.GetSnapshotAsync();
+            maxConditionCount = snapshot.ConditionPrevalence.Count > 0
+                ? snapshot.ConditionPrevalence.Max(x => x.Count)
                 : 1;
         }
         catch (Exception ex)
@@ -238,6 +258,9 @@ else
             isLoading = false;
         }
     }
+
+    private static string StackWidth(int count, int total)
+        => $"width:{(total > 0 ? (count / (double)total) * 100 : 0).ToString("0.##")}%";
 
     private static string RiskLevelClass(string riskLevel) => riskLevel switch
     {

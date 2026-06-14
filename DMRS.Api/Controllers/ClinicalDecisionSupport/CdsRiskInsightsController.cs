@@ -41,6 +41,22 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
             return Ok(result);
         }
 
+        // Scores every eligible patient in one request (see high-utilization/batch). Used by the
+        // AI Insights page to show a population view per model without 100 per-patient calls.
+        [HttpGet("diabetes/batch")]
+        public async Task<IActionResult> GetDiabetesRiskBatch(CancellationToken cancellationToken)
+        {
+            var results = await _diabetesRiskService.AssessAllAsync(cancellationToken);
+            return Ok(results);
+        }
+
+        [HttpGet("cardiovascular/batch")]
+        public async Task<IActionResult> GetCardiovascularRiskBatch(CancellationToken cancellationToken)
+        {
+            var results = await _cardiovascularRiskService.AssessAllAsync(cancellationToken);
+            return Ok(results);
+        }
+
         // Returns 200 with a null body when the model is unavailable so the patient chart, which
         // loads all risk scores together, never fails just because a model has not been trained yet.
         [HttpGet("diabetes/{patientId}")]
