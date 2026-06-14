@@ -31,9 +31,9 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
         // the per-patient endpoint 100 times (the browser caps concurrent connections).
         // The cohort is scoped to the caller's accessible patients (null = all, for a system caller).
         [HttpGet("high-utilization/batch")]
-        public async Task<IActionResult> GetHighUtilizationRiskBatch(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetHighUtilizationRiskBatch([FromQuery] bool mine, CancellationToken cancellationToken)
         {
-            var patientIdFilter = await _authorizationService.ResolveAccessiblePatientIdsAsync(User);
+            var patientIdFilter = await _authorizationService.ResolveViewPatientIdsAsync(User, mine);
             var results = await _riskService.AssessAllAsync(patientIdFilter, cancellationToken);
             return Ok(results);
         }
@@ -50,17 +50,17 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
         // Scores every eligible patient in one request (see high-utilization/batch). Used by the
         // AI Insights page to show a population view per model without 100 per-patient calls.
         [HttpGet("diabetes/batch")]
-        public async Task<IActionResult> GetDiabetesRiskBatch(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetDiabetesRiskBatch([FromQuery] bool mine, CancellationToken cancellationToken)
         {
-            var patientIdFilter = await _authorizationService.ResolveAccessiblePatientIdsAsync(User);
+            var patientIdFilter = await _authorizationService.ResolveViewPatientIdsAsync(User, mine);
             var results = await _diabetesRiskService.AssessAllAsync(patientIdFilter, cancellationToken);
             return Ok(results);
         }
 
         [HttpGet("cardiovascular/batch")]
-        public async Task<IActionResult> GetCardiovascularRiskBatch(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetCardiovascularRiskBatch([FromQuery] bool mine, CancellationToken cancellationToken)
         {
-            var patientIdFilter = await _authorizationService.ResolveAccessiblePatientIdsAsync(User);
+            var patientIdFilter = await _authorizationService.ResolveViewPatientIdsAsync(User, mine);
             var results = await _cardiovascularRiskService.AssessAllAsync(patientIdFilter, cancellationToken);
             return Ok(results);
         }

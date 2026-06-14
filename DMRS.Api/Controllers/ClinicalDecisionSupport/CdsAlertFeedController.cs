@@ -24,10 +24,10 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
         /// accessible patients (workspace-wide for a system caller).
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetFeed([FromQuery] int count = 20)
+        public async Task<IActionResult> GetFeed([FromQuery] int count = 20, [FromQuery] bool mine = false)
         {
             var take = Math.Clamp(count, 1, 50);
-            var accessiblePatientIds = await _authorizationService.ResolveAccessiblePatientIdsAsync(User);
+            var accessiblePatientIds = await _authorizationService.ResolveViewPatientIdsAsync(User, mine);
 
             if (accessiblePatientIds is null)
             {

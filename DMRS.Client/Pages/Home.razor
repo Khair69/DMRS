@@ -11,6 +11,10 @@
 {
     <OrgAdminDashboard />
 }
+else if (showDoctorDashboard)
+{
+    <DoctorDashboard />
+}
 else
 {
 
@@ -245,16 +249,20 @@ else
     private string? errorMessage;
     private DashboardSnapshotModel snapshot = new();
     private bool showOrgAdminDashboard;
+    private bool showDoctorDashboard;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
-        // Org admins get a dedicated, org-scoped dashboard. A system admin keeps the global view
-        // even if they also hold the org-admin role.
-        showOrgAdminDashboard = user.IsInRole("ROLE_ORG_ADMIN") && !user.IsInRole("ROLE_SYSTEM_ADMIN");
-        if (showOrgAdminDashboard)
+        var isAdmin = user.IsInRole("ROLE_SYSTEM_ADMIN");
+
+        // Org admins get the org-scoped dashboard; plain doctors get the clinician "My Patients"
+        // dashboard. A system admin keeps the global view even if they also hold these roles.
+        showOrgAdminDashboard = user.IsInRole("ROLE_ORG_ADMIN") && !isAdmin;
+        showDoctorDashboard = !showOrgAdminDashboard && !isAdmin && user.IsInRole("ROLE_PRACTITIONER");
+        if (showOrgAdminDashboard || showDoctorDashboard)
         {
             isLoading = false;
             return;

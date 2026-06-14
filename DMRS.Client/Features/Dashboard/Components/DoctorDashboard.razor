@@ -1,0 +1,240 @@
+@using DMRS.Client.Features.Dashboard.Models
+@inject DMRS.Client.Features.Dashboard.Services.DashboardFeatureService DashboardService
+@inject DMRS.Client.Services.OrganizationContextService OrgContext
+@inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
+
+<div class="workspace-hero">
+    <div>
+        <span class="workspace-eyebrow">Clinician Workspace</span>
+        <h1>My Workspace</h1>
+        <p>Your patient panel, predictive risk, and decision-support activity.</p>
+        @if (!string.IsNullOrWhiteSpace(organizationName))
+        {
+            <p style="margin:0.35rem 0 0; font-weight:600; opacity:0.95;">
+                <span style="opacity:0.75;">Organization:</span> @organizationName
+            </p>
+        }
+    </div>
+    <div class="workspace-hero__actions">
+        <a class="btn btn-light" href="/patients">All Patients</a>
+        <a class="btn btn-outline-light" href="/appointments">Appointments</a>
+    </div>
+</div>
+
+<div style="display:flex; align-items:center; gap:0.75rem; margin:1.5rem 0 1.25rem;">
+    <span style="color:var(--dmrs-muted); font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;">Showing</span>
+    <div role="group" aria-label="Patient scope"
+         style="display:inline-flex; gap:4px; padding:4px; background:var(--dmrs-panel); border:1px solid var(--dmrs-border); border-radius:999px; box-shadow:var(--dmrs-shadow);">
+        <button type="button" style="@SegStyle(mine)" disabled="@isLoading" @onclick="@(() => SetScope(true))">My Patients</button>
+        <button type="button" style="@SegStyle(!mine)" disabled="@isLoading" @onclick="@(() => SetScope(false))">All in My Organization</button>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="dmrs-loading-shell">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else
+{
+    <section class="dmrs-metrics-grid">
+        <a class="dmrs-metric-card metric-ocean" href="/patients">
+            <div class="dmrs-metric-card__label">@(mine ? "My Patients" : "Patients")</div>
+            <div class="dmrs-metric-card__value">@snapshot.PatientCount</div>
+            <div class="dmrs-metric-card__helper">@(mine ? "Patients on your panel" : "Patients in your organization")</div>
+        </a>
+        <a class="dmrs-metric-card metric-gold" href="/medication-requests">
+            <div class="dmrs-metric-card__label">Active Meds</div>
+            <div class="dmrs-metric-card__value">@snapshot.ActiveMedications</div>
+            <div class="dmrs-metric-card__helper">Medication requests on file</div>
+        </a>
+        <a class="dmrs-metric-card metric-rose" href="/conditions">
+            <div class="dmrs-metric-card__label">Conditions</div>
+            <div class="dmrs-metric-card__value">@snapshot.Conditions</div>
+            <div class="dmrs-metric-card__helper">Tracked problem list items</div>
+        </a>
+        <a class="dmrs-metric-card metric-emerald" href="/encounters">
+            <div class="dmrs-metric-card__label">Encounters</div>
+            <div class="dmrs-metric-card__value">@snapshot.Encounters</div>
+            <div class="dmrs-metric-card__helper">Documented clinical visits</div>
+        </a>
+        <a class="dmrs-metric-card metric-ink" href="/service-requests">
+            <div class="dmrs-metric-card__label">Service Requests</div>
+            <div class="dmrs-metric-card__value">@snapshot.ServiceRequests</div>
+            <div class="dmrs-metric-card__helper">Orders and follow-up requests</div>
+        </a>
+    </section>
+
+    <section class="row g-4 mt-1">
+        <div class="col-12 col-xl-7">
+            <div class="dmrs-panel h-100">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Predictive Watchlist</div>
+                        <div class="dmrs-panel__subtitle">@(mine ? "Your patients" : "Organization patients") by AI readmission risk.</div>
+                    </div>
+                    <div class="d-flex gap-2" style="font-size:0.8rem;">
+                        <span class="dmrs-pill dmrs-pill--danger">@snapshot.HighRiskCount High</span>
+                        <span class="dmrs-pill dmrs-pill--warning">@snapshot.MediumRiskCount Medium</span>
+                        <span class="dmrs-pill dmrs-pill--neutral">@snapshot.LowRiskCount Low</span>
+                    </div>
+                </div>
+
+                @if (snapshot.Watchlist.Count == 0)
+                {
+                    <div class="dmrs-empty-state">No assessable patients yet.</div>
+                }
+                else
+                {
+                    <div class="dmrs-list">
+                        @foreach (var patient in snapshot.Watchlist)
+                        {
+                            <a class="dmrs-list-item" href="@patient.Href">
+                                <div style="min-width:0;">
+                                    <div class="dmrs-list-item__title text-truncate">@patient.DisplayName</div>
+                                    <div class="dmrs-list-item__subtitle">@patient.Summary</div>
+                                </div>
+                                <span class="dmrs-pill @RiskLevelPillClass(patient.RiskLevel)" style="flex-shrink:0;">@patient.RiskLevel</span>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-5">
+            <div class="dmrs-panel h-100">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Recent CDS Alerts</div>
+                        <div class="dmrs-panel__subtitle">Decision-support cards for @(mine ? "your patients" : "the organization").</div>
+                    </div>
+                </div>
+                @if (snapshot.RecentAlerts.Count == 0)
+                {
+                    <div class="dmrs-empty-state">No CDS alerts have fired yet.</div>
+                }
+                else
+                {
+                    <div class="dmrs-list">
+                        @foreach (var alert in snapshot.RecentAlerts.Take(8))
+                        {
+                            <a class="dmrs-list-item" href="/patients/@alert.PatientId">
+                                <div style="min-width:0;">
+                                    <div class="dmrs-list-item__title text-truncate">@alert.CardSummary</div>
+                                    <div class="dmrs-list-item__subtitle">@alert.Hook · @TimeAgo(alert.FiredAt)</div>
+                                </div>
+                                <span class="dmrs-pill @IndicatorPillClass(alert.Indicator)" style="flex-shrink:0;">@alert.Indicator</span>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private bool mine = true;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? organizationName;
+    private DoctorSnapshotModel snapshot = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Resolve the org label once, concurrently with the first data load.
+        await Task.WhenAll(LoadOrganizationAsync(), LoadAsync());
+    }
+
+    private async Task LoadOrganizationAsync()
+    {
+        try
+        {
+            var organizationIds = await OrgContext.GetOrganizationIdsAsync();
+            var names = new List<string>();
+            foreach (var organizationId in organizationIds)
+            {
+                var org = await OrganizationService.GetAsync(organizationId);
+                names.Add(string.IsNullOrWhiteSpace(org?.Name) ? organizationId : org!.Name);
+            }
+
+            organizationName = names.Count switch
+            {
+                0 => null,
+                1 => names[0],
+                _ => $"{names[0]} (+{names.Count - 1} more)"
+            };
+        }
+        catch
+        {
+            organizationName = null;
+        }
+    }
+
+    private async Task SetScope(bool scopeMine)
+    {
+        if (mine == scopeMine)
+        {
+            return;
+        }
+
+        mine = scopeMine;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            snapshot = await DashboardService.GetDoctorSnapshotAsync(mine);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load your workspace: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // Segmented-toggle button style, on-theme with the teal accent used across the dashboard.
+    private static string SegStyle(bool active)
+    {
+        const string baseStyle = "border:none; border-radius:999px; padding:0.45rem 1.1rem; font-size:0.85rem; font-weight:600; cursor:pointer; transition:background .15s ease,color .15s ease,box-shadow .15s ease; white-space:nowrap;";
+        return active
+            ? baseStyle + "background:linear-gradient(135deg,#0f6d93,#0b8f86); color:#fff; box-shadow:0 6px 16px rgba(15,109,147,0.35);"
+            : baseStyle + "background:transparent; color:var(--dmrs-muted);";
+    }
+
+    private static string RiskLevelPillClass(string riskLevel) => riskLevel switch
+    {
+        "High" => "dmrs-pill--danger",
+        "Medium" => "dmrs-pill--warning",
+        _ => "dmrs-pill--neutral"
+    };
+
+    private static string IndicatorPillClass(string indicator) => indicator switch
+    {
+        "hard-stop" => "dmrs-pill--danger",
+        "warning" => "dmrs-pill--warning",
+        _ => "dmrs-pill--neutral"
+    };
+
+    private static string TimeAgo(DateTimeOffset firedAt)
+    {
+        var elapsed = DateTimeOffset.UtcNow - firedAt;
+        if (elapsed.TotalSeconds < 60) return "just now";
+        if (elapsed.TotalMinutes < 60) return $"{(int)elapsed.TotalMinutes}m ago";
+        if (elapsed.TotalHours < 24) return $"{(int)elapsed.TotalHours}h ago";
+        return $"{(int)elapsed.TotalDays}d ago";
+    }
+}

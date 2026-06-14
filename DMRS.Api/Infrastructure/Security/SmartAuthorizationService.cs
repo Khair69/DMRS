@@ -26,6 +26,15 @@ namespace DMRS.Api.Infrastructure.Security
         /// </summary>
         Task<IReadOnlyCollection<string>?> ResolveAccessiblePatientIdsAsync(ClaimsPrincipal user);
 
+        /// <summary>
+        /// Like <see cref="ResolveAccessiblePatientIdsAsync"/>, but when <paramref name="panelOnly"/> is true
+        /// and the caller is a practitioner, narrows the set to that practitioner's panel — patients whose
+        /// <c>generalPractitioner</c> is the caller — intersected with the accessible set so it can never
+        /// widen access. This is a VIEW filter (e.g. a doctor's "My Patients" dashboard), not a permission;
+        /// callers that aren't practitioners fall back to the accessible set.
+        /// </summary>
+        Task<IReadOnlyCollection<string>?> ResolveViewPatientIdsAsync(ClaimsPrincipal user, bool panelOnly);
+
         string? ResolvePatientId(ClaimsPrincipal user);
         string? ResolvePractitionerId(ClaimsPrincipal user);
         Task<IReadOnlyCollection<string>> ResolveOrganizationIdsAsync(ClaimsPrincipal user);
@@ -146,6 +155,41 @@ namespace DMRS.Api.Infrastructure.Security
                 default:
                     return Array.Empty<string>();
             }
+        }
+
+        public async Task<IReadOnlyCollection<string>?> ResolveViewPatientIdsAsync(ClaimsPrincipal user, bool panelOnly)
+        {
+            var accessible = await ResolveAccessiblePatientIdsAsync(user);
+            if (!panelOnly)
+            {
+                return accessible;
+            }
+
+            var practitionerId = ResolvePractitionerId(user);
+            if (string.IsNullOrWhiteSpace(practitionerId))
+            {
+                // Panel only applies to practitioners; otherwise keep the accessible set.
+                return accessible;
+            }
+
+            var practitionerReference = $"practitioner/{practitionerId}".ToLowerInvariant();
+            var panelPatientIds = await _dbContext.ResourceIndices
+                .Where(i => i.ResourceType == "Patient"
+                    && i.SearchParamCode == "general-practitioner"
+                    && i.Value == practitionerReference)
+                .Select(i => i.ResourceId)
+                .Distinct()
+                .ToListAsync();
+
+            // A panel must never widen access. When the accessible set is bounded (org/patient caller),
+            // intersect; a null accessible set means an unrestricted (system) caller, so the panel stands.
+            if (accessible is null)
+            {
+                return panelPatientIds;
+            }
+
+            var accessibleSet = accessible.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return panelPatientIds.Where(accessibleSet.Contains).ToList();
         }
 
         public string? ResolvePatientId(ClaimsPrincipal user)

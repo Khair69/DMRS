@@ -28,9 +28,9 @@ namespace DMRS.Api.Controllers
         /// caller may see (see <see cref="ISmartAuthorizationService.ResolveAccessiblePatientIdsAsync"/>).
         /// </summary>
         [HttpGet("dashboard-summary")]
-        public async Task<IActionResult> GetDashboardSummary(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetDashboardSummary([FromQuery] bool mine, CancellationToken cancellationToken)
         {
-            var accessiblePatientIds = await _authorizationService.ResolveAccessiblePatientIdsAsync(User);
+            var accessiblePatientIds = await _authorizationService.ResolveViewPatientIdsAsync(User, mine);
 
             if (accessiblePatientIds is null)
             {
@@ -79,9 +79,9 @@ namespace DMRS.Api.Controllers
         /// (workspace-wide for a system caller).
         /// </summary>
         [HttpGet("condition-prevalence")]
-        public async Task<IActionResult> GetConditionPrevalence(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetConditionPrevalence([FromQuery] bool mine, CancellationToken cancellationToken)
         {
-            var accessiblePatientIds = await _authorizationService.ResolveAccessiblePatientIdsAsync(User);
+            var accessiblePatientIds = await _authorizationService.ResolveViewPatientIdsAsync(User, mine);
 
             var allConditions = await _fhirRepository.SearchAsync<Condition>(
                 new Dictionary<string, string>());

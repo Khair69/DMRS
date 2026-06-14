@@ -114,6 +114,61 @@ public sealed class DashboardFeatureService
         };
     }
 
+    /// <summary>
+    /// Lean snapshot for the doctor dashboard. Hits only the scoped aggregate endpoints (counts,
+    /// risk batch, alerts) — no full Patient/Appointment/MedicationRequest collection fetches — and
+    /// passes <paramref name="mine"/> so the server narrows to the doctor's panel ("my patients") or
+    /// their whole organization. The watchlist names come from the risk batch itself (DisplayName).
+    /// </summary>
+    public async Task<DoctorSnapshotModel> GetDoctorSnapshotAsync(bool mine)
+    {
+        var query = mine ? "?mine=true" : string.Empty;
+
+        var summaryTask = _fhirApiService.GetApiJsonAsync<DashboardSummaryModel>($"analytics/dashboard-summary{query}");
+        var assessmentsTask = _fhirApiService.GetApiJsonAsync<List<HighUtilizationRiskAssessmentModel>>(
+            $"cds/risk/high-utilization/batch{query}");
+        var alertsTask = _fhirApiService.GetApiJsonAsync<List<CdsAlertEventModel>>($"cds/alerts{query}");
+
+        await Task.WhenAll(summaryTask, assessmentsTask, alertsTask);
+
+        var summary = summaryTask.Result ?? new DashboardSummaryModel();
+        var assessments = assessmentsTask.Result ?? [];
+
+        var watchlist = assessments
+            .OrderByDescending(a => a.CompositeScore)
+            .ThenByDescending(a => a.Probability ?? 0)
+            .Take(5)
+            .Select(a => new DashboardWatchlistItemModel(
+                a.PatientId,
+                string.IsNullOrWhiteSpace(a.DisplayName) ? $"Patient {a.PatientId}" : a.DisplayName,
+                a.FeaturesComplete ? BuildWatchlistSummary(a) : "Missing age or gender for prediction",
+                $"/patients/{a.PatientId}",
+                a.IsHighRisk,
+                a.Probability,
+                a.RiskLevel,
+                a.CompositeScore,
+                a.ConditionCount,
+                a.MedicationCount,
+                a.RecentEncounterCount,
+                a.HasChronicConditions,
+                a.TopRiskFactors))
+            .ToList();
+
+        return new DoctorSnapshotModel
+        {
+            PatientCount = summary.Patients,
+            ActiveMedications = summary.ActiveMedications,
+            Conditions = summary.Conditions,
+            ServiceRequests = summary.ServiceRequests,
+            Encounters = summary.Encounters,
+            HighRiskCount = assessments.Count(a => a.RiskLevel == "High"),
+            MediumRiskCount = assessments.Count(a => a.RiskLevel == "Medium"),
+            LowRiskCount = assessments.Count(a => a.RiskLevel == "Low"),
+            Watchlist = watchlist,
+            RecentAlerts = alertsTask.Result ?? []
+        };
+    }
+
     private static DashboardActivityItemModel MapAppointment(Appointment appointment)
     {
         var patientRef = appointment.Participant

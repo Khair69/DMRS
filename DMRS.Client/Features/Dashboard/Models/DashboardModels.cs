@@ -80,4 +80,21 @@ public sealed class HighUtilizationRiskAssessmentModel
     public float CompositeScore { get; set; }
     public string RiskLevel { get; set; } = "Unknown";
     public List<string> TopRiskFactors { get; set; } = [];
+    public string DisplayName { get; set; } = string.Empty;
+}
+
+/// <summary>Lean snapshot for the doctor dashboard — counts + watchlist + alerts only,
+/// scoped to the doctor's panel ("my patients") or their whole organization.</summary>
+public sealed class DoctorSnapshotModel
+{
+    public int PatientCount { get; set; }
+    public int ActiveMedications { get; set; }
+    public int Conditions { get; set; }
+    public int ServiceRequests { get; set; }
+    public int Encounters { get; set; }
+    public int HighRiskCount { get; set; }
+    public int MediumRiskCount { get; set; }
+    public int LowRiskCount { get; set; }
+    public List<DashboardWatchlistItemModel> Watchlist { get; set; } = [];
+    public List<CdsAlertEventModel> RecentAlerts { get; set; } = [];
 }

@@ -330,7 +330,18 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 hasChronicConditions,
                 score,
                 riskLevel,
-                riskFactors.ToArray());
+                riskFactors.ToArray(),
+                BuildDisplayName(patient, patientId));
+        }
+
+        private static string BuildDisplayName(Patient patient, string patientId)
+        {
+            var name = patient.Name?.FirstOrDefault();
+            var parts = new[] { name?.Given?.FirstOrDefault(), name?.Family }
+                .Where(part => !string.IsNullOrWhiteSpace(part))
+                .ToArray();
+
+            return parts.Length == 0 ? $"Patient {patientId}" : string.Join(" ", parts);
         }
 
         private static bool DetectChronicConditions(IEnumerable<Condition> conditions)

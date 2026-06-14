@@ -15,5 +15,6 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Models
         bool HasChronicConditions = false,
         float CompositeScore = 0f,
         string RiskLevel = "Unknown",
-        string[] TopRiskFactors = null!);
+        string[] TopRiskFactors = null!,
+        string DisplayName = "");
 }
