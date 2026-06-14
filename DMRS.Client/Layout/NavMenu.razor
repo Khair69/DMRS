@@ -63,6 +63,19 @@
             </div>
         </AuthorizeView>
 
+        <AuthorizeView Roles="ROLE_PATIENT">
+            @if (!IsStaff(context.User))
+            {
+                <div class="nav-section-label px-3">My Care</div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="my-health">My Health Records</NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="my-profile">My Profile</NavLink>
+                </div>
+            }
+        </AuthorizeView>
+
         <AuthorizeView Roles="ROLE_ORG_ADMIN">
             @if (!string.IsNullOrWhiteSpace(orgAdminOrganizationId))
             {
@@ -108,4 +121,10 @@
     {
         collapseNavMenu = !collapseNavMenu;
     }
+
+    // A user who is also staff sees the clinical nav above; don't double up with the patient links.
+    private static bool IsStaff(System.Security.Claims.ClaimsPrincipal user)
+        => user.IsInRole("ROLE_SYSTEM_ADMIN")
+            || user.IsInRole("ROLE_ORG_ADMIN")
+            || user.IsInRole("ROLE_PRACTITIONER");
 }

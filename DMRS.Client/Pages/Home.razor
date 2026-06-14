@@ -1,5 +1,5 @@
 @page "/"
-@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER,ROLE_PATIENT")]
 @using DMRS.Client.Features.Dashboard.Models
 @using DMRS.Client.Features.Dashboard.Components
 @inject DMRS.Client.Features.Dashboard.Services.DashboardFeatureService DashboardService
@@ -14,6 +14,10 @@
 else if (showDoctorDashboard)
 {
     <DoctorDashboard />
+}
+else if (showPatientDashboard)
+{
+    <PatientDashboard />
 }
 else
 {
@@ -250,6 +254,7 @@ else
     private DashboardSnapshotModel snapshot = new();
     private bool showOrgAdminDashboard;
     private bool showDoctorDashboard;
+    private bool showPatientDashboard;
 
     protected override async Task OnInitializedAsync()
     {
@@ -257,12 +262,15 @@ else
         var user = authState.User;
 
         var isAdmin = user.IsInRole("ROLE_SYSTEM_ADMIN");
+        var isStaff = isAdmin || user.IsInRole("ROLE_ORG_ADMIN") || user.IsInRole("ROLE_PRACTITIONER");
 
         // Org admins get the org-scoped dashboard; plain doctors get the clinician "My Patients"
         // dashboard. A system admin keeps the global view even if they also hold these roles.
         showOrgAdminDashboard = user.IsInRole("ROLE_ORG_ADMIN") && !isAdmin;
         showDoctorDashboard = !showOrgAdminDashboard && !isAdmin && user.IsInRole("ROLE_PRACTITIONER");
-        if (showOrgAdminDashboard || showDoctorDashboard)
+        // Patients (with no staff role) get the self-service portal dashboard.
+        showPatientDashboard = !isStaff && user.IsInRole("ROLE_PATIENT");
+        if (showOrgAdminDashboard || showDoctorDashboard || showPatientDashboard)
         {
             isLoading = false;
             return;

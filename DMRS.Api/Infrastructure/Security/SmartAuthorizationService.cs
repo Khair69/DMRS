@@ -97,7 +97,12 @@ namespace DMRS.Api.Infrastructure.Security
                 return SmartAccessLevel.System;
             }
 
-            if (HasScope(scopes, "user", resourceType, action))
+            // The realm grants user/*.* and system/*.* as default client scopes to EVERY token,
+            // including a patient's. Without a role gate, a patient would match the user level here
+            // and be treated as an org caller (with no org → no data). Mirror the system-level role
+            // gate: user (org) access requires a staff role, so a pure patient falls through to the
+            // patient level and is scoped to their own record.
+            if (HasScope(scopes, "user", resourceType, action) && IsStaff(user))
             {
                 return SmartAccessLevel.User;
             }
@@ -203,7 +208,35 @@ namespace DMRS.Api.Infrastructure.Security
             var fhirUser = user.FindFirst("fhirUser")?.Value;
             if (!string.IsNullOrWhiteSpace(fhirUser))
             {
-                return ParsePatientId(fhirUser);
+                var parsed = ParsePatientId(fhirUser);
+                if (!string.IsNullOrWhiteSpace(parsed))
+                {
+                    return parsed;
+                }
+            }
+
+            // Fallback: resolve patient by Keycloak subject linked in patient identifiers. The
+            // invite-claim flow stamps the Patient with a "{issuer}/users|{sub}" identifier but does
+            // not set a "patient_id" attribute in Keycloak, so the token carries no patient claim.
+            // Mirrors the practitioner fallback so a linked patient resolves to their own record.
+            var keycloakUserId = user.FindFirst("sub")?.Value;
+            if (!string.IsNullOrWhiteSpace(keycloakUserId))
+            {
+                var authority = user.FindFirst("iss")?.Value;
+                var identifierSystem = BuildKeycloakIdentifierSystem(authority);
+                var target = $"{identifierSystem}|{keycloakUserId}".ToLowerInvariant();
+
+                patientId = _dbContext.ResourceIndices
+                    .Where(i => i.ResourceType == "Patient"
+                        && i.SearchParamCode == "identifier"
+                        && i.Value == target)
+                    .Select(i => i.ResourceId)
+                    .FirstOrDefault();
+
+                if (!string.IsNullOrWhiteSpace(patientId))
+                {
+                    return patientId;
+                }
             }
 
             return null;
@@ -372,6 +405,13 @@ namespace DMRS.Api.Infrastructure.Security
             var ownedOrganizations = await _ownershipResolver.ResolveOrganizationsAsync(resource);
             return ownedOrganizations.Any(orgId => organizationIds.Contains(orgId, StringComparer.OrdinalIgnoreCase));
         }
+
+        // A staff caller holds one of the clinical/administrative realm roles. Used to gate the
+        // org-scoped "user" access level so a patient's default user/*.* scope can't elevate them.
+        private static bool IsStaff(ClaimsPrincipal user)
+            => user.IsInRole("ROLE_SYSTEM_ADMIN")
+                || user.IsInRole("ROLE_ORG_ADMIN")
+                || user.IsInRole("ROLE_PRACTITIONER");
 
         private static IEnumerable<string> GetScopes(ClaimsPrincipal user)
         {

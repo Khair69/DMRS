@@ -35,6 +35,35 @@ public class FhirApiService
         return _deserializer.Deserialize<T>(json);
     }
 
+    // Reads a FHIR resource from an arbitrary API path (e.g. the patient-portal "me" endpoints,
+    // which don't follow the standard fhir/{type}/{id} shape) and deserializes it with the FHIR
+    // serializer rather than System.Text.Json.
+    public async Task<T?> GetFhirFromPathAsync<T>(string path) where T : Resource
+    {
+        var response = await _httpClient.GetAsync(path);
+        if (!response.IsSuccessStatusCode) return null;
+
+        var json = await response.Content.ReadAsStringAsync();
+        return _deserializer.Deserialize<T>(json);
+    }
+
+    public async Task<T?> PutFhirToPathAsync<T, TRequest>(string path, TRequest payload) where T : Resource
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Put, path)
+        {
+            Content = JsonContent.Create(payload)
+        };
+        request.Headers.Accept.Clear();
+        request.Headers.Accept.Add(
+            new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/fhir+json"));
+
+        using var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        return _deserializer.Deserialize<T>(json);
+    }
+
     public async Task<T?> CreateResourceAsync<T>(T resource) where T : Resource
     {
         var resourceType = typeof(T).Name;

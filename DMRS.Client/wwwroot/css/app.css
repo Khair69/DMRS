@@ -396,6 +396,68 @@ code {
     padding: 0.8rem 0.9rem;
 }
 
+/* Patient-portal tabbed navigation */
+.dmrs-tabbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.4rem;
+    border-radius: 999px;
+    background: var(--dmrs-panel);
+    border: 1px solid var(--dmrs-border);
+    box-shadow: var(--dmrs-shadow);
+}
+
+.dmrs-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border: none;
+    border-radius: 999px;
+    padding: 0.5rem 1.05rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--dmrs-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+}
+
+.dmrs-tab:hover {
+    color: var(--dmrs-text);
+}
+
+.dmrs-tab--active {
+    color: #fff;
+    background: linear-gradient(135deg, #0f6d93, #0b8f86);
+    box-shadow: 0 6px 16px rgba(15, 109, 147, 0.35);
+}
+
+.dmrs-tab__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: rgba(15, 23, 42, 0.08);
+    color: inherit;
+}
+
+.dmrs-tab--active .dmrs-tab__count {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Wellness panel accent when the patient's care needs a closer look */
+.dmrs-panel--accent-rose {
+    background: linear-gradient(180deg, rgba(255, 241, 242, 0.96), var(--dmrs-panel));
+    border-color: rgba(244, 63, 94, 0.22);
+}
+
 .cds-admin-card {
     border-radius: 1rem;
 }

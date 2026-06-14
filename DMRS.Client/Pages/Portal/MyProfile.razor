@@ -1,0 +1,259 @@
+@page "/my-profile"
+@attribute [Authorize(Roles = "ROLE_PATIENT")]
+@using Hl7.Fhir.Model
+@using Microsoft.AspNetCore.Components.Forms
+@using DMRS.Client.Features.Patients.Models
+@using Task = System.Threading.Tasks.Task
+@inject DMRS.Client.Features.Patients.Services.PatientPortalFeatureService PortalService
+
+<PageTitle>My Profile</PageTitle>
+
+<div class="workspace-hero workspace-hero--patient">
+    <div>
+        <span class="workspace-eyebrow">Patient Portal</span>
+        <h1>My Profile</h1>
+        <p>Keep your personal and contact details up to date so your care team can reach you.</p>
+    </div>
+    <div class="workspace-hero__actions">
+        <a class="btn btn-outline-light" href="/my-health">My Health Records</a>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="dmrs-loading-shell">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (model is null)
+{
+    <div class="dmrs-panel mt-4">
+        <div class="dmrs-empty-state">
+            We couldn't find a medical record linked to your account. If you have an invitation,
+            <a href="/patients/claim">claim it here</a>.
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4 mt-1">
+        <div class="col-12 col-xl-8">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Personal Details</div>
+                        <div class="dmrs-panel__subtitle">This information is shared with your care team.</div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(successMessage))
+                {
+                    <div class="alert alert-success">@successMessage</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(saveError))
+                {
+                    <div class="alert alert-danger">@saveError</div>
+                }
+
+                <EditForm Model="model" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Given Name</label>
+                            <InputText @bind-Value="model.GivenName" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Family Name</label>
+                            <InputText @bind-Value="model.FamilyName" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Gender</label>
+                            <InputSelect @bind-Value="model.Gender" class="form-select">
+                                <option value="">Prefer not to say</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                                <option value="unknown">Unknown</option>
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Birth Date</label>
+                            <InputText type="date" @bind-Value="model.BirthDate" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Marital Status</label>
+                            <InputSelect @bind-Value="model.MaritalStatus" class="form-select">
+                                <option value="">Not specified</option>
+                                <option value="S">Single</option>
+                                <option value="M">Married</option>
+                                <option value="D">Divorced</option>
+                                <option value="W">Widowed</option>
+                                <option value="U">Unknown</option>
+                            </InputSelect>
+                        </div>
+
+                        <div class="col-12"><hr class="my-1" /></div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            <InputText @bind-Value="model.Phone" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <InputText @bind-Value="model.Email" class="form-control" />
+                        </div>
+
+                        <div class="col-12"><hr class="my-1" /></div>
+
+                        <div class="col-12">
+                            <label class="form-label">Address</label>
+                            <InputTextArea @bind-Value="model.AddressLine" class="form-control" rows="2"
+                                           placeholder="Street address" />
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">City</label>
+                            <InputText @bind-Value="model.City" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">State / Region</label>
+                            <InputText @bind-Value="model.State" class="form-control" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Postal Code</label>
+                            <InputText @bind-Value="model.PostalCode" class="form-control" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Country</label>
+                            <InputText @bind-Value="model.Country" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                            @(isSaving ? "Saving…" : "Save Changes")
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" disabled="@isSaving" @onclick="ResetAsync">
+                            Reset
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Account</div>
+                        <div class="dmrs-panel__subtitle">Details managed by your clinic.</div>
+                    </div>
+                </div>
+                <dl class="row mb-0 small">
+                    <dt class="col-5 text-muted">Record ID</dt>
+                    <dd class="col-7">@patient?.Id</dd>
+                    <dt class="col-5 text-muted">Managing clinic</dt>
+                    <dd class="col-7">@(patient?.ManagingOrganization?.Display ?? patient?.ManagingOrganization?.Reference ?? "—")</dd>
+                </dl>
+                <div class="dmrs-empty-state dmrs-empty-state--inline mt-3">
+                    To change your clinic or other restricted details, please contact your care team.
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private bool isSaving;
+    private string? errorMessage;
+    private string? saveError;
+    private string? successMessage;
+    private Patient? patient;
+    private PatientProfileEditModel? model;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            patient = await PortalService.GetMyPatientAsync();
+            model = patient is null ? null : MapToEditModel(patient);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load your profile: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ResetAsync()
+    {
+        successMessage = null;
+        saveError = null;
+        await LoadAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (model is null)
+        {
+            return;
+        }
+
+        isSaving = true;
+        saveError = null;
+        successMessage = null;
+
+        try
+        {
+            patient = await PortalService.UpdateProfileAsync(model);
+            if (patient is not null)
+            {
+                model = MapToEditModel(patient);
+            }
+            successMessage = "Your profile has been updated.";
+        }
+        catch (Exception ex)
+        {
+            saveError = $"We couldn't save your changes: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private static PatientProfileEditModel MapToEditModel(Patient patient)
+    {
+        var name = patient.Name.FirstOrDefault();
+        var phone = patient.Telecom.FirstOrDefault(t => t.System == ContactPoint.ContactPointSystem.Phone)?.Value;
+        var email = patient.Telecom.FirstOrDefault(t => t.System == ContactPoint.ContactPointSystem.Email)?.Value;
+        var address = patient.Address.FirstOrDefault();
+
+        return new PatientProfileEditModel
+        {
+            GivenName = name?.Given is null ? null : string.Join(" ", name.Given),
+            FamilyName = name?.Family,
+            Phone = phone,
+            Email = email,
+            BirthDate = patient.BirthDate,
+            Gender = patient.Gender?.ToString().ToLowerInvariant(),
+            MaritalStatus = patient.MaritalStatus?.Coding.FirstOrDefault()?.Code,
+            AddressLine = address?.Line is null ? null : string.Join("\n", address.Line),
+            City = address?.City,
+            State = address?.State,
+            PostalCode = address?.PostalCode,
+            Country = address?.Country
+        };
+    }
+}
