@@ -8,4 +8,5 @@ public sealed record StaffSummaryViewModel(
     string? Phone,
     bool Active,
     string RoleCode,
-    string RoleDisplay);
+    string RoleDisplay,
+    bool HasLoginAccount);

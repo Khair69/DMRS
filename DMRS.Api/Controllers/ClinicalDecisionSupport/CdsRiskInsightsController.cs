@@ -1,4 +1,5 @@
 using DMRS.Api.Application.ClinicalDecisionSupport.Interfaces;
+using DMRS.Api.Infrastructure.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,23 +13,28 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
         private readonly IHighUtilizationRiskService _riskService;
         private readonly IDiabetesRiskService _diabetesRiskService;
         private readonly ICardiovascularRiskService _cardiovascularRiskService;
+        private readonly ISmartAuthorizationService _authorizationService;
 
         public CdsRiskInsightsController(
             IHighUtilizationRiskService riskService,
             IDiabetesRiskService diabetesRiskService,
-            ICardiovascularRiskService cardiovascularRiskService)
+            ICardiovascularRiskService cardiovascularRiskService,
+            ISmartAuthorizationService authorizationService)
         {
             _riskService = riskService;
             _diabetesRiskService = diabetesRiskService;
             _cardiovascularRiskService = cardiovascularRiskService;
+            _authorizationService = authorizationService;
         }
 
         // Scores every eligible patient in one request. The dashboard uses this instead of calling
         // the per-patient endpoint 100 times (the browser caps concurrent connections).
+        // The cohort is scoped to the caller's accessible patients (null = all, for a system caller).
         [HttpGet("high-utilization/batch")]
         public async Task<IActionResult> GetHighUtilizationRiskBatch(CancellationToken cancellationToken)
         {
-            var results = await _riskService.AssessAllAsync(cancellationToken);
+            var patientIdFilter = await _authorizationService.ResolveAccessiblePatientIdsAsync(User);
+            var results = await _riskService.AssessAllAsync(patientIdFilter, cancellationToken);
             return Ok(results);
         }
 
@@ -46,14 +52,16 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
         [HttpGet("diabetes/batch")]
         public async Task<IActionResult> GetDiabetesRiskBatch(CancellationToken cancellationToken)
         {
-            var results = await _diabetesRiskService.AssessAllAsync(cancellationToken);
+            var patientIdFilter = await _authorizationService.ResolveAccessiblePatientIdsAsync(User);
+            var results = await _diabetesRiskService.AssessAllAsync(patientIdFilter, cancellationToken);
             return Ok(results);
         }
 
         [HttpGet("cardiovascular/batch")]
         public async Task<IActionResult> GetCardiovascularRiskBatch(CancellationToken cancellationToken)
         {
-            var results = await _cardiovascularRiskService.AssessAllAsync(cancellationToken);
+            var patientIdFilter = await _authorizationService.ResolveAccessiblePatientIdsAsync(User);
+            var results = await _cardiovascularRiskService.AssessAllAsync(patientIdFilter, cancellationToken);
             return Ok(results);
         }
 

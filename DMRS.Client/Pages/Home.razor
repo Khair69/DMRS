@@ -1,9 +1,18 @@
 @page "/"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @using DMRS.Client.Features.Dashboard.Models
+@using DMRS.Client.Features.Dashboard.Components
 @inject DMRS.Client.Features.Dashboard.Services.DashboardFeatureService DashboardService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>DMRS Workspace</PageTitle>
+
+@if (showOrgAdminDashboard)
+{
+    <OrgAdminDashboard />
+}
+else
+{
 
 <div class="workspace-hero">
     <div>
@@ -229,13 +238,28 @@ else
     </section>
 }
 
+}
+
 @code {
     private bool isLoading = true;
     private string? errorMessage;
     private DashboardSnapshotModel snapshot = new();
+    private bool showOrgAdminDashboard;
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        // Org admins get a dedicated, org-scoped dashboard. A system admin keeps the global view
+        // even if they also hold the org-admin role.
+        showOrgAdminDashboard = user.IsInRole("ROLE_ORG_ADMIN") && !user.IsInRole("ROLE_SYSTEM_ADMIN");
+        if (showOrgAdminDashboard)
+        {
+            isLoading = false;
+            return;
+        }
+
         try
         {
             snapshot = await DashboardService.GetSnapshotAsync();

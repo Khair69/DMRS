@@ -145,15 +145,29 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         /// conditions and medications are deserialized once for the whole cohort (needed for chronic
         /// detection and active-medication status) rather than per patient.
         /// </summary>
-        public async Task<IReadOnlyList<HighUtilizationRiskAssessment>> AssessAllAsync(CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<HighUtilizationRiskAssessment>> AssessAllAsync(IReadOnlyCollection<string>? patientIdFilter, CancellationToken cancellationToken)
         {
             if (_session is null)
             {
                 return [];
             }
 
+            // A non-null filter scopes scoring to a caller's accessible patients; an empty filter
+            // means there is nothing to score.
+            var patientIdSet = patientIdFilter is null
+                ? null
+                : patientIdFilter.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (patientIdSet is { Count: 0 })
+            {
+                return [];
+            }
+
             var noFilter = new Dictionary<string, string>();
             var patients = await _fhirRepository.SearchAsync<Patient>(noFilter);
+            if (patientIdSet is not null)
+            {
+                patients = patients.Where(p => p.Id is not null && patientIdSet.Contains(p.Id)).ToList();
+            }
             var conditions = await _fhirRepository.SearchAsync<Condition>(noFilter);
             var medications = await _fhirRepository.SearchAsync<MedicationRequest>(noFilter);
             var encounterCounts = await _fhirRepository.CountByPatientAsync("Encounter", cancellationToken);

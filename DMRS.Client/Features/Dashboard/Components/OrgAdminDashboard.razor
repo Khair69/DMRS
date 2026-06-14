@@ -1,0 +1,327 @@
+@using DMRS.Client.Features.Dashboard.Models
+@using DMRS.Client.Features.Staff.Models
+@inject DMRS.Client.Services.OrganizationContextService OrgContext
+@inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
+@inject DMRS.Client.Features.Dashboard.Services.DashboardFeatureService DashboardService
+@inject DMRS.Client.Features.Staff.Services.StaffFeatureService StaffService
+
+@if (isLoading)
+{
+    <div class="dmrs-loading-shell">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (organizationIds.Count == 0)
+{
+    <div class="alert alert-warning">
+        Your account isn't linked to an organization yet, so there's nothing to administer.
+        Ask a system administrator to assign you to an organization.
+    </div>
+}
+else
+{
+    <div class="workspace-hero">
+        <div>
+            <span class="workspace-eyebrow">Organization Administration</span>
+            <h1>@orgHeading</h1>
+            <p>Manage your team and keep an eye on your organization's patients and safety alerts.</p>
+        </div>
+        <div class="workspace-hero__actions">
+            <a class="btn btn-light" href="@($"/organizations/{PrimaryOrgId}/staff/new")">Invite Staff</a>
+            <a class="btn btn-outline-light" href="@($"/organizations/{PrimaryOrgId}/staff")">Manage Staff</a>
+            <a class="btn btn-outline-light" href="@($"/organizations/{PrimaryOrgId}")">View Organization</a>
+        </div>
+    </div>
+
+    <section class="dmrs-metrics-grid">
+        <a class="dmrs-metric-card metric-ocean" href="/patients">
+            <div class="dmrs-metric-card__label">Patients</div>
+            <div class="dmrs-metric-card__value">@summary.Patients</div>
+            <div class="dmrs-metric-card__helper">In your organization</div>
+        </a>
+        <div class="dmrs-metric-card metric-ink">
+            <div class="dmrs-metric-card__label">Practitioners</div>
+            <div class="dmrs-metric-card__value">@roster.Count</div>
+            <div class="dmrs-metric-card__helper">@doctorCount doctor@(doctorCount == 1 ? "" : "s") · @adminCount admin@(adminCount == 1 ? "" : "s")</div>
+        </div>
+        <a class="dmrs-metric-card metric-sky" href="/appointments">
+            <div class="dmrs-metric-card__label">Appointments</div>
+            <div class="dmrs-metric-card__value">@upcomingAppointmentCount</div>
+            <div class="dmrs-metric-card__helper">Upcoming scheduled visits</div>
+        </a>
+        <a class="dmrs-metric-card metric-gold" href="/medication-requests">
+            <div class="dmrs-metric-card__label">Active Meds</div>
+            <div class="dmrs-metric-card__value">@summary.ActiveMedications</div>
+            <div class="dmrs-metric-card__helper">Medication requests on file</div>
+        </a>
+        <a class="dmrs-metric-card metric-rose" href="/conditions">
+            <div class="dmrs-metric-card__label">Conditions</div>
+            <div class="dmrs-metric-card__value">@summary.Conditions</div>
+            <div class="dmrs-metric-card__helper">Tracked problem list items</div>
+        </a>
+        <a class="dmrs-metric-card metric-emerald" href="/service-requests">
+            <div class="dmrs-metric-card__label">Service Requests</div>
+            <div class="dmrs-metric-card__value">@summary.ServiceRequests</div>
+            <div class="dmrs-metric-card__helper">Orders and follow-up requests</div>
+        </a>
+    </section>
+
+    <section class="row g-4 mt-1">
+        <div class="col-12 col-xl-7">
+            <div class="dmrs-panel h-100">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Your Team</div>
+                        <div class="dmrs-panel__subtitle">Practitioners working for your organization.</div>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" href="@($"/organizations/{PrimaryOrgId}/staff")">Manage Staff</a>
+                </div>
+
+                @if (staffNeedingAccounts > 0)
+                {
+                    <div class="alert alert-warning py-2 mb-2">
+                        <strong>@staffNeedingAccounts</strong> staff member@(staffNeedingAccounts == 1 ? "" : "s")
+                        still need@(staffNeedingAccounts == 1 ? "s" : "") a login account. Open a person's details to create one.
+                    </div>
+                }
+
+                @if (roster.Count == 0)
+                {
+                    <div class="dmrs-empty-state">No practitioners yet. Use "Invite Staff" to add your team.</div>
+                }
+                else
+                {
+                    <div class="dmrs-list">
+                        @foreach (var member in roster.Take(8))
+                        {
+                            <a class="dmrs-list-item" href="@($"/organizations/{PrimaryOrgId}/staff/{member.PractitionerId}")">
+                                <div style="min-width:0;">
+                                    <div class="dmrs-list-item__title text-truncate">@member.DisplayName</div>
+                                    <div class="dmrs-list-item__subtitle">@member.RoleDisplay@(string.IsNullOrWhiteSpace(member.Email) ? "" : $" · {member.Email}")</div>
+                                </div>
+                                @if (member.HasLoginAccount)
+                                {
+                                    <span class="dmrs-pill dmrs-pill--neutral" style="flex-shrink:0;">Linked</span>
+                                }
+                                else
+                                {
+                                    <span class="dmrs-pill dmrs-pill--warning" style="flex-shrink:0;">No account</span>
+                                }
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-5">
+            <div class="dmrs-panel h-100">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Predictive Watchlist</div>
+                        <div class="dmrs-panel__subtitle">Your patients by AI readmission risk.</div>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary" href="/ai-insights">AI Insights</a>
+                </div>
+
+                <div class="d-flex gap-3 mb-2" style="font-size:0.8rem;">
+                    <span class="dmrs-pill dmrs-pill--danger">@highRiskCount High</span>
+                    <span class="dmrs-pill dmrs-pill--warning">@mediumRiskCount Medium</span>
+                    <span class="dmrs-pill dmrs-pill--neutral">@lowRiskCount Low</span>
+                </div>
+
+                @if (watchlist.Count == 0)
+                {
+                    <div class="dmrs-empty-state">No assessable patients yet.</div>
+                }
+                else
+                {
+                    <div class="dmrs-list">
+                        @foreach (var patient in watchlist)
+                        {
+                            <a class="dmrs-list-item" href="@patient.Href">
+                                <div style="min-width:0;">
+                                    <div class="dmrs-list-item__title text-truncate">@patient.DisplayName</div>
+                                    <div class="dmrs-list-item__subtitle">@patient.Summary</div>
+                                </div>
+                                <span class="dmrs-pill @RiskLevelPillClass(patient.RiskLevel)" style="flex-shrink:0;">@patient.RiskLevel</span>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="row g-4 mt-1">
+        <div class="col-12">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">Recent CDS Alerts</div>
+                        <div class="dmrs-panel__subtitle">Decision-support cards that fired for your patients.</div>
+                    </div>
+                </div>
+                @if (recentAlerts.Count == 0)
+                {
+                    <div class="dmrs-empty-state">No CDS alerts have fired for your organization yet.</div>
+                }
+                else
+                {
+                    <div class="dmrs-list">
+                        @foreach (var alert in recentAlerts.Take(8))
+                        {
+                            <a class="dmrs-list-item" href="/patients/@alert.PatientId">
+                                <div style="min-width:0;">
+                                    <div class="dmrs-list-item__title text-truncate">@alert.CardSummary</div>
+                                    <div class="dmrs-list-item__subtitle">@alert.Hook · @TimeAgo(alert.FiredAt)</div>
+                                </div>
+                                <span class="dmrs-pill @IndicatorPillClass(alert.Indicator)" style="flex-shrink:0;">@alert.Indicator</span>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    private IReadOnlyList<string> organizationIds = [];
+    private string orgHeading = "Your Organization";
+    private string PrimaryOrgId => organizationIds.FirstOrDefault() ?? string.Empty;
+
+    private DashboardSummaryModel summary = new();
+    private List<StaffSummaryViewModel> roster = [];
+    private List<DashboardWatchlistItemModel> watchlist = [];
+    private List<CdsAlertEventModel> recentAlerts = [];
+
+    private int upcomingAppointmentCount;
+    private int highRiskCount;
+    private int mediumRiskCount;
+    private int lowRiskCount;
+
+    private int doctorCount => roster.Count(m => string.Equals(m.RoleCode, StaffRoleCodes.Doctor, StringComparison.OrdinalIgnoreCase));
+    private int adminCount => roster.Count(m => string.Equals(m.RoleCode, StaffRoleCodes.OrganizationAdmin, StringComparison.OrdinalIgnoreCase));
+    private int staffNeedingAccounts => roster.Count(m => !m.HasLoginAccount);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            organizationIds = await OrgContext.GetOrganizationIdsAsync();
+            if (organizationIds.Count == 0)
+            {
+                return;
+            }
+
+            await LoadOrgHeadingAsync();
+
+            // The aggregate endpoints are scoped server-side to this admin's organization(s),
+            // so the shared snapshot already returns only their data.
+            var snapshot = await DashboardService.GetSnapshotAsync();
+            summary = new DashboardSummaryModel
+            {
+                Patients = CountMetric(snapshot, "Patients"),
+                ActiveMedications = CountMetric(snapshot, "Active Meds"),
+                Conditions = CountMetric(snapshot, "Conditions"),
+                ServiceRequests = CountMetric(snapshot, "Service Requests"),
+                Encounters = CountMetric(snapshot, "Encounters")
+            };
+            upcomingAppointmentCount = CountMetric(snapshot, "Appointments");
+            watchlist = snapshot.HighRiskPatients;
+            recentAlerts = snapshot.RecentAlerts;
+            highRiskCount = snapshot.HighRiskCount;
+            mediumRiskCount = snapshot.MediumRiskCount;
+            lowRiskCount = snapshot.LowRiskCount;
+
+            await LoadRosterAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Unable to load your organization dashboard: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadOrgHeadingAsync()
+    {
+        var names = new List<string>();
+        foreach (var orgId in organizationIds)
+        {
+            try
+            {
+                var org = await OrganizationService.GetAsync(orgId);
+                names.Add(string.IsNullOrWhiteSpace(org?.Name) ? orgId : org!.Name);
+            }
+            catch
+            {
+                names.Add(orgId);
+            }
+        }
+
+        orgHeading = names.Count switch
+        {
+            0 => "Your Organization",
+            1 => names[0],
+            _ => $"{names[0]} (+{names.Count - 1} more)"
+        };
+    }
+
+    private async Task LoadRosterAsync()
+    {
+        var combined = new Dictionary<string, StaffSummaryViewModel>(StringComparer.OrdinalIgnoreCase);
+        foreach (var orgId in organizationIds)
+        {
+            var staff = await StaffService.GetByOrganizationAsync(orgId, "ALL", null);
+            foreach (var member in staff)
+            {
+                combined[member.PractitionerId] = member;
+            }
+        }
+
+        roster = combined.Values
+            .OrderBy(m => m.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    // The shared snapshot exposes tile values as strings; pull the ones we reuse back as ints.
+    private static int CountMetric(DashboardSnapshotModel snapshot, string label)
+    {
+        var metric = snapshot.Metrics.FirstOrDefault(m => string.Equals(m.Label, label, StringComparison.OrdinalIgnoreCase));
+        return metric is not null && int.TryParse(metric.Value, out var value) ? value : 0;
+    }
+
+    private static string RiskLevelPillClass(string riskLevel) => riskLevel switch
+    {
+        "High" => "dmrs-pill--danger",
+        "Medium" => "dmrs-pill--warning",
+        _ => "dmrs-pill--neutral"
+    };
+
+    private static string IndicatorPillClass(string indicator) => indicator switch
+    {
+        "hard-stop" => "dmrs-pill--danger",
+        "warning" => "dmrs-pill--warning",
+        _ => "dmrs-pill--neutral"
+    };
+
+    private static string TimeAgo(DateTimeOffset firedAt)
+    {
+        var elapsed = DateTimeOffset.UtcNow - firedAt;
+        if (elapsed.TotalSeconds < 60) return "just now";
+        if (elapsed.TotalMinutes < 60) return $"{(int)elapsed.TotalMinutes}m ago";
+        if (elapsed.TotalHours < 24) return $"{(int)elapsed.TotalHours}h ago";
+        return $"{(int)elapsed.TotalDays}d ago";
+    }
+}

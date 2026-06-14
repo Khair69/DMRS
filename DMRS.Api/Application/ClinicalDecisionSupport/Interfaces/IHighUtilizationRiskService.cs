@@ -8,8 +8,10 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Interfaces
 
         /// <summary>
         /// Scores every eligible patient (one with a birth date and a male/female gender) in a single
-        /// pass, so the dashboard makes one request instead of one per patient.
+        /// pass, so the dashboard makes one request instead of one per patient. When
+        /// <paramref name="patientIdFilter"/> is non-null, only patients in that set are scored
+        /// (used to scope aggregate views to a caller's organization); null scores all patients.
         /// </summary>
-        Task<IReadOnlyList<HighUtilizationRiskAssessment>> AssessAllAsync(CancellationToken cancellationToken);
+        Task<IReadOnlyList<HighUtilizationRiskAssessment>> AssessAllAsync(IReadOnlyCollection<string>? patientIdFilter, CancellationToken cancellationToken);
     }
 }

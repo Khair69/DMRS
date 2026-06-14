@@ -17,6 +17,15 @@ namespace DMRS.Api.Infrastructure.Security
     public interface ISmartAuthorizationService
     {
         SmartAccessLevel GetAccessLevel(ClaimsPrincipal user, string resourceType, string action);
+
+        /// <summary>
+        /// Resolves the set of Patient ids the caller may aggregate over (dashboards, analytics,
+        /// batch risk scoring). Returns <c>null</c> for an unrestricted (system) caller — callers
+        /// should treat null as "all patients" and keep their existing global behavior. A non-null
+        /// (possibly empty) set is the exact whitelist of patient ids the caller can see.
+        /// </summary>
+        Task<IReadOnlyCollection<string>?> ResolveAccessiblePatientIdsAsync(ClaimsPrincipal user);
+
         string? ResolvePatientId(ClaimsPrincipal user);
         string? ResolvePractitionerId(ClaimsPrincipal user);
         Task<IReadOnlyCollection<string>> ResolveOrganizationIdsAsync(ClaimsPrincipal user);
@@ -90,6 +99,53 @@ namespace DMRS.Api.Infrastructure.Security
             }
 
             return SmartAccessLevel.None;
+        }
+
+        public async Task<IReadOnlyCollection<string>?> ResolveAccessiblePatientIdsAsync(ClaimsPrincipal user)
+        {
+            // "Patient.read" is the representative capability for aggregate views; the access level
+            // it yields drives the scoping strategy and mirrors the per-resource checks.
+            var accessLevel = GetAccessLevel(user, "Patient", "read");
+
+            switch (accessLevel)
+            {
+                case SmartAccessLevel.System:
+                    return null;
+
+                case SmartAccessLevel.User:
+                {
+                    var organizationIds = await ResolveOrganizationIdsAsync(user);
+                    if (organizationIds.Count == 0)
+                    {
+                        return Array.Empty<string>();
+                    }
+
+                    // Index values are stored lowercased (see IsResourceOwnedByPatientAsync), and a
+                    // Patient's org ownership is its managingOrganization, indexed under "organization".
+                    var organizationReferences = organizationIds
+                        .Select(id => $"organization/{id}".ToLowerInvariant())
+                        .ToList();
+
+                    return await _dbContext.ResourceIndices
+                        .Where(i => i.ResourceType == "Patient"
+                            && i.SearchParamCode == "organization"
+                            && organizationReferences.Contains(i.Value))
+                        .Select(i => i.ResourceId)
+                        .Distinct()
+                        .ToListAsync();
+                }
+
+                case SmartAccessLevel.Patient:
+                {
+                    var patientId = ResolvePatientId(user);
+                    return string.IsNullOrWhiteSpace(patientId)
+                        ? Array.Empty<string>()
+                        : new[] { patientId };
+                }
+
+                default:
+                    return Array.Empty<string>();
+            }
         }
 
         public string? ResolvePatientId(ClaimsPrincipal user)

@@ -1,3 +1,6 @@
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject DMRS.Client.Services.OrganizationContextService OrgContext
+
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">DMRS Workspace</a>
@@ -60,6 +63,19 @@
             </div>
         </AuthorizeView>
 
+        <AuthorizeView Roles="ROLE_ORG_ADMIN">
+            @if (!string.IsNullOrWhiteSpace(orgAdminOrganizationId))
+            {
+                <div class="nav-section-label px-3">My Organization</div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="@($"/organizations/{orgAdminOrganizationId}")">Organization</NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="@($"/organizations/{orgAdminOrganizationId}/staff")">Staff</NavLink>
+                </div>
+            }
+        </AuthorizeView>
+
         <AuthorizeView Roles="ROLE_SYSTEM_ADMIN">
             <div class="nav-section-label px-3">Administration</div>
             <div class="nav-item px-3">
@@ -74,8 +90,19 @@
 
 @code {
     private bool collapseNavMenu = true;
+    private string? orgAdminOrganizationId;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Only org admins need the "My Organization" links; skip the lookup for everyone else.
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.IsInRole("ROLE_ORG_ADMIN"))
+        {
+            orgAdminOrganizationId = await OrgContext.GetPrimaryOrganizationIdAsync();
+        }
+    }
 
     private void ToggleNavMenu()
     {

@@ -40,8 +40,12 @@
         {
             <div class="col-md-6">
                 <label class="form-label">Managing Organization Id</label>
-                <InputText @bind-Value="Model.ManagingOrganizationId" class="form-control" />
+                <InputText @bind-Value="Model.ManagingOrganizationId" class="form-control" readonly="@OrganizationReadOnly" />
                 <ValidationMessage For="() => Model.ManagingOrganizationId" />
+                @if (OrganizationReadOnly)
+                {
+                    <div class="form-text">This patient will be registered under your organization.</div>
+                }
             </div>
         }
     </div>
@@ -63,6 +67,9 @@
 
     [Parameter]
     public bool ShowOrganizationField { get; set; }
+
+    [Parameter]
+    public bool OrganizationReadOnly { get; set; }
 
     [Parameter]
     public EventCallback OnSave { get; set; }

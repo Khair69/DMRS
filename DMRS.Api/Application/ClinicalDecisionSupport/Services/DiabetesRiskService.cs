@@ -93,15 +93,29 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
         /// and grouped by patient (rather than one search per patient), then each patient's feature
         /// vector is built and run through the model — mirroring the readmission cohort path.
         /// </summary>
-        public async Task<IReadOnlyList<DiabetesRiskAssessment>> AssessAllAsync(CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<DiabetesRiskAssessment>> AssessAllAsync(IReadOnlyCollection<string>? patientIdFilter, CancellationToken cancellationToken)
         {
             if (_session is null)
             {
                 return [];
             }
 
+            // A non-null filter scopes scoring to a caller's accessible patients; an empty filter
+            // means there is nothing to score.
+            var patientIdSet = patientIdFilter is null
+                ? null
+                : patientIdFilter.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (patientIdSet is { Count: 0 })
+            {
+                return [];
+            }
+
             var noFilter = new Dictionary<string, string>();
             var patients = await _fhirRepository.SearchAsync<Patient>(noFilter);
+            if (patientIdSet is not null)
+            {
+                patients = patients.Where(p => p.Id is not null && patientIdSet.Contains(p.Id)).ToList();
+            }
             var observations = await _fhirRepository.SearchAsync<Observation>(noFilter);
 
             var observationsByPatient = observations

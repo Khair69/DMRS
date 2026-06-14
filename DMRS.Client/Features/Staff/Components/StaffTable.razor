@@ -15,6 +15,7 @@ else
                     <th>Phone</th>
                     <th>Role</th>
                     <th>Active</th>
+                    <th>Login</th>
                     <th></th>
                 </tr>
             </thead>
@@ -31,6 +32,16 @@ else
                             </span>
                         </td>
                         <td>@staff.Active</td>
+                        <td>
+                            @if (staff.HasLoginAccount)
+                            {
+                                <span class="badge bg-success">Linked</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">No account</span>
+                            }
+                        </td>
                         <td>
                             <NavLink class="btn btn-sm btn-outline-primary" href="@($"/organizations/{OrganizationId}/staff/{staff.PractitionerId}")">Details</NavLink>
                         </td>

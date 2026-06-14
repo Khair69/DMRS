@@ -176,6 +176,12 @@ public sealed class StaffFeatureService
         var roleCode = coding?.Code ?? "UNKNOWN";
         var roleDisplay = coding?.Display ?? role.Code.FirstOrDefault()?.Text ?? roleCode;
 
+        // A linked Keycloak account is recorded as an identifier whose system ends with "/users"
+        // (see StaffClaimController / StaffProvisionController).
+        var hasLoginAccount = practitioner.Identifier?.Any(i =>
+            !string.IsNullOrWhiteSpace(i.System)
+            && i.System.EndsWith("/users", StringComparison.OrdinalIgnoreCase)) == true;
+
         return new StaffSummaryViewModel(
             practitioner.Id ?? "(no-id)",
             role.Id ?? "(no-role-id)",
@@ -184,7 +190,8 @@ public sealed class StaffFeatureService
             phone,
             practitioner.Active ?? false,
             roleCode,
-            roleDisplay);
+            roleDisplay,
+            hasLoginAccount);
     }
 
     private static string? ParseReferenceId(string? reference, string expectedType)
