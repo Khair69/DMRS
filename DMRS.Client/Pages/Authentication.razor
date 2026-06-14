@@ -1,7 +1,67 @@
-﻿@page "/authentication/{action}"
+@page "/authentication/{action}"
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
-<RemoteAuthenticatorView Action="@Action" />
+@inject NavigationManager Navigation
+
+<RemoteAuthenticatorView Action="@Action">
+    <LogOutSucceeded>
+        <div class="auth-screen">
+            <div class="auth-card">
+                <span class="auth-card__eyebrow">DMRS</span>
+
+                <div class="auth-card__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" stroke="currentColor"
+                              stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M10 17l-5-5 5-5" stroke="currentColor" stroke-width="1.7"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M5 12h10" stroke="currentColor" stroke-width="1.7"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+
+                <h1 class="auth-card__title">You've been signed out</h1>
+                <p class="auth-card__subtitle">
+                    Your session has ended securely. Thanks for using the DMRS clinical workspace.
+                </p>
+
+                <div class="auth-card__actions">
+                    <button class="btn btn-primary" @onclick="GoHome">Return to dashboard</button>
+                </div>
+
+                <p class="auth-card__redirect">
+                    Taking you back automatically in @_seconds second@(_seconds == 1 ? "" : "s")…
+                </p>
+            </div>
+        </div>
+    </LogOutSucceeded>
+</RemoteAuthenticatorView>
 
 @code {
     [Parameter] public string? Action { get; set; }
+
+    private bool IsLoggedOut =>
+        string.Equals(Action, "logged-out", StringComparison.OrdinalIgnoreCase);
+
+    private int _seconds = 4;
+    private bool _redirectStarted;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !IsLoggedOut || _redirectStarted)
+        {
+            return;
+        }
+
+        _redirectStarted = true;
+        while (_seconds > 0)
+        {
+            await Task.Delay(1000);
+            _seconds--;
+            await InvokeAsync(StateHasChanged);
+        }
+
+        GoHome();
+    }
+
+    private void GoHome() => Navigation.NavigateTo("/");
 }
