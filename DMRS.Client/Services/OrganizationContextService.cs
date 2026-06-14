@@ -15,14 +15,27 @@ public sealed class OrganizationContextService
     ];
 
     private readonly AuthenticationStateProvider _authenticationStateProvider;
+    private readonly FhirApiService _fhirApiService;
 
-    public OrganizationContextService(AuthenticationStateProvider authenticationStateProvider)
+    // Cache the resolved ids for the lifetime of this scoped service so multiple components on the
+    // same page (nav + dashboard) don't each hit the API.
+    private IReadOnlyList<string>? _cachedOrganizationIds;
+
+    public OrganizationContextService(
+        AuthenticationStateProvider authenticationStateProvider,
+        FhirApiService fhirApiService)
     {
         _authenticationStateProvider = authenticationStateProvider;
+        _fhirApiService = fhirApiService;
     }
 
     public async Task<IReadOnlyList<string>> GetOrganizationIdsAsync()
     {
+        if (_cachedOrganizationIds is not null)
+        {
+            return _cachedOrganizationIds;
+        }
+
         var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
@@ -48,7 +61,33 @@ public sealed class OrganizationContextService
             }
         }
 
-        return organizations.ToList();
+        // Staff org membership is usually not a token claim — it lives in FHIR data and is resolved
+        // server-side (Keycloak user → Practitioner → PractitionerRole → Organization). Fall back to
+        // the API when the token carries no organization claim.
+        if (organizations.Count == 0)
+        {
+            try
+            {
+                var resolved = await _fhirApiService.GetApiJsonAsync<List<string>>("api/me/organizations");
+                if (resolved is not null)
+                {
+                    foreach (var organizationId in resolved)
+                    {
+                        if (!string.IsNullOrWhiteSpace(organizationId))
+                        {
+                            organizations.Add(organizationId);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Leave organizations empty on failure; callers surface the "no organization" state.
+            }
+        }
+
+        _cachedOrganizationIds = organizations.ToList();
+        return _cachedOrganizationIds;
     }
 
     public async Task<string?> GetPrimaryOrganizationIdAsync()

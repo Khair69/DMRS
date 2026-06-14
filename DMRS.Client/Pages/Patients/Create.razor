@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
 @inject DMRS.Client.Services.OrganizationContextService OrgContextService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 
 <PageTitle>Create Patient</PageTitle>
@@ -30,7 +31,7 @@
     </div>
 }
 
-<PatientForm Model="model" IsBusy="@isSaving" SubmitText="Create Patient & Invite" OnSave="Save" ShowOrganizationField="@showOrganizationField" />
+<PatientForm Model="model" IsBusy="@isSaving" SubmitText="Create Patient & Invite" OnSave="Save" ShowOrganizationField="@showOrganizationField" OrganizationReadOnly="@organizationReadOnly" />
 
 @code {
     private readonly PatientEditModel model = new();
@@ -38,20 +39,28 @@
     private string? errorMessage;
     private string? successMessage;
     private bool showOrganizationField;
+    private bool organizationReadOnly;
     private DMRS.Client.Features.Patients.Services.PatientInviteResult? inviteResult;
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var isSystemAdmin = authState.User.IsInRole("ROLE_SYSTEM_ADMIN");
+
+        // A new Patient must carry managingOrganization or it is invisible to org-scoped users
+        // (see SmartAuthorizationService.ResolveAccessiblePatientIdsAsync). Default it to the
+        // caller's organization so org admins and practitioners can immediately see who they create.
         var organizationIds = await OrgContextService.GetOrganizationIdsAsync();
-        if (organizationIds.Count > 0)
+        var primaryOrganizationId = organizationIds.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(primaryOrganizationId))
         {
-            model.ManagingOrganizationId = organizationIds[0];
-            showOrganizationField = organizationIds.Count != 1;
+            model.ManagingOrganizationId = primaryOrganizationId;
         }
-        else
-        {
-            showOrganizationField = true;
-        }
+
+        // The organization field is always shown. System admins may pick/override it; org admins and
+        // practitioners are locked to their own organization (read-only when they have exactly one).
+        showOrganizationField = true;
+        organizationReadOnly = !isSystemAdmin && organizationIds.Count == 1;
     }
 
     private async Task Save()
@@ -62,7 +71,7 @@
         inviteResult = null;
         try
         {
-            if (showOrganizationField && string.IsNullOrWhiteSpace(model.ManagingOrganizationId))
+            if (string.IsNullOrWhiteSpace(model.ManagingOrganizationId))
             {
                 errorMessage = "Managing organization is required.";
                 return;
