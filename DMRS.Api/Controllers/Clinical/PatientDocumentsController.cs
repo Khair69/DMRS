@@ -118,6 +118,12 @@ namespace DMRS.Api.Controllers.Clinical
                     return true;
 
                 case SmartAccessLevel.User:
+                    // Staff may read any patient's documents across orgs; upload/delete stay org-scoped.
+                    if (action == "read")
+                    {
+                        return true;
+                    }
+
                     var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
                     return await _authorizationService.IsResourceOwnedByOrganizationsAsync("Patient", patientId, organizationIds);
 

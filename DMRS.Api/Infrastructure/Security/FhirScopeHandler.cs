@@ -61,11 +61,19 @@ namespace DMRS.Api.Infrastructure.Security
 
             if (accessLevel == SmartAccessLevel.User && isInstanceRequest && !isVersionedRequest)
             {
-                var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(context.User);
-                var isOwned = await _authorizationService.IsResourceOwnedByOrganizationsAsync(resourceType, id!, organizationIds);
-                if (!isOwned)
+                // Staff may READ any patient and their clinical record across organizations; only
+                // write/delete stay org-scoped. Skip the org-ownership gate for cross-org-readable reads.
+                var isCrossOrgRead = action == "read"
+                    && _authorizationService.IsCrossOrganizationReadableType(resourceType);
+
+                if (!isCrossOrgRead)
                 {
-                    return;
+                    var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(context.User);
+                    var isOwned = await _authorizationService.IsResourceOwnedByOrganizationsAsync(resourceType, id!, organizationIds);
+                    if (!isOwned)
+                    {
+                        return;
+                    }
                 }
             }
 

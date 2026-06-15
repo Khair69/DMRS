@@ -19,6 +19,14 @@ namespace DMRS.Api.Infrastructure.Security
         SmartAccessLevel GetAccessLevel(ClaimsPrincipal user, string resourceType, string action);
 
         /// <summary>
+        /// True for the patient-facing resource types — the Patient record plus their clinical data —
+        /// that any staff (User-level) caller may READ across organizations. Create/update/delete remain
+        /// org-scoped; this relaxes the read path only so a practitioner can view any patient and their
+        /// full clinical record regardless of which organization owns it.
+        /// </summary>
+        bool IsCrossOrganizationReadableType(string resourceType);
+
+        /// <summary>
         /// Resolves the set of Patient ids the caller may aggregate over (dashboards, analytics,
         /// batch risk scoring). Returns <c>null</c> for an unrestricted (system) caller — callers
         /// should treat null as "all patients" and keep their existing global behavior. A non-null
@@ -72,6 +80,23 @@ namespace DMRS.Api.Infrastructure.Security
             "launch/organization"
         ];
 
+        // The Patient record plus the patient-owned clinical resources that make up a patient's record.
+        // Staff may READ any of these across organizations (see IsCrossOrganizationReadableType); write
+        // and delete stay org-scoped. Administrative types (Organization, Location, Practitioner,
+        // PractitionerRole) are intentionally excluded — they remain org-scoped for reads too.
+        private static readonly HashSet<string> CrossOrganizationReadableTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Patient",
+            "Encounter",
+            "Condition",
+            "Observation",
+            "Procedure",
+            "MedicationRequest",
+            "ServiceRequest",
+            "AllergyIntolerance",
+            "Appointment",
+        };
+
         private readonly AppDbContext _dbContext;
         private readonly IResourceOwnershipResolver _ownershipResolver;
 
@@ -114,6 +139,10 @@ namespace DMRS.Api.Infrastructure.Security
 
             return SmartAccessLevel.None;
         }
+
+        public bool IsCrossOrganizationReadableType(string resourceType)
+            => !string.IsNullOrWhiteSpace(resourceType)
+                && CrossOrganizationReadableTypes.Contains(resourceType);
 
         public async Task<IReadOnlyCollection<string>?> ResolveAccessiblePatientIdsAsync(ClaimsPrincipal user)
         {

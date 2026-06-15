@@ -519,6 +519,13 @@ namespace DMRS.Api.Controllers
 
             if (accessLevel == SmartAccessLevel.User)
             {
+                // Staff may read any patient + clinical record across orgs (search is always a read);
+                // return the full result set for those types. Write/delete remain org-scoped elsewhere.
+                if (_authorizationService.IsCrossOrganizationReadableType(typeof(T).Name))
+                {
+                    return resources.ToList();
+                }
+
                 var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
                 if (organizationIds.Count == 0)
                 {
@@ -608,6 +615,12 @@ namespace DMRS.Api.Controllers
 
             if (accessLevel == SmartAccessLevel.User)
             {
+                // Staff may read any patient + clinical record across orgs; write/delete stay org-scoped.
+                if (action == "read" && _authorizationService.IsCrossOrganizationReadableType(typeof(T).Name))
+                {
+                    return true;
+                }
+
                 var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
 
                 if (!useResourceOwnership && !string.IsNullOrWhiteSpace(resource.Id))
