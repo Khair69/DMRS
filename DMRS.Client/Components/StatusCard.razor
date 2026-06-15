@@ -1,0 +1,48 @@
+@* Shared centered status/error card — matches the signed-out screen styling. *@
+
+<div class="status-screen">
+    <div class="status-card">
+        @if (!string.IsNullOrWhiteSpace(Eyebrow))
+        {
+            <span class="status-card__eyebrow">@Eyebrow</span>
+        }
+
+        @if (Icon is not null)
+        {
+            <div class="status-card__icon status-card__icon--@Tone.ToString().ToLowerInvariant()" aria-hidden="true">
+                @Icon
+            </div>
+        }
+
+        <h1 class="status-card__title">@Title</h1>
+
+        @if (!string.IsNullOrWhiteSpace(Subtitle))
+        {
+            <p class="status-card__subtitle">@Subtitle</p>
+        }
+
+        @if (Actions is not null)
+        {
+            <div class="status-card__actions">
+                @Actions
+            </div>
+        }
+
+        @if (Footer is not null)
+        {
+            <p class="status-card__redirect">@Footer</p>
+        }
+    </div>
+</div>
+
+@code {
+    public enum CardTone { Brand, Danger, Warning }
+
+    [Parameter] public string Eyebrow { get; set; } = "DMRS";
+    [Parameter] public RenderFragment? Icon { get; set; }
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public CardTone Tone { get; set; } = CardTone.Brand;
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+}

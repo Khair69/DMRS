@@ -13,6 +13,10 @@
 </AuthorizeView>
 
 @code {
-    private void BeginLogin() => Navigation.NavigateToLogin("authentication/login");
+    private void BeginLogin() => Navigation.NavigateToLogin("authentication/login", new InteractiveRequestOptions
+    {
+        Interaction = InteractionType.SignIn,
+        ReturnUrl = Navigation.BaseUri
+    });
     private void BeginLogOut() => Navigation.NavigateToLogout("authentication/logout");
 }
