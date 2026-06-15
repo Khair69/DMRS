@@ -69,35 +69,72 @@ else
             }
             else
             {
-                <!-- Risk distribution -->
-                <div class="d-flex flex-wrap align-items-center gap-4 mb-3">
-                    <div class="d-flex align-items-center gap-2">
+                var search = GetSearch(model.Key);
+                var levelFilter = GetLevelFilter(model.Key);
+                var isFiltering = !string.IsNullOrWhiteSpace(search) || levelFilter != "All";
+                var rows = FilterRows(model, search, levelFilter);
+
+                <!-- Risk distribution (click a level to filter) + patient search -->
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                    <button type="button" class="dmrs-risk-toggle @(levelFilter == "High" ? "is-active" : "")"
+                            @onclick='() => ToggleLevelFilter(model.Key, "High")'
+                            title="Click to show only High risk patients">
                         <span class="dmrs-pill dmrs-pill--danger">High</span>
                         <strong>@model.HighCount</strong>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
+                    </button>
+                    <button type="button" class="dmrs-risk-toggle @(levelFilter == "Medium" ? "is-active" : "")"
+                            @onclick='() => ToggleLevelFilter(model.Key, "Medium")'
+                            title="Click to show only Medium risk patients">
                         <span class="dmrs-pill dmrs-pill--warning">Medium</span>
                         <strong>@model.MediumCount</strong>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
+                    </button>
+                    <button type="button" class="dmrs-risk-toggle @(levelFilter == "Low" ? "is-active" : "")"
+                            @onclick='() => ToggleLevelFilter(model.Key, "Low")'
+                            title="Click to show only Low risk patients">
                         <span class="dmrs-pill dmrs-pill--neutral">Low</span>
                         <strong>@model.LowCount</strong>
-                    </div>
-                    @if (model.ImputedCount > 0)
+                    </button>
+                    @if (levelFilter != "All")
                     {
-                        <div class="ms-auto small text-muted">
-                            @model.ImputedCount of @model.Total scored with one or more imputed (estimated) features
-                        </div>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0"
+                                @onclick='() => SetLevelFilter(model.Key, "All")'>
+                            Clear
+                        </button>
                     }
+                    <div class="ms-auto" style="min-width:220px; max-width:320px;">
+                        <input type="search" class="form-control form-control-sm"
+                               placeholder="Search patient by name…"
+                               value="@search"
+                               @oninput="e => SetSearch(model.Key, e.Value?.ToString())" />
+                    </div>
                 </div>
 
-                <div class="progress mb-4" style="height:10px;">
+                <div class="progress mb-2" style="height:10px;">
                     <div class="progress-bar bg-danger"
                          style="@StackWidth(model.HighCount, model.Total)"></div>
                     <div class="progress-bar bg-warning"
                          style="@StackWidth(model.MediumCount, model.Total)"></div>
                     <div class="progress-bar bg-success"
                          style="@StackWidth(model.LowCount, model.Total)"></div>
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-4 small text-muted">
+                    <span>
+                        @if (isFiltering)
+                        {
+                            <span>@rows.Count of @model.Total match</span>
+                        }
+                        else
+                        {
+                            <span>Top @rows.Count by risk · @model.Total scored</span>
+                        }
+                    </span>
+                    @if (model.ImputedCount > 0)
+                    {
+                        <span class="ms-auto">
+                            @model.ImputedCount of @model.Total scored with one or more imputed (estimated) features
+                        </span>
+                    }
                 </div>
 
                 <!-- Feature inputs -->
@@ -121,7 +158,15 @@ else
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var row in model.Watchlist)
+                            @if (rows.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted small py-3">
+                                        No patients match your search or filter.
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var row in rows)
                             {
                                 <tr>
                                     <td>
@@ -266,7 +311,47 @@ else
     private List<PatientOption> patientOptions = [];
     private string selectedPatientId = string.Empty;
 
+    private const int FilteredResultCap = 50;
+    private readonly Dictionary<string, string> searchByModel = new();
+    private readonly Dictionary<string, string> levelFilterByModel = new();
+
     private sealed record PatientOption(string Id, string Name);
+
+    private string GetSearch(string key) => searchByModel.GetValueOrDefault(key, string.Empty);
+
+    private string GetLevelFilter(string key) => levelFilterByModel.GetValueOrDefault(key, "All");
+
+    private void SetSearch(string key, string? value) => searchByModel[key] = value ?? string.Empty;
+
+    private void SetLevelFilter(string key, string level) => levelFilterByModel[key] = level;
+
+    // Clicking the active level again clears the filter back to "All".
+    private void ToggleLevelFilter(string key, string level)
+        => levelFilterByModel[key] = GetLevelFilter(key) == level ? "All" : level;
+
+    private static List<AiPatientRiskRow> FilterRows(AiModelCohort model, string search, string levelFilter)
+    {
+        // No active search/filter: keep the default top-risk watchlist.
+        if (string.IsNullOrWhiteSpace(search) && levelFilter == "All")
+        {
+            return model.Watchlist;
+        }
+
+        IEnumerable<AiPatientRiskRow> query = model.AllRows;
+
+        if (levelFilter != "All")
+        {
+            query = query.Where(r => r.RiskLevel == levelFilter);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(r => r.DisplayName.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return query.Take(FilteredResultCap).ToList();
+    }
 
     protected override async Task OnInitializedAsync()
     {

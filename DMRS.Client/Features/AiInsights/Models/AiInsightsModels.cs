@@ -29,7 +29,12 @@ public sealed class AiModelCohort
     public int MediumCount { get; set; }
     public int LowCount { get; set; }
     public int ImputedCount { get; set; }
+
+    /// <summary>Top-ranked rows shown by default when no search/filter is active.</summary>
     public List<AiPatientRiskRow> Watchlist { get; set; } = [];
+
+    /// <summary>Every scored patient for this model, ranked by score descending — backs search and filtering.</summary>
+    public List<AiPatientRiskRow> AllRows { get; set; } = [];
 
     public int Total => HighCount + MediumCount + LowCount;
 }

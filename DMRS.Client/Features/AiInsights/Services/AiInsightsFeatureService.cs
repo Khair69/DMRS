@@ -115,15 +115,13 @@ public sealed class AiInsightsFeatureService
 
     private static AiModelCohort BuildCohort(AiModelCohort cohort, IEnumerable<AiPatientRiskRow> rows)
     {
-        var all = rows.ToList();
+        var all = rows.OrderByDescending(r => r.Score).ToList();
         cohort.HighCount = all.Count(r => r.RiskLevel == "High");
         cohort.MediumCount = all.Count(r => r.RiskLevel == "Medium");
         cohort.LowCount = all.Count(r => r.RiskLevel == "Low");
         cohort.ImputedCount = all.Count(r => !r.FeaturesComplete);
-        cohort.Watchlist = all
-            .OrderByDescending(r => r.Score)
-            .Take(WatchlistSize)
-            .ToList();
+        cohort.AllRows = all;
+        cohort.Watchlist = all.Take(WatchlistSize).ToList();
         return cohort;
     }
 

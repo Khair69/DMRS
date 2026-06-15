@@ -335,6 +335,27 @@ code {
     color: #065f46;
 }
 
+.dmrs-risk-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.55rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease;
+}
+
+.dmrs-risk-toggle:hover {
+    background: rgba(148, 163, 184, 0.12);
+}
+
+.dmrs-risk-toggle.is-active {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.08);
+}
+
 .dmrs-stack {
     display: grid;
     gap: 0.95rem;
