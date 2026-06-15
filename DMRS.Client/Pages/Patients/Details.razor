@@ -231,6 +231,10 @@ else
                                          style="@($"width:{(riskAssessment.CompositeScore * 100).ToString("0")}%")"></div>
                                 </div>
                                 <strong>@((riskAssessment.CompositeScore * 100).ToString("0"))%</strong>
+                                <span class="badge @VerdictBadgeClass(riskAssessment.IsHighRisk)"
+                                      title="Does the model flag this patient as a likely 30-day readmission?">
+                                    @VerdictText(riskAssessment.IsHighRisk)
+                                </span>
                             </div>
                             <p class="mb-1">
                                 Risk level: <strong>@riskAssessment.RiskLevel</strong>
@@ -267,6 +271,10 @@ else
                                          style="@($"width:{((diabetesRisk.Probability ?? 0) * 100).ToString("0")}%")"></div>
                                 </div>
                                 <strong>@(((diabetesRisk.Probability ?? 0) * 100).ToString("0"))%</strong>
+                                <span class="badge @VerdictBadgeClass(diabetesRisk.IsHighRisk)"
+                                      title="Does the model classify this patient as diabetic?">
+                                    @VerdictText(diabetesRisk.IsHighRisk)
+                                </span>
                             </div>
                             <p class="mb-1">Risk level: <strong>@diabetesRisk.RiskLevel</strong></p>
                             <ul class="mb-1 small text-muted ps-3">
@@ -294,6 +302,10 @@ else
                                          style="@($"width:{((cardiovascularRisk.Probability ?? 0) * 100).ToString("0")}%")"></div>
                                 </div>
                                 <strong>@(((cardiovascularRisk.Probability ?? 0) * 100).ToString("0"))%</strong>
+                                <span class="badge @VerdictBadgeClass(cardiovascularRisk.IsHighRisk)"
+                                      title="Does the model classify this patient as having cardiovascular disease?">
+                                    @VerdictText(cardiovascularRisk.IsHighRisk)
+                                </span>
                             </div>
                             <p class="mb-1">Risk level: <strong>@cardiovascularRisk.RiskLevel</strong></p>
                             <ul class="mb-1 small text-muted ps-3">
@@ -694,6 +706,13 @@ else
         "Medium" => "dmrs-pill--warning",
         _        => "dmrs-pill--success"
     };
+
+    // The model's binary verdict (positive class at its decision threshold), shown next to the score.
+    private static string VerdictBadgeClass(bool isPositive)
+        => isPositive ? "text-bg-danger" : "text-bg-success";
+
+    private static string VerdictText(bool isPositive)
+        => isPositive ? "Yes" : "No";
 
     private static string GetConditionLabel(Hl7.Fhir.Model.Condition condition)
         => condition.Code?.Text
