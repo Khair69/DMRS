@@ -12,7 +12,7 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="nav flex-column">
-        <div class="nav-section-label px-3">Workspace</div>
+        @* Standalone items — never grouped. *@
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 Home Dashboard
@@ -20,58 +20,92 @@
         </div>
 
         <AuthorizeView Roles="ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER">
-            <div class="nav-section-label px-3">Clinical</div>
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="patients">Patients</NavLink>
             </div>
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="documents">Documents</NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="encounters">Encounters</NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="conditions">Conditions</NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="observations">Observations</NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="procedures">Procedures</NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="allergy-intolerances">Allergies</NavLink>
-            </div>
-
-            <div class="nav-section-label px-3">Orders and Scheduling</div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="medication-requests">Medication Requests</NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="service-requests">Service Requests</NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="appointments">Appointments</NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="locations">Locations</NavLink>
-            </div>
-
-            <div class="nav-section-label px-3">Intelligence</div>
-            <div class="nav-item px-3">
                 <NavLink class="nav-link" href="ai-insights">AI Insights</NavLink>
             </div>
+
+            <div class="nav-group">
+                <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("clinical")'>
+                    <span>Clinical Records</span>
+                    <svg class="nav-group-chevron @(IsExpanded("clinical") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+                </button>
+                <div class="nav-group-items @(IsExpanded("clinical") ? "expanded" : "")">
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="documents">Documents</NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="encounters">Encounters</NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="conditions">Conditions</NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="observations">Observations</NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="procedures">Procedures</NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="allergy-intolerances">Allergies</NavLink>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-group">
+                <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("orders")'>
+                    <span>Orders &amp; Scheduling</span>
+                    <svg class="nav-group-chevron @(IsExpanded("orders") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+                </button>
+                <div class="nav-group-items @(IsExpanded("orders") ? "expanded" : "")">
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="medication-requests">Medication Requests</NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="service-requests">Service Requests</NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="appointments">Appointments</NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="locations">Locations</NavLink>
+                    </div>
+                </div>
+            </div>
+
+            <AuthorizeView Roles="ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN" Context="adminContext">
+                <div class="nav-group">
+                    <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("intelligence")'>
+                        <span>Intelligence</span>
+                        <svg class="nav-group-chevron @(IsExpanded("intelligence") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+                    </button>
+                    <div class="nav-group-items @(IsExpanded("intelligence") ? "expanded" : "")">
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="external-ai/admin">External AI Models</NavLink>
+                        </div>
+                    </div>
+                </div>
+            </AuthorizeView>
         </AuthorizeView>
 
         <AuthorizeView Roles="ROLE_PATIENT">
             @if (!IsStaff(context.User))
             {
-                <div class="nav-section-label px-3">My Care</div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="my-health">My Health Records</NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="my-profile">My Profile</NavLink>
+                <div class="nav-group">
+                    <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("mycare")'>
+                        <span>My Care</span>
+                        <svg class="nav-group-chevron @(IsExpanded("mycare") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+                    </button>
+                    <div class="nav-group-items @(IsExpanded("mycare") ? "expanded" : "")">
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="my-health">My Health Records</NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="my-profile">My Profile</NavLink>
+                        </div>
+                    </div>
                 </div>
             }
         </AuthorizeView>
@@ -79,23 +113,37 @@
         <AuthorizeView Roles="ROLE_ORG_ADMIN">
             @if (!string.IsNullOrWhiteSpace(orgAdminOrganizationId))
             {
-                <div class="nav-section-label px-3">My Organization</div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="@($"/organizations/{orgAdminOrganizationId}")">Organization</NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="@($"/organizations/{orgAdminOrganizationId}/staff")">Staff</NavLink>
+                <div class="nav-group">
+                    <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("myorg")'>
+                        <span>My Organization</span>
+                        <svg class="nav-group-chevron @(IsExpanded("myorg") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+                    </button>
+                    <div class="nav-group-items @(IsExpanded("myorg") ? "expanded" : "")">
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="@($"/organizations/{orgAdminOrganizationId}")">Organization</NavLink>
+                        </div>
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="@($"/organizations/{orgAdminOrganizationId}/staff")">Staff</NavLink>
+                        </div>
+                    </div>
                 </div>
             }
         </AuthorizeView>
 
         <AuthorizeView Roles="ROLE_SYSTEM_ADMIN">
-            <div class="nav-section-label px-3">Administration</div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="organizations">Organizations</NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="cds/admin">CDS Admin</NavLink>
+            <div class="nav-group">
+                <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("admin")'>
+                    <span>Administration</span>
+                    <svg class="nav-group-chevron @(IsExpanded("admin") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+                </button>
+                <div class="nav-group-items @(IsExpanded("admin") ? "expanded" : "")">
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="organizations">Organizations</NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="cds/admin">CDS Admin</NavLink>
+                    </div>
+                </div>
             </div>
         </AuthorizeView>
     </nav>
@@ -104,6 +152,9 @@
 @code {
     private bool collapseNavMenu = true;
     private string? orgAdminOrganizationId;
+
+    // Groups start collapsed; clicking a header expands/collapses it.
+    private readonly HashSet<string> expandedGroups = new();
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
@@ -120,6 +171,16 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    private bool IsExpanded(string group) => expandedGroups.Contains(group);
+
+    private void ToggleGroup(string group)
+    {
+        if (!expandedGroups.Remove(group))
+        {
+            expandedGroups.Add(group);
+        }
     }
 
     // A user who is also staff sees the clinical nav above; don't double up with the patient links.

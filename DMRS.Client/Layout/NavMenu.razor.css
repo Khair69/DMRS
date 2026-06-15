@@ -28,6 +28,61 @@
     letter-spacing: 0.18em;
 }
 
+.nav-group {
+    margin-top: 0.35rem;
+}
+
+.nav-group-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    padding-top: 1rem;
+    padding-bottom: 0.45rem;
+    color: rgba(226, 232, 240, 0.58);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 600;
+    transition: color 0.16s ease;
+}
+
+.nav-group-header:hover {
+    color: rgba(226, 232, 240, 0.92);
+}
+
+.nav-group-chevron {
+    width: 0.85rem;
+    height: 0.85rem;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: transform 0.2s ease, opacity 0.16s ease;
+}
+
+.nav-group-header:hover .nav-group-chevron {
+    opacity: 1;
+}
+
+.nav-group-chevron.expanded {
+    transform: rotate(90deg);
+}
+
+.nav-group-items {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.24s ease, opacity 0.2s ease;
+}
+
+.nav-group-items.expanded {
+    max-height: 32rem;
+    opacity: 1;
+}
+
 .nav-item {
     font-size: 0.95rem;
     padding-bottom: 0.35rem;
