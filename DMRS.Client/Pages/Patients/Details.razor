@@ -3,6 +3,7 @@
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
 @inject DMRS.Client.Features.Patients.Services.PatientChartFeatureService PatientChartService
 @inject DMRS.Client.Features.Documents.Services.PatientDocumentFeatureService DocumentService
+@inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
 @inject IConfiguration Configuration
 @inject NavigationManager NavigationManager
 @using DMRS.Client.Features.Dashboard.Models
@@ -466,6 +467,7 @@ else
     private CardiovascularRiskAssessmentModel? cardiovascularRisk;
     private bool isBusy;
     private string? errorMessage;
+    private string? managingOrganizationName;
     private bool isLinkedToAccount;
     private string? existingInviteCode;
     private bool isGeneratingInvite;
@@ -497,9 +499,24 @@ else
     }
 
     private string DisplayPatientDemographics
-        => patient is null
-            ? string.Empty
-            : $"{patient.Gender} | Born {patient.BirthDate ?? "unknown"} | Managing org {patient.ManagingOrganization?.Reference ?? "not set"}";
+    {
+        get
+        {
+            if (patient is null)
+            {
+                return string.Empty;
+            }
+
+            // Prefer the resolved organization name; fall back to the reference's display, then the
+            // raw reference, so the line is still meaningful if the name can't be loaded.
+            var managingOrganization = managingOrganizationName
+                ?? patient.ManagingOrganization?.Display
+                ?? patient.ManagingOrganization?.Reference
+                ?? "not set";
+
+            return $"{patient.Gender} | Born {patient.BirthDate ?? "unknown"} | Managing Organization {managingOrganization}";
+        }
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -528,6 +545,7 @@ else
             {
                 isLinkedToAccount = IsLinkedToAccount(patient);
                 existingInviteCode = GetInviteCode(patient);
+                await LoadManagingOrganizationNameAsync();
                 allergyCount = chart?.Allergies.Count ?? 0;
                 conditionCount = chart?.Conditions.Count ?? 0;
                 medicationCount = chart?.MedicationRequests.Count ?? 0;
@@ -541,6 +559,28 @@ else
         finally
         {
             isBusy = false;
+        }
+    }
+
+    private async System.Threading.Tasks.Task LoadManagingOrganizationNameAsync()
+    {
+        managingOrganizationName = null;
+
+        var organizationId = DMRS.Client.Services.FhirReferenceHelper.ExtractReferenceId(
+            patient?.ManagingOrganization?.Reference, "organization");
+        if (string.IsNullOrWhiteSpace(organizationId))
+        {
+            return;
+        }
+
+        try
+        {
+            var organization = await OrganizationService.GetAsync(organizationId);
+            managingOrganizationName = string.IsNullOrWhiteSpace(organization?.Name) ? null : organization.Name;
+        }
+        catch
+        {
+            // Non-fatal: DisplayPatientDemographics falls back to the reference id.
         }
     }
 
