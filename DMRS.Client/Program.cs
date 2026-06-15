@@ -56,6 +56,7 @@ builder.Services.AddScoped<PatientChartFeatureService>();
 builder.Services.AddScoped<PatientPortalFeatureService>();
 builder.Services.AddScoped<DashboardFeatureService>();
 builder.Services.AddScoped<AiInsightsFeatureService>();
+builder.Services.AddScoped<DMRS.Client.Features.ExternalAi.Services.ExternalAiFeatureService>();
 builder.Services.AddScoped<OrganizationFeatureService>();
 builder.Services.AddScoped<OrganizationAdminFeatureService>();
 builder.Services.AddScoped<StaffFeatureService>();

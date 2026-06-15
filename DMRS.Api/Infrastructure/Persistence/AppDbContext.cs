@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using DMRS.Api.Domain;
 using DMRS.Api.Domain.ClinicalDecisionSupport;
+using DMRS.Api.Domain.ExternalAi;
 namespace DMRS.Api.Infrastructure.Persistence
 {
     public class AppDbContext:DbContext
@@ -12,6 +13,7 @@ namespace DMRS.Api.Infrastructure.Persistence
         public DbSet<CdsRuleDefinition> CdsRuleDefinitions { get; set; }
         public DbSet<CdsRuleVersion> CdsRuleVersions { get; set; }
         public DbSet<MedicineKnowledgeRecord> MedicineKnowledgeRecords { get; set; }
+        public DbSet<ExternalAiModel> ExternalAiModels { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -79,6 +81,15 @@ namespace DMRS.Api.Infrastructure.Persistence
                 entity.Property(e => e.IndicationCodesJson).HasColumnType("jsonb");
                 entity.Property(e => e.Source).IsRequired();
                 entity.HasIndex(e => e.Name);
+            });
+
+            modelBuilder.Entity<ExternalAiModel>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.EndpointUrl).IsRequired();
+                entity.Property(e => e.AuthType).HasConversion<string>();
+                entity.HasIndex(e => e.Name).IsUnique();
             });
         }
     }

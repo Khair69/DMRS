@@ -1,0 +1,293 @@
+@page "/external-ai/admin"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
+@using DMRS.Client.Features.ExternalAi.Models
+@inject DMRS.Client.Features.ExternalAi.Services.ExternalAiFeatureService ExternalAiService
+
+<PageTitle>External AI Models</PageTitle>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="mb-1">External AI Models</h1>
+        <p class="text-body-secondary mb-0">
+            Register remote ("away") AI model endpoints. A practitioner can then send a patient's FHIR
+            record to one and read back its decision. Endpoints must use HTTPS; secrets are encrypted at rest.
+        </p>
+    </div>
+    <button class="btn btn-primary" @onclick="StartCreate" disabled="@isSaving">+ Register model</button>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(loadError))
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+
+<div class="row g-4">
+    <div class="@(editing is null ? "col-12" : "col-12 col-xl-7")">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                @if (isLoading)
+                {
+                    <div class="d-flex align-items-center gap-2 text-muted">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span>Loading…</span>
+                    </div>
+                }
+                else if (models.Count == 0)
+                {
+                    <div class="dmrs-empty-state mb-0">No external models registered yet.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Endpoint</th>
+                                    <th>Auth</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var model in models)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@model.Name</div>
+                                            @if (!string.IsNullOrWhiteSpace(model.Description))
+                                            {
+                                                <div class="small text-muted">@model.Description</div>
+                                            }
+                                        </td>
+                                        <td class="small text-break" style="max-width:260px;">@model.EndpointUrl</td>
+                                        <td>
+                                            <span class="badge bg-secondary">@model.AuthType</span>
+                                            @if (model.AuthType != ExternalAiAuthType.None && model.HasSecret)
+                                            {
+                                                <span class="small text-success ms-1" title="Secret stored">🔒</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (model.IsActive)
+                                            {
+                                                <span class="badge bg-success">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-light text-dark">Disabled</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => StartEdit(model)">Edit</button>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(model)">Delete</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (editing is not null)
+    {
+        <div class="col-12 col-xl-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h2 class="h5 mb-0">@(editingId is null ? "Register model" : "Edit model")</h2>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="editing" OnValidSubmit="SaveAsync">
+                        <DataAnnotationsValidator />
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <InputText @bind-Value="editing.Name" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <InputTextArea @bind-Value="editing.Description" class="form-control" rows="2" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Endpoint URL (HTTPS)</label>
+                            <InputText @bind-Value="editing.EndpointUrl" class="form-control" placeholder="https://…" />
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Auth type</label>
+                                <InputSelect @bind-Value="editing.AuthType" class="form-select">
+                                    <option value="@ExternalAiAuthType.None">None</option>
+                                    <option value="@ExternalAiAuthType.ApiKey">API key (header)</option>
+                                    <option value="@ExternalAiAuthType.Bearer">Bearer token</option>
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Timeout (seconds)</label>
+                                <InputNumber @bind-Value="editing.TimeoutSeconds" class="form-control" />
+                            </div>
+                        </div>
+
+                        @if (editing.AuthType == ExternalAiAuthType.ApiKey)
+                        {
+                            <div class="mt-3">
+                                <label class="form-label">API key header name</label>
+                                <InputText @bind-Value="editing.AuthHeaderName" class="form-control" placeholder="X-API-Key" />
+                            </div>
+                        }
+
+                        @if (editing.AuthType != ExternalAiAuthType.None)
+                        {
+                            <div class="mt-3">
+                                <label class="form-label">Secret (@(editingId is null ? "required" : "leave blank to keep current"))</label>
+                                <InputText type="password" @bind-Value="editing.Secret" class="form-control" autocomplete="new-password" />
+                            </div>
+                        }
+
+                        <div class="mt-3">
+                            <label class="form-label">Decision JSON path (optional)</label>
+                            <InputText @bind-Value="editing.DecisionJsonPath" class="form-control" placeholder="e.g. result.label" />
+                            <div class="form-text">Dot-path into the response to surface as the decision. Leave blank to return the whole body.</div>
+                        </div>
+
+                        <div class="form-check mt-3">
+                            <InputCheckbox @bind-Value="editing.IsActive" class="form-check-input" id="isActive" />
+                            <label class="form-check-label" for="isActive">Active</label>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(formError))
+                        {
+                            <div class="alert alert-danger mt-3 mb-0">@formError</div>
+                        }
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button class="btn btn-primary" type="submit" disabled="@isSaving">
+                                @(isSaving ? "Saving…" : "Save")
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" @onclick="CancelEdit" disabled="@isSaving">Cancel</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private bool isSaving;
+    private string? loadError;
+    private string? formError;
+    private List<ExternalAiModelDto> models = [];
+
+    private ExternalAiModelInput? editing;
+    private Guid? editingId;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        loadError = null;
+        try
+        {
+            models = (await ExternalAiService.ListModelsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Unable to load models: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void StartCreate()
+    {
+        editingId = null;
+        formError = null;
+        editing = new ExternalAiModelInput();
+    }
+
+    private void StartEdit(ExternalAiModelDto model)
+    {
+        editingId = model.Id;
+        formError = null;
+        editing = new ExternalAiModelInput
+        {
+            Name = model.Name,
+            Description = model.Description,
+            EndpointUrl = model.EndpointUrl,
+            AuthType = model.AuthType,
+            AuthHeaderName = model.AuthHeaderName,
+            Secret = null,
+            TimeoutSeconds = model.TimeoutSeconds,
+            DecisionJsonPath = model.DecisionJsonPath,
+            IsActive = model.IsActive
+        };
+    }
+
+    private void CancelEdit()
+    {
+        editing = null;
+        editingId = null;
+        formError = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (editing is null)
+        {
+            return;
+        }
+
+        isSaving = true;
+        formError = null;
+        try
+        {
+            if (editingId is null)
+            {
+                await ExternalAiService.CreateModelAsync(editing);
+            }
+            else
+            {
+                await ExternalAiService.UpdateModelAsync(editingId.Value, editing);
+            }
+
+            CancelEdit();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            formError = $"Save failed: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteAsync(ExternalAiModelDto model)
+    {
+        isSaving = true;
+        try
+        {
+            await ExternalAiService.DeleteModelAsync(model.Id);
+            if (editingId == model.Id)
+            {
+                CancelEdit();
+            }
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Delete failed: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

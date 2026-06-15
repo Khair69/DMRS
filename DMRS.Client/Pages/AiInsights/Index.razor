@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @using DMRS.Client.Features.AiInsights.Models
 @inject DMRS.Client.Features.AiInsights.Services.AiInsightsFeatureService AiInsightsService
+@inject DMRS.Client.Services.FhirApiService FhirApi
 
 <PageTitle>AI Insights</PageTitle>
 
@@ -232,6 +233,29 @@ else
             </div>
         }
     </div>
+
+    <!-- External AI Models -->
+    <div class="dmrs-panel mt-4">
+        <div class="dmrs-panel__header">
+            <div>
+                <div class="dmrs-panel__title">External AI Models</div>
+                <div class="dmrs-panel__subtitle">Pick a patient, then send their record to a registered remote model.</div>
+            </div>
+        </div>
+
+        <div class="mb-3" style="max-width:360px;">
+            <label class="form-label small mb-1">Patient</label>
+            <select class="form-select" @bind="selectedPatientId">
+                <option value="">— Select a patient —</option>
+                @foreach (var option in patientOptions)
+                {
+                    <option value="@option.Id">@option.Name</option>
+                }
+            </select>
+        </div>
+
+        <DMRS.Client.Features.ExternalAi.Components.ExternalAiRunPanel PatientId="@selectedPatientId" @key="selectedPatientId" />
+    </div>
 }
 
 @code {
@@ -239,6 +263,10 @@ else
     private string? errorMessage;
     private AiInsightsSnapshot snapshot = new();
     private int maxConditionCount = 1;
+    private List<PatientOption> patientOptions = [];
+    private string selectedPatientId = string.Empty;
+
+    private sealed record PatientOption(string Id, string Name);
 
     protected override async Task OnInitializedAsync()
     {
@@ -248,6 +276,13 @@ else
             maxConditionCount = snapshot.ConditionPrevalence.Count > 0
                 ? snapshot.ConditionPrevalence.Max(x => x.Count)
                 : 1;
+
+            var patients = await FhirApi.SearchResourcesAsync<Hl7.Fhir.Model.Patient>();
+            patientOptions = patients
+                .Where(p => !string.IsNullOrWhiteSpace(p.Id))
+                .Select(p => new PatientOption(p.Id!, FormatPatientName(p)))
+                .OrderBy(o => o.Name)
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -275,4 +310,14 @@ else
         "Medium" => "bg-warning",
         _        => "bg-success"
     };
+
+    private static string FormatPatientName(Hl7.Fhir.Model.Patient patient)
+    {
+        var name = patient.Name.FirstOrDefault();
+        var parts = new[] { name?.Given?.FirstOrDefault(), name?.Family }
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .ToArray();
+
+        return parts.Length == 0 ? $"Patient {patient.Id}" : $"{string.Join(" ", parts)} ({patient.Id})";
+    }
 }

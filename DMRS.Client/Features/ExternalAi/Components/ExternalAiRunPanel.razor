@@ -1,0 +1,163 @@
+@using System.Text.Json
+@using DMRS.Client.Features.ExternalAi.Models
+@inject DMRS.Client.Features.ExternalAi.Services.ExternalAiFeatureService ExternalAiService
+
+<div class="dmrs-panel">
+    <div class="dmrs-panel__header">
+        <div>
+            <div class="dmrs-panel__title">External AI Models</div>
+            <div class="dmrs-panel__subtitle">Send this patient's record to a registered remote model and read back its decision.</div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="d-flex align-items-center gap-2 text-muted">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <span>Loading models…</span>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(loadError))
+    {
+        <div class="alert alert-danger mb-0">@loadError</div>
+    }
+    else if (models.Count == 0)
+    {
+        <div class="dmrs-empty-state mb-0">
+            No active external models are registered.
+            <AuthorizeView Roles="ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN">
+                <a href="external-ai/admin">Register one</a> to enable remote inference.
+            </AuthorizeView>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning d-flex align-items-start gap-2 py-2">
+            <span>⚠️</span>
+            <span class="small mb-0">
+                Running a model sends this patient's FHIR data (demographics, observations, conditions,
+                medications, allergies) to the selected external service. Only run models you trust.
+            </span>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+            <div style="min-width:240px;">
+                <label class="form-label small mb-1">Model</label>
+                <select class="form-select" @bind="selectedModelId" disabled="@isRunning">
+                    @foreach (var model in models)
+                    {
+                        <option value="@model.Id">@model.Name</option>
+                    }
+                </select>
+            </div>
+            <button class="btn btn-primary" @onclick="RunAsync" disabled="@(isRunning || selectedModelId == Guid.Empty || string.IsNullOrWhiteSpace(PatientId))">
+                @(isRunning ? "Running…" : "Run model")
+            </button>
+        </div>
+
+        @if (selectedDescription is not null)
+        {
+            <p class="text-muted small">@selectedDescription</p>
+        }
+
+        @if (result is not null)
+        {
+            <div class="border rounded-3 p-3 mt-2">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                    <span class="fw-semibold">@result.ModelName</span>
+                    <span class="small text-muted">
+                        @(result.Success ? "Succeeded" : "Failed")
+                        @if (result.StatusCode is not null) { <text> · HTTP @result.StatusCode</text> }
+                        · @result.DurationMs ms
+                    </span>
+                </div>
+
+                @if (result.Success)
+                {
+                    <div class="small text-muted mb-1">Decision</div>
+                    <pre class="bg-light border rounded p-2 mb-0" style="white-space:pre-wrap; max-height:320px; overflow:auto;">@FormatDecision(result.Decision)</pre>
+                }
+                else
+                {
+                    <div class="alert alert-danger mb-0">@result.Error</div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string PatientId { get; set; } = string.Empty;
+
+    private bool isLoading = true;
+    private bool isRunning;
+    private string? loadError;
+    private List<ExternalAiModelDto> models = [];
+    private Guid selectedModelId = Guid.Empty;
+    private ExternalAiInferenceResult? result;
+
+    private string? selectedDescription =>
+        models.FirstOrDefault(m => m.Id == selectedModelId)?.Description;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            models = (await ExternalAiService.ListActiveModelsAsync()).ToList();
+            selectedModelId = models.FirstOrDefault()?.Id ?? Guid.Empty;
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Unable to load external models: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RunAsync()
+    {
+        if (selectedModelId == Guid.Empty || string.IsNullOrWhiteSpace(PatientId))
+        {
+            return;
+        }
+
+        isRunning = true;
+        result = null;
+        try
+        {
+            result = await ExternalAiService.RunAsync(selectedModelId, PatientId);
+        }
+        catch (Exception ex)
+        {
+            result = new ExternalAiInferenceResult
+            {
+                ModelName = models.FirstOrDefault(m => m.Id == selectedModelId)?.Name ?? "Model",
+                Success = false,
+                Error = ex.Message
+            };
+        }
+        finally
+        {
+            isRunning = false;
+        }
+    }
+
+    private static string FormatDecision(JsonElement? decision)
+    {
+        if (decision is null)
+        {
+            return "(no content)";
+        }
+
+        try
+        {
+            return JsonSerializer.Serialize(decision.Value, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch
+        {
+            return decision.Value.ToString();
+        }
+    }
+}

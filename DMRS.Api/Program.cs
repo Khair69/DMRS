@@ -3,11 +3,14 @@ using DMRS.Api.Application.ClinicalDecisionSupport.Interfaces;
 using DMRS.Api.Application.ClinicalDecisionSupport.Models;
 using DMRS.Api.Application.ClinicalDecisionSupport.Services;
 using DMRS.Api.Application.Documents;
+using DMRS.Api.Application.ExternalAi.Interfaces;
+using DMRS.Api.Application.ExternalAi.Services;
 using DMRS.Api.Application.Interfaces;
 using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Infrastructure;
 using DMRS.Api.Infrastructure.ClinicalDecisionSupport;
 using DMRS.Api.Infrastructure.Documents;
+using DMRS.Api.Infrastructure.ExternalAi;
 using DMRS.Api.Infrastructure.Persistence;
 using DMRS.Api.Infrastructure.Search.Administrative;
 using DMRS.Api.Infrastructure.Search.Clinical;
@@ -130,6 +133,20 @@ builder.Services.AddScoped<ObservationFeatureExtractor>();
 builder.Services.AddScoped<IDiabetesRiskService, DiabetesRiskService>();
 builder.Services.AddScoped<ICardiovascularRiskService, CardiovascularRiskService>();
 builder.Services.AddScoped<IPatientDocumentService, PatientDocumentService>();
+
+// External ("away") AI model integration: admin-managed registry + remote inference. Data Protection
+// encrypts the stored endpoint secrets at rest.
+builder.Services.AddDataProtection();
+builder.Services.AddSingleton<IExternalAiSecretProtector, ExternalAiSecretProtector>();
+builder.Services.AddScoped<IExternalAiModelRepository, EfExternalAiModelRepository>();
+builder.Services.AddScoped<IExternalAiModelManagementService, ExternalAiModelManagementService>();
+// Per-request timeout is enforced in the service via a linked CancellationToken (the model's
+// configurable TimeoutSeconds), so disable the HttpClient's own 100s default which would otherwise
+// cap it.
+builder.Services.AddHttpClient<IExternalAiInferenceService, ExternalAiInferenceService>(client =>
+{
+    client.Timeout = Timeout.InfiniteTimeSpan;
+});
 
 if (builder.Environment.IsDevelopment())
 {
