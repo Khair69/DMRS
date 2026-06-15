@@ -1,0 +1,181 @@
+/* ============================================================
+   DMRS login theme
+   Mirrors the design tokens from DMRS.Client/wwwroot/css/app.css
+   (teal/ocean gradient, ink text, Segoe UI, soft rounded panels).
+   Loaded after the base login.css so these rules win.
+   ============================================================ */
+
+:root {
+    --dmrs-text: #0f172a;
+    --dmrs-muted: #64748b;
+    --dmrs-border: rgba(15, 23, 42, 0.08);
+    --dmrs-panel: rgba(255, 255, 255, 0.92);
+    --dmrs-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+    --dmrs-radius-lg: 1.5rem;
+    --dmrs-radius-md: 0.85rem;
+    --dmrs-primary: #0f6d93;
+    --dmrs-primary-2: #0b8f86;
+    --dmrs-ring: rgba(15, 109, 147, 0.22);
+}
+
+/* ---------- Page background ---------- */
+html,
+body,
+.login-pf body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--dmrs-text);
+}
+
+body {
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 38%),
+        radial-gradient(circle at bottom left, rgba(11, 143, 134, 0.16), transparent 42%),
+        #eef3f8;
+    background-attachment: fixed;
+}
+
+/* Kill the default PatternFly background image */
+.login-pf {
+    background: none !important;
+}
+
+/* ---------- Card / panel ---------- */
+.card-pf,
+#kc-content,
+.login-pf-page .card-pf {
+    background: var(--dmrs-panel);
+    border: 1px solid var(--dmrs-border);
+    border-radius: var(--dmrs-radius-lg);
+    box-shadow: var(--dmrs-shadow);
+    backdrop-filter: blur(14px);
+    padding: 2rem 2.25rem;
+}
+
+.login-pf-page .login-pf-header h1,
+#kc-page-title {
+    color: var(--dmrs-text);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+/* ---------- Header / brand area ---------- */
+#kc-header,
+#kc-header-wrapper {
+    color: var(--dmrs-text);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    padding: 1.25rem 0;
+}
+
+/* ---------- Inputs ---------- */
+.pf-c-form-control,
+input[type="text"],
+input[type="password"],
+input[type="email"],
+select,
+textarea {
+    border: 1px solid var(--dmrs-border);
+    border-radius: var(--dmrs-radius-md);
+    color: var(--dmrs-text);
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.pf-c-form-control:focus,
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--dmrs-primary);
+    box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem var(--dmrs-ring);
+    outline: none;
+}
+
+label,
+.pf-c-form__label {
+    color: var(--dmrs-text);
+    font-weight: 600;
+}
+
+/* ---------- Primary button ---------- */
+.pf-c-button.pf-m-primary,
+input[type="submit"].pf-c-button.pf-m-primary,
+#kc-login,
+.btn-primary {
+    color: #fff;
+    background: linear-gradient(135deg, var(--dmrs-primary), var(--dmrs-primary-2));
+    border: 1px solid transparent;
+    border-radius: var(--dmrs-radius-md);
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(15, 109, 147, 0.35);
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+
+.pf-c-button.pf-m-primary:hover,
+#kc-login:hover,
+.btn-primary:hover {
+    filter: brightness(1.04);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(15, 109, 147, 0.4);
+}
+
+/* ---------- Secondary / link buttons ---------- */
+.pf-c-button.pf-m-secondary {
+    color: var(--dmrs-primary);
+    background: transparent;
+    border: 1px solid var(--dmrs-ring);
+    border-radius: var(--dmrs-radius-md);
+    font-weight: 600;
+}
+
+a,
+#kc-registration a,
+#kc-info-message a,
+.login-pf-page a {
+    color: var(--dmrs-primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ---------- Social / identity-provider buttons ---------- */
+#kc-social-providers .pf-c-button {
+    border-radius: var(--dmrs-radius-md);
+    border: 1px solid var(--dmrs-border);
+}
+
+/* ---------- Alerts ---------- */
+.pf-c-alert,
+.alert {
+    border-radius: var(--dmrs-radius-md);
+    border: 1px solid var(--dmrs-border);
+}
+
+.pf-c-alert.pf-m-danger,
+.alert-error {
+    background: rgba(254, 226, 226, 0.92);
+    color: #b91c1c;
+}
+
+.pf-c-alert.pf-m-success,
+.alert-success {
+    background: rgba(209, 250, 229, 0.92);
+    color: #065f46;
+}
+
+.pf-c-alert.pf-m-warning,
+.alert-warning {
+    background: rgba(254, 243, 199, 0.92);
+    color: #92400e;
+}
+
+/* ---------- Footer / locale ---------- */
+#kc-info,
+#kc-locale {
+    color: var(--dmrs-muted);
+}

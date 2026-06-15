@@ -8,7 +8,9 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
     volumes:
       # This line is the "save button" for your database
-      - ./keycloak_data:/opt/keycloak/data 
+      - ./keycloak_data:/opt/keycloak/data
+      # Custom DMRS-branded login theme (live-reloads in start-dev on browser refresh)
+      - ./themes:/opt/keycloak/themes
       # Keep this only if you want to initialize a NEW setup
       # - ./realm-export.json:/opt/keycloak/data/import/realm.json
     ports:
