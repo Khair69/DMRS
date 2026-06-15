@@ -129,35 +129,52 @@ namespace DMRS.Api.Infrastructure
             where T : Resource
         {
             var typeName = typeof(T).Name;
+            var limit = ParseCount(queryParams);
+            var hasFilters = queryParams.Any(p => !p.Key.StartsWith("_", StringComparison.Ordinal));
 
-            var query = _context.ResourceIndices
-                .Where(x => x.ResourceType == typeName);
+            var resourceQuery = _context.FhirResources
+                .Where(r => r.ResourceType == typeName && !r.IsDeleted);
 
-            foreach (var param in queryParams)
+            // Only join the search index when there's an actual filter. An unfiltered list (e.g. an
+            // Index page's capped default load) hits the resource table directly, avoiding a full
+            // materialization of every index row for the type.
+            if (hasFilters)
             {
-                var key = param.Key.ToLower();
-                var value = param.Value.ToLower();
+                var indexQuery = _context.ResourceIndices
+                    .Where(x => x.ResourceType == typeName);
 
-                // Ignore control params
-                if (key.StartsWith("_"))
-                    continue;
+                foreach (var param in queryParams)
+                {
+                    var key = param.Key.ToLower();
+                    var value = param.Value.ToLower();
 
-                query = query.Where(x =>
-                    x.SearchParamCode == key &&
-                    x.Value == value);
+                    // Ignore control params (_count, _sort, …) — they aren't index filters.
+                    if (key.StartsWith("_"))
+                        continue;
+
+                    indexQuery = indexQuery.Where(x =>
+                        x.SearchParamCode == key &&
+                        x.Value == value);
+                }
+
+                var matchedIds = await indexQuery
+                    .Select(x => x.ResourceId)
+                    .Distinct()
+                    .ToListAsync();
+
+                resourceQuery = resourceQuery.Where(r => matchedIds.Contains(r.Id));
             }
 
-            var matchedIds = await query
-                .Select(x => x.ResourceId)
-                .Distinct()
-                .ToListAsync();
+            // _count caps the rows we load AND deserialize — the expensive part. Order by most-recent
+            // so the cap is a deterministic "latest N" preview rather than an arbitrary slice.
+            if (limit is > 0)
+            {
+                resourceQuery = resourceQuery
+                    .OrderByDescending(r => r.LastUpdated)
+                    .Take(limit.Value);
+            }
 
-            var resources = await _context.FhirResources
-                .Where(r =>
-                    r.ResourceType == typeName &&
-                    !r.IsDeleted &&
-                    matchedIds.Contains(r.Id))
-                .ToListAsync();
+            var resources = await resourceQuery.ToListAsync();
 
             var result = new List<T>(resources.Count);
             foreach (var resourceEntity in resources)
@@ -174,6 +191,21 @@ namespace DMRS.Api.Infrastructure
             }
 
             return result;
+        }
+
+        // Reads the FHIR _count control parameter (case-insensitive); returns null when absent/invalid.
+        private static int? ParseCount(Dictionary<string, string> queryParams)
+        {
+            foreach (var kvp in queryParams)
+            {
+                if (string.Equals(kvp.Key, "_count", StringComparison.OrdinalIgnoreCase)
+                    && int.TryParse(kvp.Value, out var n) && n > 0)
+                {
+                    return n;
+                }
+            }
+
+            return null;
         }
 
         public async System.Threading.Tasks.Task UpdateAsync<T>(string id, T resource, ISearchIndexer searchIndexer) where T : Resource

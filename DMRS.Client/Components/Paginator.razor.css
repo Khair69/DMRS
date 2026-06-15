@@ -1,0 +1,25 @@
+.dmrs-paginator .page-link {
+    color: #0f6d93;
+    border-color: var(--dmrs-border, rgba(15, 23, 42, 0.08));
+    cursor: pointer;
+}
+
+.dmrs-paginator .page-link:hover {
+    color: #0b8f86;
+    background: rgba(15, 109, 147, 0.08);
+}
+
+.dmrs-paginator .page-item.active .page-link {
+    color: #fff;
+    background: linear-gradient(135deg, #0f6d93, #0b8f86);
+    border-color: transparent;
+}
+
+.dmrs-paginator .page-item.disabled .page-link {
+    color: var(--dmrs-muted, #64748b);
+    background: transparent;
+}
+
+.dmrs-paginator .page-link:focus {
+    box-shadow: 0 0 0 0.2rem rgba(15, 109, 147, 0.22);
+}

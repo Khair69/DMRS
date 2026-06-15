@@ -18,6 +18,25 @@ public abstract class FhirFeatureServiceBase<TResource, TEditModel, TSummary>
         return resources.Select(MapToSummary).ToList();
     }
 
+    // Capped list used to populate Index pages on open. Passing a count sends FHIR _count so the API
+    // loads/deserializes only the most-recent N rows instead of the whole collection. The API also
+    // access-filters server-side (FhirBaseController.FilterReadableAsync), so this only ever returns
+    // resources the caller may read.
+    public async Task<IReadOnlyList<TSummary>> ListAsync(int? count = null, Dictionary<string, string>? extraParams = null)
+    {
+        var query = extraParams is null
+            ? new Dictionary<string, string>()
+            : new Dictionary<string, string>(extraParams);
+
+        if (count is > 0)
+        {
+            query["_count"] = count.Value.ToString();
+        }
+
+        var resources = await _fhirApiService.SearchResourcesAsync<TResource>(query.Count == 0 ? null : query);
+        return resources.Select(MapToSummary).ToList();
+    }
+
     public Task<TResource?> GetAsync(string id)
     {
         return _fhirApiService.GetResourceAsync<TResource>(id);

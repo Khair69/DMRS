@@ -1,0 +1,174 @@
+@typeparam TSummary
+
+@* Shared scaffold for every resource Index page: title + "new" button, an optional search form,
+   loading/error/empty states, and a capped, paginated results table. Pages supply only what differs
+   — the columns (HeaderTemplate/RowTemplate), the search fields, and the load/search delegates. *@
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">@Title</h1>
+    @if (!string.IsNullOrWhiteSpace(NewLink))
+    {
+        <NavLink class="btn btn-primary" href="@NewLink">@NewLabel</NavLink>
+    }
+</div>
+
+@if (SearchFields is { Count: > 0 } && Search is not null)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <EditForm Model="this" OnSubmit="RunSearch">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Search Field</label>
+                        <InputSelect @bind-Value="_searchParam" class="form-select">
+                            @foreach (var field in SearchFields)
+                            {
+                                <option value="@field.Value">@field.Label</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label">Search Value</label>
+                        <InputText @bind-Value="_searchValue" class="form-control" placeholder="@CurrentPlaceholder" />
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button class="btn btn-primary" disabled="@_isBusy" type="submit">Search</button>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger">@_errorMessage</div>
+}
+
+@if (_isBusy)
+{
+    <div class="text-muted py-3">Loading…</div>
+}
+else if (_items.Count == 0)
+{
+    <div class="alert alert-secondary">@EmptyText</div>
+}
+else
+{
+    @if (_isDefaultView && _capped)
+    {
+        <div class="alert alert-info py-2">
+            Showing the @Cap most recent @EntityName. Use search to find others.
+        </div>
+    }
+    <Paginator Items="_items" PageSize="PageSize" Context="pageItems">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>@HeaderTemplate</tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in pageItems)
+                    {
+                        <tr>@RowTemplate(item)</tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </Paginator>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? NewLink { get; set; }
+    [Parameter] public string NewLabel { get; set; } = "New";
+
+    // Plural noun used in the empty/cap messages, e.g. "encounters".
+    [Parameter] public string EntityName { get; set; } = "records";
+    [Parameter] public string EmptyText { get; set; } = "Nothing found.";
+
+    [Parameter] public IReadOnlyList<SearchField> SearchFields { get; set; } = [];
+
+    // Capped default load (the int argument is Cap). Required — this is what populates the page on open.
+    [Parameter, EditorRequired] public Func<int, Task<IReadOnlyList<TSummary>>> LoadDefault { get; set; } = default!;
+
+    // Filtered search by (searchParam, value). Optional — omit to render a list without a search form.
+    [Parameter] public Func<string, string, Task<IReadOnlyList<TSummary>>>? Search { get; set; }
+
+    [Parameter, EditorRequired] public RenderFragment HeaderTemplate { get; set; } = default!;
+    [Parameter, EditorRequired] public RenderFragment<TSummary> RowTemplate { get; set; } = default!;
+
+    [Parameter] public int PageSize { get; set; } = 10;
+    [Parameter] public int Cap { get; set; } = 50;
+
+    private string _searchParam = string.Empty;
+    private string _searchValue = string.Empty;
+    private bool _isBusy;
+    private bool _isDefaultView = true;
+    private bool _capped;
+    private string? _errorMessage;
+    private IReadOnlyList<TSummary> _items = [];
+
+    private string CurrentPlaceholder =>
+        SearchFields.FirstOrDefault(f => f.Value == _searchParam)?.Placeholder ?? "Search value";
+
+    protected override void OnInitialized()
+        => _searchParam = SearchFields.FirstOrDefault()?.Value ?? string.Empty;
+
+    protected override Task OnInitializedAsync() => LoadDefaultAsync();
+
+    private async Task LoadDefaultAsync()
+    {
+        _errorMessage = null;
+        _isBusy = true;
+        try
+        {
+            _items = await LoadDefault(Cap);
+            _isDefaultView = true;
+            // The API capped the fetch, so a full page back means there are (probably) more.
+            _capped = _items.Count >= Cap;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to load {EntityName}: {ex.Message}";
+            _items = [];
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task RunSearch()
+    {
+        if (Search is null)
+        {
+            return;
+        }
+
+        // An empty search returns to the capped default view.
+        if (string.IsNullOrWhiteSpace(_searchValue))
+        {
+            await LoadDefaultAsync();
+            return;
+        }
+
+        _errorMessage = null;
+        _isBusy = true;
+        try
+        {
+            _items = await Search(_searchParam, _searchValue);
+            _isDefaultView = false;
+            _capped = false;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to load {EntityName}: {ex.Message}";
+            _items = [];
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+}

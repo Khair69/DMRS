@@ -22,7 +22,9 @@
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<StaffTable OrganizationId="@OrganizationId" Staff="@staff" />
+<Paginator Items="staff" PageSize="10" Context="pageStaff">
+    <StaffTable OrganizationId="@OrganizationId" Staff="pageStaff" />
+</Paginator>
 
 @code {
     [Parameter]

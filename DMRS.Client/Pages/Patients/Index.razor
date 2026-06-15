@@ -1,69 +1,58 @@
-﻿@page "/patients"
+@page "/patients"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Patients.Models
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
 @inject DMRS.Client.Services.OrganizationContextService OrgContextService
 
 <PageTitle>Patients</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Patients</h1>
-    <NavLink class="btn btn-primary" href="/patients/new">New Patient</NavLink>
-</div>
-
-<PatientSearchForm SearchParam="@searchParam" SearchValue="@searchValue" IsBusy="@isBusy" OnSearch="RunSearch" />
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<PatientsTable Patients="@patients" />
+<ResourceIndexPage TSummary="PatientSummaryViewModel"
+                   Title="Patients"
+                   NewLink="/patients/new"
+                   NewLabel="New Patient"
+                   EntityName="patients"
+                   EmptyText="No patients found."
+                   SearchFields="_searchFields"
+                   LoadDefault="LoadPatients"
+                   Search="(p, v) => PatientService.SearchAsync(p, v)">
+    <HeaderTemplate>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Identifier</th>
+        <th>Gender</th>
+        <th>Birth Date</th>
+        <th></th>
+    </HeaderTemplate>
+    <RowTemplate Context="patient">
+        <td>@patient.Id</td>
+        <td>@patient.DisplayName</td>
+        <td>@patient.Identifier</td>
+        <td>@patient.Gender</td>
+        <td>@patient.BirthDate</td>
+        <td class="text-nowrap">
+            <NavLink class="btn btn-sm btn-outline-primary me-1" href="@($"/patients/{patient.Id}")">Details</NavLink>
+            <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/patients/{patient.Id}/edit")">Edit</NavLink>
+            <NavLink class="btn btn-sm btn-outline-info" href="@($"/patients/{patient.Id}/history")">History</NavLink>
+        </td>
+    </RowTemplate>
+</ResourceIndexPage>
 
 @code {
-    private string searchParam = "family";
-    private string searchValue = string.Empty;
-    private bool isBusy;
-    private string? errorMessage;
-    private IReadOnlyList<PatientSummaryViewModel> patients = [];
+    private static readonly IReadOnlyList<SearchField> _searchFields =
+    [
+        new("family", "Family Name", "e.g. Smith"),
+        new("given", "Given Name", "e.g. John"),
+        new("identifier", "Identifier", "e.g. 12345"),
+        new("organization", "Organization", "e.g. 7 (organization id)"),
+    ];
 
-    protected override async Task OnInitializedAsync()
+    // Default view is scoped to the practitioner/admin's organization when there is one; a system
+    // admin with no org context sees the most-recent patients across everything they may read.
+    private async Task<IReadOnlyList<PatientSummaryViewModel>> LoadPatients(int cap)
     {
         var orgId = await OrgContextService.GetPrimaryOrganizationIdAsync();
-        if (!string.IsNullOrWhiteSpace(orgId))
-        {
-            searchParam = "organization";
-            searchValue = $"Organization/{orgId}";
-        }
-
-        await RunSearch((searchParam, searchValue));
-    }
-
-    private async Task RunSearch((string SearchParam, string SearchValue) criteria)
-    {
-        searchParam = criteria.SearchParam;
-        searchValue = criteria.SearchValue;
-        errorMessage = null;
-        isBusy = true;
-
-        if (string.IsNullOrWhiteSpace(searchValue))
-        {
-            isBusy = false;
-            patients = [];
-            return;
-        }
-
-        try
-        {
-            patients = await PatientService.SearchAsync(searchParam, searchValue);
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Failed to load patients: {ex.Message}";
-            patients = [];
-        }
-        finally
-        {
-            isBusy = false;
-        }
+        return string.IsNullOrWhiteSpace(orgId)
+            ? await PatientService.ListAsync(cap)
+            : await PatientService.ListAsync(cap, new() { ["organization"] = $"Organization/{orgId}" });
     }
 }

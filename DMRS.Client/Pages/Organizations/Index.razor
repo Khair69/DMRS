@@ -1,61 +1,47 @@
 @page "/organizations"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN")]
+@using DMRS.Client.Features.Organizations.Models
 @inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
 
 <PageTitle>Organizations</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Organizations</h1>
-    <NavLink class="btn btn-primary" href="/organizations/new">New Organization</NavLink>
-</div>
-
-<OrganizationSearchForm SearchParam="@searchParam" SearchValue="@searchValue" IsBusy="@isBusy" OnSearch="RunSearch" />
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<OrganizationsTable Organizations="@organizations" />
+<ResourceIndexPage TSummary="OrganizationSummaryViewModel"
+                   Title="Organizations"
+                   NewLink="/organizations/new"
+                   NewLabel="New Organization"
+                   EntityName="organizations"
+                   EmptyText="No organizations found."
+                   SearchFields="_searchFields"
+                   LoadDefault="cap => OrganizationService.ListAsync(cap)"
+                   Search="(p, v) => OrganizationService.SearchAsync(p, v)">
+    <HeaderTemplate>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Active</th>
+        <th>Identifier</th>
+        <th>Email</th>
+        <th></th>
+    </HeaderTemplate>
+    <RowTemplate Context="organization">
+        <td>@organization.Id</td>
+        <td>@organization.Name</td>
+        <td>@organization.Active</td>
+        <td>@organization.Identifier</td>
+        <td>@organization.Email</td>
+        <td class="text-nowrap">
+            <NavLink class="btn btn-sm btn-outline-primary me-1" href="@($"/organizations/{organization.Id}")">Details</NavLink>
+            <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/organizations/{organization.Id}/edit")">Edit</NavLink>
+            <NavLink class="btn btn-sm btn-outline-info" href="@($"/organizations/{organization.Id}/history")">History</NavLink>
+        </td>
+    </RowTemplate>
+</ResourceIndexPage>
 
 @code {
-    private string searchParam = "name";
-    private string searchValue = string.Empty;
-    private bool isBusy;
-    private string? errorMessage;
-    private IReadOnlyList<OrganizationSummaryViewModel> organizations = [];
-
-    protected override async Task OnInitializedAsync()
-    {
-        await RunSearch((searchParam, ""));
-    }
-
-    private async Task RunSearch((string SearchParam, string SearchValue) criteria)
-    {
-        searchParam = criteria.SearchParam;
-        searchValue = criteria.SearchValue;
-        errorMessage = null;
-        isBusy = true;
-
-        if (string.IsNullOrWhiteSpace(searchValue))
-        {
-            isBusy = false;
-            organizations = [];
-            return;
-        }
-
-        try
-        {
-            organizations = await OrganizationService.SearchAsync(searchParam, searchValue);
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Failed to load organizations: {ex.Message}";
-            organizations = [];
-        }
-        finally
-        {
-            isBusy = false;
-        }
-    }
+    private static readonly IReadOnlyList<SearchField> _searchFields =
+    [
+        new("name", "Name", "e.g. General Hospital"),
+        new("identifier", "Identifier", "e.g. 12345"),
+        new("email", "Email", "e.g. contact@hospital.org"),
+        new("phone", "Phone", "e.g. 555-1234"),
+    ];
 }
