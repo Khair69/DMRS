@@ -78,8 +78,37 @@ textarea {
     border: 1px solid var(--dmrs-border);
     border-radius: var(--dmrs-radius-md);
     color: var(--dmrs-text);
-    background: #fff;
+    background-color: #fff;
+    background-repeat: no-repeat;
     transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+/* ---------- Error / invalid state ---------- */
+/* Drop PatternFly's tiled error icon; use a clean red border like
+   the DMRS app's .invalid style. */
+.pf-c-form-control.pf-m-error,
+input.pf-m-error,
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+    border-color: #dc2626;
+    background-image: none;
+}
+
+.pf-c-form-control.pf-m-error:focus,
+input.pf-m-error:focus,
+input[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem rgba(220, 38, 38, 0.22);
+}
+
+.pf-c-form__helper-text.pf-m-error,
+.kc-feedback-text,
+#input-error,
+.input-error {
+    color: #dc2626;
 }
 
 .pf-c-form-control:focus,
