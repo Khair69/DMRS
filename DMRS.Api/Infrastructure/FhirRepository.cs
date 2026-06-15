@@ -16,6 +16,27 @@ namespace DMRS.Api.Infrastructure
         private readonly FhirJsonSerializer _serializer;
         private readonly FhirJsonDeserializer _deserializer;
         private readonly ILogger<FhirRepository> _logger;
+
+        // FHIR "string"-type search params (names, addresses) match on a case-insensitive substring,
+        // so typing "a" finds every value containing "a". Token/reference/date params (gender,
+        // identifier, organization, birthdate, …) are NOT listed here and keep exact matching, where a
+        // partial match would be wrong. Index values are stored lowercased and the query value is
+        // lowercased too, so the Contains comparison is case-insensitive even on PostgreSQL.
+        private static readonly HashSet<string> PartialMatchParams = new(StringComparer.Ordinal)
+        {
+            "name", "family", "given",
+            "address", "address-city", "address-state", "address-country", "address-postalcode",
+        };
+
+        // Applies one search param to the index query: substring match for string-type params,
+        // exact match for everything else. Shared by SearchAsync and SearchCountAsync so both agree.
+        private static IQueryable<ResourceIndex> ApplyParamFilter(IQueryable<ResourceIndex> query, string key, string value)
+        {
+            return PartialMatchParams.Contains(key)
+                ? query.Where(x => x.SearchParamCode == key && x.Value.Contains(value))
+                : query.Where(x => x.SearchParamCode == key && x.Value == value);
+        }
+
         public FhirRepository(AppDbContext context, FhirJsonSerializer serializer, FhirJsonDeserializer deserializer, ILogger<FhirRepository> logger)
         {
             _context = context;
@@ -152,9 +173,7 @@ namespace DMRS.Api.Infrastructure
                     if (key.StartsWith("_"))
                         continue;
 
-                    indexQuery = indexQuery.Where(x =>
-                        x.SearchParamCode == key &&
-                        x.Value == value);
+                    indexQuery = ApplyParamFilter(indexQuery, key, value);
                 }
 
                 var matchedIds = await indexQuery
@@ -191,6 +210,32 @@ namespace DMRS.Api.Infrastructure
             }
 
             return result;
+        }
+
+        public async Task<List<string>> SuggestValuesAsync<T>(string searchParamCode, string prefix, int limit, IReadOnlyCollection<string>? restrictToIds)
+            where T : Resource
+        {
+            var typeName = typeof(T).Name;
+            var code = searchParamCode.ToLowerInvariant();
+            var value = prefix.ToLowerInvariant();
+
+            var query = _context.ResourceIndices
+                .Where(x => x.ResourceType == typeName && x.SearchParamCode == code && x.Value.Contains(value));
+
+            // null = unrestricted (system caller). A non-null set is the exact whitelist of resource ids
+            // the caller may read — an empty set yields no suggestions. Mirrors ResolveAccessiblePatientIdsAsync.
+            if (restrictToIds is not null)
+            {
+                var ids = restrictToIds.ToList();
+                query = query.Where(x => ids.Contains(x.ResourceId));
+            }
+
+            return await query
+                .Select(x => x.Value)
+                .Distinct()
+                .OrderBy(v => v)
+                .Take(limit)
+                .ToListAsync();
         }
 
         // Reads the FHIR _count control parameter (case-insensitive); returns null when absent/invalid.
@@ -330,9 +375,7 @@ namespace DMRS.Api.Infrastructure
                 if (key.StartsWith("_"))
                     continue;
 
-                query = query.Where(x =>
-                    x.SearchParamCode == key &&
-                    x.Value == value);
+                query = ApplyParamFilter(query, key, value);
             }
 
             var matchedIds = await query

@@ -16,6 +16,10 @@ public class PatientFeatureService : FhirFeatureServiceBase<Patient, PatientEdit
     protected override Patient ToResource(PatientEditModel model)
         => model.ToFhirPatient();
 
+    // Type-ahead suggestions for the Patients search box, scoped server-side to readable patients.
+    public Task<IReadOnlyList<string>> SuggestAsync(string field, string value)
+        => _fhirApiService.SuggestAsync<Patient>(field, value);
+
     protected override PatientSummaryViewModel MapToSummary(Patient patient)
     {
         var name = patient.Name.FirstOrDefault();

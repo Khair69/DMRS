@@ -14,7 +14,8 @@
                    EmptyText="No patients found."
                    SearchFields="_searchFields"
                    LoadDefault="LoadPatients"
-                   Search="(p, v) => PatientService.SearchAsync(p, v)">
+                   Search="(p, v) => PatientService.SearchAsync(p, v)"
+                   Suggest="(p, v) => PatientService.SuggestAsync(p, v)">
     <HeaderTemplate>
         <th>ID</th>
         <th>Name</th>

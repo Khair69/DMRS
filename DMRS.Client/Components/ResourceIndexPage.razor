@@ -29,7 +29,22 @@
                     </div>
                     <div class="col-md-7">
                         <label class="form-label">Search Value</label>
-                        <InputText @bind-Value="_searchValue" class="form-control" placeholder="@CurrentPlaceholder" />
+                        @if (Suggest is not null)
+                        {
+                            @* Type-ahead: a native datalist fed by debounced suggestion fetches. *@
+                            <input class="form-control" placeholder="@CurrentPlaceholder" autocomplete="off"
+                                   list="@_suggestListId" value="@_searchValue" @oninput="OnSearchValueInput" />
+                            <datalist id="@_suggestListId">
+                                @foreach (var suggestion in _suggestions)
+                                {
+                                    <option value="@suggestion" />
+                                }
+                            </datalist>
+                        }
+                        else
+                        {
+                            <InputText @bind-Value="_searchValue" class="form-control" placeholder="@CurrentPlaceholder" />
+                        }
                     </div>
                     <div class="col-md-2 d-grid">
                         <button class="btn btn-primary" disabled="@_isBusy" type="submit">Search</button>
@@ -95,6 +110,10 @@ else
     // Filtered search by (searchParam, value). Optional — omit to render a list without a search form.
     [Parameter] public Func<string, string, Task<IReadOnlyList<TSummary>>>? Search { get; set; }
 
+    // Type-ahead suggestions by (searchParam, partialValue). Optional — supply to enable autocomplete
+    // on the search value field.
+    [Parameter] public Func<string, string, Task<IReadOnlyList<string>>>? Suggest { get; set; }
+
     [Parameter, EditorRequired] public RenderFragment HeaderTemplate { get; set; } = default!;
     [Parameter, EditorRequired] public RenderFragment<TSummary> RowTemplate { get; set; } = default!;
 
@@ -103,6 +122,9 @@ else
 
     private string _searchParam = string.Empty;
     private string _searchValue = string.Empty;
+    private readonly string _suggestListId = $"suggest-{Guid.NewGuid():N}";
+    private IReadOnlyList<string> _suggestions = [];
+    private CancellationTokenSource? _suggestCts;
     private bool _isBusy;
     private bool _isDefaultView = true;
     private bool _capped;
@@ -169,6 +191,50 @@ else
         finally
         {
             _isBusy = false;
+        }
+    }
+
+    private async Task OnSearchValueInput(ChangeEventArgs e)
+    {
+        _searchValue = e.Value?.ToString() ?? string.Empty;
+
+        if (Suggest is null)
+        {
+            return;
+        }
+
+        // Cancel any in-flight suggestion fetch, then debounce so we issue at most one request per
+        // ~250ms of typing rather than one per keystroke (the browser per-host connection cap bites
+        // hardest with rapid-fire requests).
+        _suggestCts?.Cancel();
+
+        var term = _searchValue.Trim();
+        if (term.Length == 0)
+        {
+            _suggestions = [];
+            return;
+        }
+
+        var cts = new CancellationTokenSource();
+        _suggestCts = cts;
+        try
+        {
+            await Task.Delay(250, cts.Token);
+            var results = await Suggest(_searchParam, term);
+            if (!cts.IsCancellationRequested)
+            {
+                _suggestions = results;
+                StateHasChanged();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer keystroke — ignore.
+        }
+        catch
+        {
+            // Autocomplete is best-effort; a failed suggestion fetch must not disrupt searching.
+            _suggestions = [];
         }
     }
 }

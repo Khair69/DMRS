@@ -21,6 +21,14 @@ namespace DMRS.Api.Domain.Interfaces
         Task<int> SearchCountAsync<T>(Dictionary<string, string> queryParams) where T : Resource;
 
         /// <summary>
+        /// Returns up to <paramref name="limit"/> distinct index values of the given type whose value
+        /// contains <paramref name="prefix"/> (case-insensitive), for type-ahead autocomplete. No
+        /// resources are deserialized. <paramref name="restrictToIds"/> scopes the suggestions to a set
+        /// of resource ids the caller may read; pass <c>null</c> for an unrestricted (system) caller.
+        /// </summary>
+        Task<List<string>> SuggestValuesAsync<T>(string searchParamCode, string prefix, int limit, IReadOnlyCollection<string>? restrictToIds) where T : Resource;
+
+        /// <summary>
         /// Returns the number of non-deleted resources of a given type with a single SQL COUNT —
         /// no resources are loaded or deserialized. Used by dashboard/analytics tiles that only
         /// need a total, not the resources themselves.

@@ -122,6 +122,26 @@ public class FhirApiService
             .ToList();
     }
 
+    // Type-ahead suggestions for a string-type search field (e.g. patient family/given name). Hits the
+    // resource's "_suggest" endpoint, which returns a plain JSON string array (not a FHIR bundle).
+    public async Task<IReadOnlyList<string>> SuggestAsync<T>(string field, string value) where T : Resource
+    {
+        var resourceType = typeof(T).Name;
+        var path = QueryHelpers.AddQueryString(
+            $"fhir/{resourceType}/_suggest",
+            new Dictionary<string, string?> { ["field"] = field, ["value"] = value });
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, path);
+        request.Headers.Accept.Clear();
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await _httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+            return [];
+
+        return await response.Content.ReadFromJsonAsync<List<string>>() ?? [];
+    }
+
     public async Task<IReadOnlyList<T>> SearchResourcesAsync<T>(Dictionary<string, string>? queryParams = null) where T : Resource
     {
         var resourceType = typeof(T).Name;
