@@ -98,6 +98,9 @@ public sealed class StaffDirectoryController : ControllerBase
         var roleCode = coding?.Code ?? "UNKNOWN";
         var roleDisplay = coding?.Display ?? role.Code.FirstOrDefault()?.Text ?? roleCode;
 
+        var specialtyCoding = role.Specialty.SelectMany(s => s.Coding).FirstOrDefault();
+        var specialty = specialtyCoding?.Display ?? role.Specialty.FirstOrDefault()?.Text;
+
         // A linked Keycloak account is recorded as an identifier whose system ends with "/users".
         var hasLoginAccount = practitioner.Identifier?.Any(i =>
             !string.IsNullOrWhiteSpace(i.System)
@@ -113,6 +116,7 @@ public sealed class StaffDirectoryController : ControllerBase
             Active = practitioner.Active ?? false,
             RoleCode = roleCode,
             RoleDisplay = roleDisplay,
+            Specialty = specialty,
             HasLoginAccount = hasLoginAccount
         };
     }
@@ -140,6 +144,7 @@ public sealed class StaffDirectoryController : ControllerBase
         public bool Active { get; set; }
         public string RoleCode { get; set; } = string.Empty;
         public string RoleDisplay { get; set; } = string.Empty;
+        public string? Specialty { get; set; }
         public bool HasLoginAccount { get; set; }
     }
 }

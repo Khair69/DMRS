@@ -31,6 +31,7 @@ public sealed class StaffFeatureService
                 d.Active,
                 d.RoleCode,
                 d.RoleDisplay,
+                d.Specialty,
                 d.HasLoginAccount))
             .Where(summary => MatchesSummaryRoleFilter(summary, roleCodeFilter) && MatchesTextFilter(summary, textFilter))
             .OrderBy(s => s.DisplayName, StringComparer.OrdinalIgnoreCase)
@@ -176,6 +177,7 @@ internal sealed class StaffSummaryApiModel
     public bool Active { get; set; }
     public string RoleCode { get; set; } = string.Empty;
     public string RoleDisplay { get; set; } = string.Empty;
+    public string? Specialty { get; set; }
     public bool HasLoginAccount { get; set; }
 }
 

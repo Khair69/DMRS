@@ -11,7 +11,7 @@ else
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Email</th>
+                    <th>Specialty</th>
                     <th>Phone</th>
                     <th>Role</th>
                     <th>Active</th>
@@ -24,7 +24,7 @@ else
                 {
                     <tr>
                         <td>@staff.DisplayName</td>
-                        <td>@staff.Email</td>
+                        <td>@(string.IsNullOrWhiteSpace(staff.Specialty) ? "—" : staff.Specialty)</td>
                         <td>@staff.Phone</td>
                         <td>
                             <span class="badge @(staff.RoleCode == StaffRoleCodes.OrganizationAdmin ? "bg-warning text-dark" : "bg-primary")">

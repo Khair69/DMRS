@@ -9,4 +9,5 @@ public sealed record StaffSummaryViewModel(
     bool Active,
     string RoleCode,
     string RoleDisplay,
+    string? Specialty,
     bool HasLoginAccount);
