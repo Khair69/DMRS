@@ -371,21 +371,36 @@ That means:
 
 This is enough for the current max-dose testing flow, but it is still a first version.
 
-## 12. Authentication and authorization gotcha
+## 12. Authentication and authorization
 
-This is the most important operational detail for testing.
+CDS administration and the CDS runtime use two different policies on purpose.
 
-All CDS endpoints use the `FhirScope` policy, and that policy checks scopes using the controller name.
+### Admin endpoints — `CdsAdmin` policy (role-based)
 
-That means the new CDS controllers may require scopes like:
+`CdsRulesController` (`/cds/rules`) and `CdsMedicineKnowledgeController` (`/cds/medications`)
+are administrative. They use the `CdsAdmin` policy, which requires one of:
 
-- `user/cdsmedicineknowledge.read`
-- `user/cdsmedicineknowledge.write`
-- `user/cdsrules.read`
-- `user/cdsrules.write`
-- `user/cdshooks.write`
+- `ROLE_SYSTEM_ADMIN`
+- `ROLE_ORG_ADMIN`
 
-This is why a token that works for the FHIR resource endpoints may still fail with `403` on the CDS endpoints.
+These are CDS-administration records, not FHIR resources, so they are intentionally **not**
+routed through `FhirScope`. `FhirScope` keys off the controller name as if it were a FHIR
+resource type and then runs an org-ownership gate against the FHIR index. CDS rules live in
+their own table, so that gate found no ownership and returned `403` to legitimate admins on
+instance operations (`GET/PUT/PATCH /cds/rules/{id}`). The role-based `CdsAdmin` policy fixes
+that and matches the client, where `/cds/admin` is gated to the same two roles.
+
+### Runtime / read endpoints — `FhirScope` policy
+
+The CDS Hooks runtime and the read-only feeds keep `FhirScope`:
+
+- `CdsHooksController` (`/cds-services`, `POST /cds-services/{id}`)
+- `CdsRiskInsightsController` (`/cds/risk/...`)
+- `CdsAlertFeedController` (`/cds/alerts`)
+
+These are reached by any authenticated staff caller (and are patient-scoped where relevant),
+so a clinician can trigger CDS at prescribe time without holding an admin role. Their routes use
+`{patientId}` / no `{id}` / `POST`, so they never hit the org-ownership instance gate.
 
 Relevant code:
 

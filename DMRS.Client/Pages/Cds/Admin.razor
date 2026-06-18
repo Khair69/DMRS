@@ -1,19 +1,20 @@
 @page "/cds/admin"
-@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN")]
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @implements IDisposable
 @using System.Text.Json
 @using DMRS.Client.Features.Cds.Models
 @inject DMRS.Client.Features.Cds.Services.CdsAdminFeatureService CdsService
 
-<PageTitle>CDS Admin</PageTitle>
+<PageTitle>@Loc["cds.title"]</PageTitle>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
-        <h1 class="mb-1">CDS Admin</h1>
-        <p class="text-body-secondary mb-0">Author, inspect, test, and manage medication CDS rules from one admin console.</p>
+        <h1 class="mb-1">@Loc["cds.title"]</h1>
+        <p class="text-body-secondary mb-0">@Loc["cds.subtitle"]</p>
     </div>
     <button class="btn btn-outline-primary" @onclick="LoadAllAsync" disabled="@isLoading">
-        @(isLoading ? "Refreshing..." : "Refresh Console")
+        @(isLoading ? Loc["common.refreshing"] : Loc["cds.refreshConsole"])
     </button>
 </div>
 
@@ -26,13 +27,13 @@
     <div class="col-12 col-xl-4">
         <div class="card shadow-sm border-0 cds-admin-card">
             <div class="card-header bg-white border-0 pb-0">
-                <h2 class="h5 mb-1">Template Builder</h2>
-                <p class="text-body-secondary mb-0">Start from a supported medication rule template and load it into the editor.</p>
+                <h2 class="h5 mb-1">@Loc["cds.builder.title"]</h2>
+                <p class="text-body-secondary mb-0">@Loc["cds.builder.subtitle"]</p>
             </div>
             <div class="card-body">
                 <EditForm Model="templateModel" OnSubmit="CompileTemplateAsync">
                     <div class="mb-3">
-                        <label class="form-label">Template</label>
+                        <label class="form-label">@Loc["cds.builder.template"]</label>
                         <InputSelect @bind-Value="templateModel.TemplateId" class="form-select" @onchange="OnTemplateChanged">
                             @foreach (var template in templates)
                             {
@@ -42,19 +43,19 @@
                     </div>
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label">Rule Name</label>
+                            <label class="form-label">@Loc["cds.builder.ruleName"]</label>
                             <InputText @bind-Value="templateModel.Name" class="form-control" />
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Description</label>
+                            <label class="form-label">@Loc["common.field.description"]</label>
                             <InputTextArea @bind-Value="templateModel.Description" class="form-control" rows="2" />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Priority</label>
+                            <label class="form-label">@Loc["cds.builder.priority"]</label>
                             <InputNumber @bind-Value="templateModel.Priority" class="form-control" />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Indicator</label>
+                            <label class="form-label">@Loc["cds.builder.indicator"]</label>
                             <InputSelect @bind-Value="templateModel.Indicator" class="form-select">
                                 <option value="info">info</option>
                                 <option value="warning">warning</option>
@@ -62,34 +63,34 @@
                             </InputSelect>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Source Label</label>
+                            <label class="form-label">@Loc["cds.builder.sourceLabel"]</label>
                             <InputText @bind-Value="templateModel.SourceLabel" class="form-control" />
                         </div>
                         @if (NeedsMedicationRxCui)
                         {
                             <div class="col-12">
-                                <label class="form-label">Medication RxCUI</label>
+                                <label class="form-label">@Loc["medications.form.rxcui"]</label>
                                 <InputText @bind-Value="templateModel.MedicationRxCui" class="form-control" />
                             </div>
                         }
                         @if (NeedsPregnancyCategory)
                         {
                             <div class="col-12">
-                                <label class="form-label">Pregnancy Category</label>
+                                <label class="form-label">@Loc["cds.builder.pregnancyCategory"]</label>
                                 <InputText @bind-Value="templateModel.PregnancyCategory" class="form-control" />
                             </div>
                         }
                         @if (NeedsIndicationCode)
                         {
                             <div class="col-12">
-                                <label class="form-label">Indication Code</label>
+                                <label class="form-label">@Loc["cds.builder.indicationCode"]</label>
                                 <InputText @bind-Value="templateModel.IndicationCode" class="form-control" />
                             </div>
                         }
                     </div>
                     <div class="d-flex gap-2 mt-4">
-                        <button class="btn btn-primary" type="submit" disabled="@isCompiling">Compile</button>
-                        <button class="btn btn-outline-success" type="button" @onclick="CreateFromTemplateAsync" disabled="@isSaving">Save From Template</button>
+                        <button class="btn btn-primary" type="submit" disabled="@isCompiling">@Loc["cds.builder.compile"]</button>
+                        <button class="btn btn-outline-success" type="button" @onclick="CreateFromTemplateAsync" disabled="@isSaving">@Loc["cds.builder.saveFromTemplate"]</button>
                     </div>
                 </EditForm>
 
@@ -107,12 +108,12 @@
 
         <div class="card shadow-sm border-0 cds-admin-card mt-4">
             <div class="card-header bg-white border-0 pb-0">
-                <h2 class="h5 mb-1">Variables and Templates</h2>
-                <p class="text-body-secondary mb-0">Reference the supported CDS inputs and starter templates.</p>
+                <h2 class="h5 mb-1">@Loc["cds.varTemplates.title"]</h2>
+                <p class="text-body-secondary mb-0">@Loc["cds.varTemplates.subtitle"]</p>
             </div>
             <div class="card-body">
                 <div class="mb-4">
-                    <div class="fw-semibold mb-2">Templates</div>
+                    <div class="fw-semibold mb-2">@Loc["cds.varTemplates.templates"]</div>
                     <div class="cds-scroll-panel-sm">
                         @foreach (var template in templates)
                         {
@@ -124,7 +125,7 @@
                     </div>
                 </div>
                 <div>
-                    <div class="fw-semibold mb-2">Variables</div>
+                    <div class="fw-semibold mb-2">@Loc["cds.varTemplates.variables"]</div>
                     <div class="cds-scroll-panel-sm">
                         @foreach (var variable in variables)
                         {
@@ -140,20 +141,20 @@
 
         <div class="card shadow-sm border-0 cds-admin-card mt-4">
             <div class="card-header bg-white border-0 pb-0">
-                <h2 class="h5 mb-1">Medicine Knowledge</h2>
-                <p class="text-body-secondary mb-0">Browse the normalized medicine knowledge now available to CDS.</p>
+                <h2 class="h5 mb-1">@Loc["cds.medKnowledge.title"]</h2>
+                <p class="text-body-secondary mb-0">@Loc["cds.medKnowledge.subtitle"]</p>
             </div>
             <div class="card-body">
                 <EditForm Model="this" OnSubmit="SearchMedicinesAsync">
                     <div class="input-group mb-3">
-                        <InputText @bind-Value="medicineSearch" class="form-control" placeholder="Search by name or RxCUI" />
-                        <button class="btn btn-outline-primary" type="submit" disabled="@isSearchingMedicines">Search</button>
+                        <InputText @bind-Value="medicineSearch" class="form-control" placeholder="@Loc["cds.medKnowledge.searchPlaceholder"]" />
+                        <button class="btn btn-outline-primary" type="submit" disabled="@isSearchingMedicines">@Loc["common.search"]</button>
                     </div>
                 </EditForm>
 
                 @if (medicineResults.Count == 0)
                 {
-                    <div class="alert alert-secondary mb-0">No medicine results loaded.</div>
+                    <div class="alert alert-secondary mb-0">@Loc["cds.medKnowledge.noResults"]</div>
                 }
                 else
                 {
@@ -168,14 +169,14 @@
                                     </div>
                                     @if (medicine.IsControlled == true)
                                     {
-                                        <span class="badge text-bg-warning">Controlled</span>
+                                        <span class="badge text-bg-warning">@Loc["cds.medKnowledge.controlled"]</span>
                                     }
                                 </div>
                                 <div class="small mt-2">
-                                    Max daily: @DisplayDose(medicine.MaxDailyMg) | Pregnancy: @(medicine.PregnancyCategory ?? "n/a")
+                                    @Loc["cds.medKnowledge.maxDaily"] @DisplayDose(medicine.MaxDailyMg) | @Loc["cds.medKnowledge.pregnancy"] @(medicine.PregnancyCategory ?? Loc["common.notAvailable"])
                                 </div>
                                 <div class="small text-body-secondary mt-1">
-                                    Ingredients: @string.Join(", ", medicine.Ingredients.Select(i => i.Name))
+                                    @Loc["cds.medKnowledge.ingredients"] @string.Join(", ", medicine.Ingredients.Select(i => i.Name))
                                 </div>
                             </div>
                         }
@@ -190,77 +191,77 @@
             <div class="card-header bg-white border-0 pb-0">
                 <div class="d-flex justify-content-between align-items-start gap-3">
                     <div>
-                        <h2 class="h5 mb-1">Rule Workspace</h2>
-                        <p class="text-body-secondary mb-0">Edit draft rules, validate them, preview them, and publish only when ready.</p>
+                        <h2 class="h5 mb-1">@Loc["cds.workspace.title"]</h2>
+                        <p class="text-body-secondary mb-0">@Loc["cds.workspace.subtitle"]</p>
                     </div>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="StartNewRule">New Raw Rule</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="StartNewRule">@Loc["cds.workspace.newRaw"]</button>
                 </div>
             </div>
             <div class="card-body">
                 @if (editableRule is null)
                 {
-                    <div class="alert alert-secondary mb-0">Select a stored rule or compile a template to start editing.</div>
+                    <div class="alert alert-secondary mb-0">@Loc["cds.workspace.selectPrompt"]</div>
                 }
                 else
                 {
                     <div class="d-flex flex-wrap gap-2 mb-3">
-                        <span class="badge text-bg-light border">Status: @editableRule.Status</span>
+                        <span class="badge text-bg-light border">@Loc["cds.workspace.statusBadge", editableRule.Status]</span>
                         @if (editableRule.PublishedVersionNumber is not null)
                         {
-                            <span class="badge text-bg-light border">Published v@editableRule.PublishedVersionNumber</span>
+                            <span class="badge text-bg-light border">@Loc["cds.workspace.publishedVersion", editableRule.PublishedVersionNumber]</span>
                         }
                         @if (editableRule.HasUnpublishedChanges)
                         {
-                            <span class="badge text-bg-warning">Draft Changes Pending</span>
+                            <span class="badge text-bg-warning">@Loc["cds.workspace.draftPending"]</span>
                         }
                         @if (editableRule.IsActive)
                         {
-                            <span class="badge text-bg-success">Live</span>
+                            <span class="badge text-bg-success">@Loc["cds.workspace.live"]</span>
                         }
                         else if (editableRule.PublishedVersionId is not null && editableRule.Status == "Published")
                         {
-                            <span class="badge text-bg-secondary">Published but Off</span>
+                            <span class="badge text-bg-secondary">@Loc["cds.workspace.publishedOff"]</span>
                         }
                     </div>
                     <EditForm Model="editableRule" OnSubmit="SaveEditableRuleAsync">
                         <div class="row g-3">
                             <div class="col-md-7">
-                                <label class="form-label">Rule Name</label>
+                                <label class="form-label">@Loc["cds.builder.ruleName"]</label>
                                 <InputText @bind-Value="editableRule.Name" class="form-control" />
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Hook</label>
+                                <label class="form-label">@Loc["cds.workspace.hook"]</label>
                                 <InputText @bind-Value="editableRule.HookId" class="form-control" />
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Priority</label>
+                                <label class="form-label">@Loc["cds.builder.priority"]</label>
                                 <InputNumber @bind-Value="editableRule.Priority" class="form-control" />
                             </div>
                             <div class="col-12">
-                                <label class="form-label">Description</label>
+                                <label class="form-label">@Loc["common.field.description"]</label>
                                 <InputTextArea @bind-Value="editableRule.Description" class="form-control" rows="2" />
                             </div>
                             <div class="col-12">
-                                <label class="form-label">Expression JSON</label>
+                                <label class="form-label">@Loc["cds.workspace.expressionJson"]</label>
                                 <InputTextArea @bind-Value="editableRule.ExpressionJson" class="form-control font-monospace" rows="8"
                                               @oninput="OnExpressionJsonInput" />
                             </div>
                             <div class="col-12">
-                                <label class="form-label">Card Template JSON</label>
+                                <label class="form-label">@Loc["cds.workspace.cardTemplateJson"]</label>
                                 <InputTextArea @bind-Value="editableRule.CardTemplateJson" class="form-control font-monospace" rows="8"
                                               @oninput="OnCardTemplateJsonInput" />
                             </div>
                         </div>
                         <div class="d-flex flex-wrap gap-2 mt-4">
-                            <button class="btn btn-primary" type="submit" disabled="@isSaving">Save Draft</button>
-                            <button class="btn btn-outline-dark" type="button" @onclick="PublishEditableRuleAsync" disabled="@(!CanPublishEditableRule || isPublishing)">Publish</button>
-                            <button class="btn btn-outline-primary" type="button" @onclick="ValidateEditableRuleAsync" disabled="@isValidating">Validate</button>
-                            <button class="btn btn-outline-success" type="button" @onclick="PreviewEditableRuleAsync" disabled="@isPreviewing">Preview</button>
+                            <button class="btn btn-primary" type="submit" disabled="@isSaving">@Loc["cds.workspace.saveDraft"]</button>
+                            <button class="btn btn-outline-dark" type="button" @onclick="PublishEditableRuleAsync" disabled="@(!CanPublishEditableRule || isPublishing)">@Loc["cds.workspace.publish"]</button>
+                            <button class="btn btn-outline-primary" type="button" @onclick="ValidateEditableRuleAsync" disabled="@isValidating">@Loc["cds.workspace.validate"]</button>
+                            <button class="btn btn-outline-success" type="button" @onclick="PreviewEditableRuleAsync" disabled="@isPreviewing">@Loc["cds.workspace.preview"]</button>
                             <button class="btn btn-outline-warning" type="button" @onclick="ToggleEditableRuleAsync" disabled="@(!CanToggleEditableRule || isToggling)">
-                                @(editableRule.IsActive ? "Deactivate" : "Activate")
+                                @(editableRule.IsActive ? Loc["cds.workspace.deactivate"] : Loc["cds.workspace.activate"])
                             </button>
-                            <button class="btn btn-outline-secondary" type="button" @onclick="CloneEditableRuleAsync" disabled="@(!CanCloneEditableRule || isCloning)">Clone</button>
-                            <button class="btn btn-outline-danger" type="button" @onclick="ArchiveEditableRuleAsync" disabled="@(!CanArchiveEditableRule || isArchiving)">Archive</button>
+                            <button class="btn btn-outline-secondary" type="button" @onclick="CloneEditableRuleAsync" disabled="@(!CanCloneEditableRule || isCloning)">@Loc["cds.workspace.clone"]</button>
+                            <button class="btn btn-outline-danger" type="button" @onclick="ArchiveEditableRuleAsync" disabled="@(!CanArchiveEditableRule || isArchiving)">@Loc["cds.workspace.archive"]</button>
                         </div>
                     </EditForm>
 
@@ -269,7 +270,7 @@
                         <div class="alert @(validationResult.IsValid ? "alert-success" : "alert-danger") mt-3 mb-0">
                             @if (validationResult.IsValid)
                             {
-                                <div>Rule validation passed.</div>
+                                <div>@Loc["cds.workspace.validationPassed"]</div>
                             }
                             else
                             {
@@ -286,23 +287,23 @@
 
         <div class="card shadow-sm border-0 cds-admin-card mb-4">
             <div class="card-header bg-white border-0 pb-0">
-                <h2 class="h5 mb-1">Preview Payload</h2>
-                <p class="text-body-secondary mb-0">Edit the sample hook payload directly before previewing a rule.</p>
+                <h2 class="h5 mb-1">@Loc["cds.payload.title"]</h2>
+                <p class="text-body-secondary mb-0">@Loc["cds.payload.subtitle"]</p>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-12">
-                        <label class="form-label">Preview Context JSON</label>
+                        <label class="form-label">@Loc["cds.payload.contextJson"]</label>
                         <InputTextArea @bind-Value="previewContextJson" class="form-control font-monospace" rows="12" />
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Preview Prefetch JSON</label>
+                        <label class="form-label">@Loc["cds.payload.prefetchJson"]</label>
                         <InputTextArea @bind-Value="previewPrefetchJson" class="form-control font-monospace" rows="5" />
                     </div>
                 </div>
                 <div class="d-flex gap-2 mt-4">
-                    <button class="btn btn-outline-secondary" type="button" @onclick="ResetPreviewPayload">Reset Sample Payload</button>
-                    <button class="btn btn-outline-success" type="button" @onclick="PreviewEditableRuleAsync" disabled="@(editableRule is null || isPreviewing)">Preview Current Rule</button>
+                    <button class="btn btn-outline-secondary" type="button" @onclick="ResetPreviewPayload">@Loc["cds.payload.resetSample"]</button>
+                    <button class="btn btn-outline-success" type="button" @onclick="PreviewEditableRuleAsync" disabled="@(editableRule is null || isPreviewing)">@Loc["cds.payload.previewCurrent"]</button>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(previewError))
                 {
@@ -315,13 +316,13 @@
             <div class="card-header bg-white border-0 pb-0">
                 <div class="d-flex justify-content-between align-items-start gap-3">
                     <div>
-                        <h2 class="h5 mb-1">Preview Cards</h2>
-                        <p class="text-body-secondary mb-0">The result of previewing the current rule against the current sample payload.</p>
+                        <h2 class="h5 mb-1">@Loc["cds.previewCards.title"]</h2>
+                        <p class="text-body-secondary mb-0">@Loc["cds.previewCards.subtitle"]</p>
                     </div>
                     @if (isAutoPreviewPending || isPreviewing)
                     {
                         <span class="text-body-secondary small d-flex align-items-center gap-1 pt-1">
-                            <span class="spinner-border spinner-border-sm"></span>Updating…
+                            <span class="spinner-border spinner-border-sm"></span>@Loc["cds.previewCards.updating"]
                         </span>
                     }
                 </div>
@@ -329,12 +330,12 @@
             <div class="card-body">
                 @if (previewResponse is null)
                 {
-                    <div class="alert alert-secondary mb-0">Preview a rule to see resulting CDS cards.</div>
+                    <div class="alert alert-secondary mb-0">@Loc["cds.previewCards.prompt"]</div>
                 }
                 else if (!previewResponse.Validation.IsValid)
                 {
                     <div class="alert alert-danger mb-0">
-                        <div class="fw-semibold mb-2">Preview validation failed</div>
+                        <div class="fw-semibold mb-2">@Loc["cds.previewCards.validationFailed"]</div>
                         @foreach (var error in previewResponse.Validation.Errors)
                         {
                             <div>@error</div>
@@ -343,7 +344,7 @@
                 }
                 else if (previewResponse.Cards.Count == 0)
                 {
-                    <div class="alert alert-warning mb-0">The preview ran successfully, but the current payload did not trigger any cards.</div>
+                    <div class="alert alert-warning mb-0">@Loc["cds.previewCards.noCards"]</div>
                 }
                 else
                 {
@@ -363,10 +364,10 @@
                                         <span class="badge text-bg-light border">@card.Indicator</span>
                                     </div>
                                     <div class="small text-body-secondary mt-2">
-                                        Source: @card.Source.Label
+                                        @Loc["cds.previewCards.source"] @card.Source.Label
                                         @if (!string.IsNullOrWhiteSpace(card.Source.Url))
                                         {
-                                            <span> | </span><a href="@card.Source.Url" target="_blank">link</a>
+                                            <span> | </span><a href="@card.Source.Url" target="_blank">@Loc["cds.previewCards.link"]</a>
                                         }
                                     </div>
                                 </div>
@@ -379,17 +380,17 @@
 
         <div class="card shadow-sm border-0 cds-admin-card mb-4">
             <div class="card-header bg-white border-0 pb-0">
-                <h2 class="h5 mb-1">Version History</h2>
-                <p class="text-body-secondary mb-0">Published snapshots stay immutable and are what live CDS actually evaluates.</p>
+                <h2 class="h5 mb-1">@Loc["cds.versions.title"]</h2>
+                <p class="text-body-secondary mb-0">@Loc["cds.versions.subtitle"]</p>
             </div>
             <div class="card-body">
                 @if (editableRule is null || editableRule.Id == Guid.Empty)
                 {
-                    <div class="alert alert-secondary mb-0">Save a rule first to start building version history.</div>
+                    <div class="alert alert-secondary mb-0">@Loc["cds.versions.saveFirst"]</div>
                 }
                 else if (selectedRuleVersions.Count == 0)
                 {
-                    <div class="alert alert-secondary mb-0">This rule has not been published yet.</div>
+                    <div class="alert alert-secondary mb-0">@Loc["cds.versions.notPublished"]</div>
                 }
                 else
                 {
@@ -399,19 +400,19 @@
                             <div class="border rounded-3 p-3 mb-3">
                                 <div class="d-flex justify-content-between gap-3">
                                     <div>
-                                        <div class="fw-semibold">Version @version.VersionNumber</div>
+                                        <div class="fw-semibold">@Loc["cds.versions.version", version.VersionNumber]</div>
                                         <div class="small text-body-secondary">@version.Name</div>
                                     </div>
                                     @if (editableRule.PublishedVersionId == version.Id)
                                     {
-                                        <span class="badge text-bg-success">Current Live Snapshot</span>
+                                        <span class="badge text-bg-success">@Loc["cds.versions.currentSnapshot"]</span>
                                     }
                                 </div>
                                 <div class="small text-body-secondary mt-2">
-                                    Published @(version.PublishedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")) by @(version.PublishedBy ?? "system")
+                                    @Loc["cds.versions.publishedBy", version.PublishedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm"), version.PublishedBy ?? Loc["cds.versions.systemUser"]]
                                 </div>
                                 <div class="small text-body-secondary mt-1">
-                                    Hook: <code>@version.HookId</code> | Priority: @version.Priority
+                                    @Loc["cds.versions.hookLabel"] <code>@version.HookId</code> | @Loc["cds.versions.priorityLabel"] @version.Priority
                                 </div>
                             </div>
                         }
@@ -422,13 +423,13 @@
 
         <div class="card shadow-sm border-0 cds-admin-card">
             <div class="card-header bg-white border-0 pb-0">
-                <h2 class="h5 mb-1">Stored CDS Rules</h2>
-                <p class="text-body-secondary mb-0">Select a rule to edit its draft, publish it, clone it, or toggle its live state.</p>
+                <h2 class="h5 mb-1">@Loc["cds.stored.title"]</h2>
+                <p class="text-body-secondary mb-0">@Loc["cds.stored.subtitle"]</p>
             </div>
             <div class="card-body">
                 @if (rules.Count == 0)
                 {
-                    <div class="alert alert-secondary mb-0">No CDS rules found.</div>
+                    <div class="alert alert-secondary mb-0">@Loc["cds.stored.empty"]</div>
                 }
                 else
                 {
@@ -436,12 +437,12 @@
                         <table class="table align-middle">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Hook</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Version</th>
-                                    <th class="text-end">Actions</th>
+                                    <th>@Loc["cds.builder.ruleName"]</th>
+                                    <th>@Loc["cds.workspace.hook"]</th>
+                                    <th>@Loc["cds.builder.priority"]</th>
+                                    <th>@Loc["common.field.status"]</th>
+                                    <th>@Loc["cds.stored.version"]</th>
+                                    <th class="text-end">@Loc["common.actions"]</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -462,27 +463,27 @@
                                                 <span class="badge @(rule.Status == "Archived" ? "text-bg-dark" : "text-bg-light border")">@rule.Status</span>
                                                 @if (rule.IsActive)
                                                 {
-                                                    <span class="badge text-bg-success">Live</span>
+                                                    <span class="badge text-bg-success">@Loc["cds.workspace.live"]</span>
                                                 }
                                                 else if (rule.PublishedVersionId is not null && rule.Status == "Published")
                                                 {
-                                                    <span class="badge text-bg-secondary">Off</span>
+                                                    <span class="badge text-bg-secondary">@Loc["cds.stored.off"]</span>
                                                 }
                                                 @if (rule.HasUnpublishedChanges)
                                                 {
-                                                    <span class="badge text-bg-warning">Draft</span>
+                                                    <span class="badge text-bg-warning">@Loc["cds.stored.draft"]</span>
                                                 }
                                             </div>
                                         </td>
-                                        <td>@(rule.PublishedVersionNumber is null ? "-" : $"v{rule.PublishedVersionNumber}")</td>
+                                        <td>@(rule.PublishedVersionNumber is null ? "—" : $"v{rule.PublishedVersionNumber}")</td>
                                         <td class="text-end">
                                             <div class="d-flex justify-content-end gap-2">
-                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditRuleAsync(rule)">Edit</button>
-                                                <button class="btn btn-sm btn-outline-dark" @onclick="() => PublishStoredRuleAsync(rule)" disabled="@(rule.Status == "Archived")">Publish</button>
+                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditRuleAsync(rule)">@Loc["common.edit"]</button>
+                                                <button class="btn btn-sm btn-outline-dark" @onclick="() => PublishStoredRuleAsync(rule)" disabled="@(rule.Status == "Archived")">@Loc["cds.workspace.publish"]</button>
                                                 <button class="btn btn-sm @(rule.IsActive ? "btn-outline-warning" : "btn-outline-success")"
                                                         disabled="@(rule.PublishedVersionId is null || rule.Status != "Published")"
                                                         @onclick="() => ToggleStoredRuleAsync(rule)">
-                                                    @(rule.IsActive ? "Deactivate" : "Activate")
+                                                    @(rule.IsActive ? Loc["cds.workspace.deactivate"] : Loc["cds.workspace.activate"])
                                                 </button>
                                             </div>
                                         </td>
@@ -570,7 +571,7 @@
         }
         catch (Exception ex)
         {
-            loadError = $"Unable to load CDS admin console: {ex.Message}";
+            loadError = Loc["cds.loadFailed", ex.Message];
         }
         finally
         {
@@ -610,12 +611,12 @@
             if (compiled is not null)
             {
                 await EditRuleAsync(compiled);
-                builderSuccess = $"Compiled template '{templateModel.TemplateId}' into the rule workspace.";
+                builderSuccess = Loc["cds.builder.compiled", templateModel.TemplateId];
             }
         }
         catch (Exception ex)
         {
-            builderError = $"Failed to compile rule template: {ex.Message}";
+            builderError = Loc["cds.builder.compileFailed", ex.Message];
         }
         finally
         {
@@ -634,14 +635,14 @@
             var saved = await CdsService.CreateFromTemplateAsync(templateModel);
             if (saved is not null)
             {
-                builderSuccess = $"Saved CDS draft '{saved.Name}' with id {saved.Id}.";
+                builderSuccess = Loc["cds.builder.saved", saved.Name, saved.Id];
                 rules = await CdsService.ListRulesAsync();
                 await EditRuleAsync(saved);
             }
         }
         catch (Exception ex)
         {
-            builderError = $"Failed to save template rule: {ex.Message}";
+            builderError = Loc["cds.builder.saveTemplateFailed", ex.Message];
         }
         finally
         {
@@ -698,7 +699,7 @@
                 if (created is not null)
                 {
                     editableRule = CloneRule(created);
-                    builderSuccess = $"Created CDS draft '{created.Name}'.";
+                    builderSuccess = Loc["cds.workspace.created", created.Name];
                     rules = await CdsService.ListRulesAsync();
                     selectedRuleVersions = [];
                 }
@@ -709,13 +710,13 @@
             if (updated is not null)
             {
                 editableRule = CloneRule(updated);
-                builderSuccess = $"Saved draft changes for '{updated.Name}'.";
+                builderSuccess = Loc["cds.workspace.savedChanges", updated.Name];
                 rules = await CdsService.ListRulesAsync();
             }
         }
         catch (Exception ex)
         {
-            builderError = $"Failed to save rule: {ex.Message}";
+            builderError = Loc["cds.workspace.saveFailed", ex.Message];
         }
         finally
         {
@@ -739,7 +740,7 @@
         }
         catch (Exception ex)
         {
-            builderError = $"Failed to validate rule: {ex.Message}";
+            builderError = Loc["cds.workspace.validateFailed", ex.Message];
         }
         finally
         {
@@ -777,7 +778,7 @@
         }
         catch (Exception ex)
         {
-            previewError = $"Failed to preview rule: {ex.Message}";
+            previewError = Loc["cds.workspace.previewFailed", ex.Message];
         }
         finally
         {
@@ -809,7 +810,7 @@
         }
         catch (Exception ex)
         {
-            builderError = $"Failed to toggle rule status: {ex.Message}";
+            builderError = Loc["cds.workspace.toggleFailed", ex.Message];
         }
         finally
         {
@@ -839,7 +840,7 @@
         }
         catch (Exception ex)
         {
-            builderError = $"Failed to toggle rule status: {ex.Message}";
+            builderError = Loc["cds.workspace.toggleFailed", ex.Message];
         }
         finally
         {
@@ -866,12 +867,12 @@
                 editableRule = CloneRule(published);
                 selectedRuleVersions = await CdsService.ListRuleVersionsAsync(published.Id);
                 rules = await CdsService.ListRulesAsync();
-                builderSuccess = $"Published rule '{published.Name}' as version {published.PublishedVersionNumber}.";
+                builderSuccess = Loc["cds.workspace.published", published.Name, published.PublishedVersionNumber];
             }
         }
         catch (Exception ex)
         {
-            builderError = $"Failed to publish rule: {ex.Message}";
+            builderError = Loc["cds.workspace.publishFailed", ex.Message];
         }
         finally
         {
@@ -897,7 +898,7 @@
         }
         catch (Exception ex)
         {
-            builderError = $"Failed to publish rule: {ex.Message}";
+            builderError = Loc["cds.workspace.publishFailed", ex.Message];
         }
         finally
         {
@@ -925,11 +926,11 @@
             {
                 editableRule = CloneRule(archived);
             }
-            builderSuccess = "Archived the current rule.";
+            builderSuccess = Loc["cds.workspace.archived"];
         }
         catch (Exception ex)
         {
-            builderError = $"Failed to archive rule: {ex.Message}";
+            builderError = Loc["cds.workspace.archiveFailed", ex.Message];
         }
         finally
         {
@@ -955,12 +956,12 @@
             {
                 rules = await CdsService.ListRulesAsync();
                 await EditRuleAsync(cloned);
-                builderSuccess = $"Cloned rule into draft '{cloned.Name}'.";
+                builderSuccess = Loc["cds.workspace.cloned", cloned.Name];
             }
         }
         catch (Exception ex)
         {
-            builderError = $"Failed to clone rule: {ex.Message}";
+            builderError = Loc["cds.workspace.cloneFailed", ex.Message];
         }
         finally
         {
@@ -1057,7 +1058,7 @@
             UpdatedAt = rule.UpdatedAt
         };
 
-    private static string DisplayDose(decimal? dose) => dose is null ? "n/a" : $"{dose:0.##} mg";
+    private string DisplayDose(decimal? dose) => dose is null ? Loc["common.notAvailable"] : $"{dose:0.##} mg";
 
     // ── Debounced auto-preview ─────────────────────────────────────────────────
 
@@ -1109,8 +1110,9 @@
         }
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
+        base.Dispose();
         _debounceCts?.Cancel();
         _debounceCts?.Dispose();
     }

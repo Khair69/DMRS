@@ -23,13 +23,11 @@ For the full architecture and change summary, see [cds-system.md](/D:/Code/ASP/D
 
 Important auth note:
 
-- The CDS authorization policy checks scopes against the controller name, not only the route.
-- If CDS calls return `403`, add scopes like:
-  - `user/cdsmedicineknowledge.read`
-  - `user/cdsmedicineknowledge.write`
-  - `user/cdsrules.read`
-  - `user/cdsrules.write`
-  - `user/cdshooks.write`
+- CDS **admin** endpoints (`/cds/rules`, `/cds/medications`) use the `CdsAdmin` policy and require
+  the `ROLE_SYSTEM_ADMIN` or `ROLE_ORG_ADMIN` realm role. If these return `403`, your token is
+  missing one of those roles — it is no longer a scope problem.
+- CDS **runtime** endpoints (`/cds-services`, `/cds/risk`, `/cds/alerts`) still use `FhirScope`, so a
+  normal staff token works there.
 - For FHIR setup requests, also make sure your token covers:
   - `user/patient.write`
   - `user/allergyintolerance.write`

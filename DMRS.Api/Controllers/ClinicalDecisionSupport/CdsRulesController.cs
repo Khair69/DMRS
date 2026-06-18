@@ -8,7 +8,7 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
 {
     [ApiController]
     [Route("cds/rules")]
-    [Authorize(Policy = "FhirScope")]
+    [Authorize(Policy = "CdsAdmin")]
     public sealed class CdsRulesController : ControllerBase
     {
         private readonly IRuleManagementService _ruleManagement;

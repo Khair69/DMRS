@@ -6,7 +6,7 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
 {
     [ApiController]
     [Route("cds/medications")]
-    [Authorize(Policy = "FhirScope")]
+    [Authorize(Policy = "CdsAdmin")]
     public sealed class CdsMedicineKnowledgeController : ControllerBase
     {
         private readonly IMedicineKnowledgeService _medicineKnowledgeService;
