@@ -79,9 +79,10 @@ main {
 
     .sidebar {
         width: 292px;
-        min-height: 100vh;
+        height: 100vh;
         position: sticky;
         top: 0;
+        align-self: flex-start;
     }
 
     .top-row {
