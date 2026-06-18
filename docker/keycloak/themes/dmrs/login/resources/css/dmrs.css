@@ -1,8 +1,15 @@
 /* ============================================================
    DMRS login theme
-   Mirrors the design tokens from DMRS.Client/wwwroot/css/app.css
-   (teal/ocean gradient, ink text, Segoe UI, soft rounded panels).
-   Loaded after the base login.css so these rules win.
+   Reproduces the DMRS system design (see DMRS.Client/wwwroot/css/app.css,
+   Layout/MainLayout.razor.css, Layout/NavMenu.razor.css):
+     - light radial-teal page background
+     - dark slate -> teal brand accents
+     - primary gradient  #0f6d93 -> #0b8f86
+     - glassy, rounded panels with soft shadows
+     - Segoe UI
+   CSS-only: loaded after the base login.css so these rules win.
+   Covers login, register, forgot-password, OTP, update-password,
+   and info/error pages (they all inherit this `login` theme).
    ============================================================ */
 
 :root {
@@ -10,36 +17,93 @@
     --dmrs-muted: #64748b;
     --dmrs-border: rgba(15, 23, 42, 0.08);
     --dmrs-panel: rgba(255, 255, 255, 0.92);
-    --dmrs-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+    --dmrs-shadow: 0 24px 80px rgba(15, 23, 42, 0.14);
     --dmrs-radius-lg: 1.5rem;
     --dmrs-radius-md: 0.85rem;
     --dmrs-primary: #0f6d93;
     --dmrs-primary-2: #0b8f86;
     --dmrs-ring: rgba(15, 109, 147, 0.22);
+    --dmrs-danger: #dc2626;
 }
 
-/* ---------- Page background ---------- */
+/* ============================================================
+   Page background  (mirrors MainLayout .page)
+   ============================================================ */
 html,
 body,
 .login-pf body {
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     color: var(--dmrs-text);
+    height: 100%;
 }
 
 body {
     background:
-        radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 38%),
-        radial-gradient(circle at bottom left, rgba(11, 143, 134, 0.16), transparent 42%),
-        #eef3f8;
+        radial-gradient(circle at top left, rgba(20, 184, 166, 0.14), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.12), transparent 36%),
+        linear-gradient(180deg, #f4f7fb 0%, #eef3f8 100%) !important;
     background-attachment: fixed;
 }
 
-/* Kill the default PatternFly background image */
+/* Kill the default PatternFly background image/overlay */
 .login-pf {
     background: none !important;
 }
 
-/* ---------- Card / panel ---------- */
+.login-pf-page {
+    padding-top: 3vh;
+}
+
+/* ============================================================
+   Brand header  (badge + wordmark + tagline)
+   The wordmark text is the realm's display name -> set it to
+   "DMRS Workspace" in Realm settings -> General -> Display name.
+   ============================================================ */
+#kc-header,
+#kc-header-wrapper {
+    width: 100%;
+}
+
+#kc-header-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0 0 1.6rem;
+    color: var(--dmrs-text);
+    font-size: 1.7rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    line-height: 1.15;
+    text-transform: none;
+    white-space: normal;
+    text-shadow: none;
+}
+
+/* Gradient "pulse" badge above the wordmark */
+#kc-header-wrapper::before {
+    content: "";
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 1.05rem;
+    background:
+        url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='white'%20stroke-width='2.2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M3%2012h4l2-6%204%2012%202-6h6'/%3E%3C/svg%3E") center / 1.85rem no-repeat,
+        linear-gradient(135deg, var(--dmrs-primary), var(--dmrs-primary-2));
+    box-shadow: 0 14px 30px rgba(15, 109, 147, 0.42);
+}
+
+/* Tagline under the wordmark */
+#kc-header-wrapper::after {
+    content: "Clinical workspace, CDS & predictive insights";
+    font-size: 0.86rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--dmrs-muted);
+}
+
+/* ============================================================
+   Card / panel  (mirrors .dmrs-panel)
+   ============================================================ */
 .card-pf,
 #kc-content,
 .login-pf-page .card-pf {
@@ -48,31 +112,47 @@ body {
     border-radius: var(--dmrs-radius-lg);
     box-shadow: var(--dmrs-shadow);
     backdrop-filter: blur(14px);
-    padding: 2rem 2.25rem;
+    padding: 2.1rem 2.25rem;
+    max-width: 30rem;
+    margin: 0 auto;
 }
 
+/* Card title ("Sign in to your account", "Register", ...) */
 .login-pf-page .login-pf-header h1,
 #kc-page-title {
     color: var(--dmrs-text);
     font-weight: 700;
+    font-size: 1.45rem;
     letter-spacing: -0.01em;
+    margin-bottom: 0.4rem;
 }
 
-/* ---------- Header / brand area ---------- */
-#kc-header,
-#kc-header-wrapper {
+.login-pf-page .login-pf-header {
+    margin-bottom: 1.25rem;
+}
+
+/* ============================================================
+   Form groups / labels / inputs
+   ============================================================ */
+.form-group,
+.pf-c-form__group {
+    margin-bottom: 1.05rem;
+}
+
+label,
+.pf-c-form__label,
+.pf-c-form__label-text {
     color: var(--dmrs-text);
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    text-transform: none;
-    padding: 1.25rem 0;
+    font-weight: 600;
+    font-size: 0.92rem;
 }
 
-/* ---------- Inputs ---------- */
 .pf-c-form-control,
 input[type="text"],
 input[type="password"],
 input[type="email"],
+input[type="number"],
+input[type="tel"],
 select,
 textarea {
     border: 1px solid var(--dmrs-border);
@@ -80,18 +160,38 @@ textarea {
     color: var(--dmrs-text);
     background-color: #fff;
     background-repeat: no-repeat;
+    padding: 0.62rem 0.85rem;
+    height: auto;
+    min-height: 2.85rem;
     transition: border-color .15s ease, box-shadow .15s ease;
 }
 
-/* ---------- Error / invalid state ---------- */
-/* Drop PatternFly's tiled error icon; use a clean red border like
+.pf-c-form-control:focus,
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="tel"]:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--dmrs-primary);
+    box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem var(--dmrs-ring);
+    outline: none;
+}
+
+input::placeholder {
+    color: #94a3b8;
+}
+
+/* ---------- Error / invalid state ----------
+   Drop PatternFly's tiled error icon; use a clean red border like
    the DMRS app's .invalid style. */
 .pf-c-form-control.pf-m-error,
 input.pf-m-error,
 input[aria-invalid="true"],
 select[aria-invalid="true"],
 textarea[aria-invalid="true"] {
-    border-color: #dc2626;
+    border-color: var(--dmrs-danger);
     background-image: none;
 }
 
@@ -100,35 +200,74 @@ input.pf-m-error:focus,
 input[aria-invalid="true"]:focus,
 select[aria-invalid="true"]:focus,
 textarea[aria-invalid="true"]:focus {
-    border-color: #dc2626;
+    border-color: var(--dmrs-danger);
     box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem rgba(220, 38, 38, 0.22);
 }
 
 .pf-c-form__helper-text.pf-m-error,
 .kc-feedback-text,
 #input-error,
-.input-error {
-    color: #dc2626;
+.input-error,
+.error {
+    color: var(--dmrs-danger);
+    font-size: 0.85rem;
 }
 
-.pf-c-form-control:focus,
-input[type="text"]:focus,
-input[type="password"]:focus,
-input[type="email"]:focus,
-select:focus,
-textarea:focus {
+/* ============================================================
+   Password input group + show/hide toggle
+   ============================================================ */
+.pf-c-input-group {
+    border-radius: var(--dmrs-radius-md);
+    overflow: hidden;
+    border: 1px solid var(--dmrs-border);
+    background: #fff;
+}
+
+.pf-c-input-group:focus-within {
     border-color: var(--dmrs-primary);
     box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem var(--dmrs-ring);
-    outline: none;
 }
 
-label,
-.pf-c-form__label {
+.pf-c-input-group .pf-c-form-control {
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.pf-c-button.pf-m-control {
+    background: #fff;
+    border: 0;
+    color: var(--dmrs-muted);
+    border-radius: 0;
+}
+
+.pf-c-button.pf-m-control:hover {
+    color: var(--dmrs-primary);
+    background: rgba(15, 109, 147, 0.06);
+}
+
+/* ============================================================
+   Checkbox ("Remember me")
+   ============================================================ */
+.checkbox,
+.pf-c-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     color: var(--dmrs-text);
-    font-weight: 600;
+    font-size: 0.92rem;
 }
 
-/* ---------- Primary button ---------- */
+input[type="checkbox"],
+.pf-c-check__input {
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--dmrs-primary);
+    margin: 0;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
 .pf-c-button.pf-m-primary,
 input[type="submit"].pf-c-button.pf-m-primary,
 #kc-login,
@@ -138,6 +277,8 @@ input[type="submit"].pf-c-button.pf-m-primary,
     border: 1px solid transparent;
     border-radius: var(--dmrs-radius-md);
     font-weight: 600;
+    font-size: 1rem;
+    padding: 0.7rem 1.1rem;
     box-shadow: 0 6px 16px rgba(15, 109, 147, 0.35);
     transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
 }
@@ -150,8 +291,20 @@ input[type="submit"].pf-c-button.pf-m-primary,
     box-shadow: 0 10px 22px rgba(15, 109, 147, 0.4);
 }
 
-/* ---------- Secondary / link buttons ---------- */
-.pf-c-button.pf-m-secondary {
+.pf-c-button.pf-m-primary:active,
+#kc-login:active {
+    transform: translateY(0);
+}
+
+/* Full-width primary submit, like the DMRS forms */
+.pf-c-button.pf-m-block,
+#kc-form-buttons .pf-c-button,
+.btn-block {
+    width: 100%;
+}
+
+.pf-c-button.pf-m-secondary,
+.btn-default {
     color: var(--dmrs-primary);
     background: transparent;
     border: 1px solid var(--dmrs-ring);
@@ -159,8 +312,17 @@ input[type="submit"].pf-c-button.pf-m-primary,
     font-weight: 600;
 }
 
+.pf-c-button.pf-m-secondary:hover,
+.btn-default:hover {
+    background: rgba(15, 109, 147, 0.06);
+}
+
+/* ============================================================
+   Links (register, forgot password, "back to login")
+   ============================================================ */
 a,
 #kc-registration a,
+#kc-registration-container a,
 #kc-info-message a,
 .login-pf-page a {
     color: var(--dmrs-primary);
@@ -172,39 +334,129 @@ a:hover {
     text-decoration: underline;
 }
 
-/* ---------- Social / identity-provider buttons ---------- */
-#kc-social-providers .pf-c-button {
-    border-radius: var(--dmrs-radius-md);
-    border: 1px solid var(--dmrs-border);
+#kc-form-options,
+#kc-registration,
+#kc-registration-container {
+    color: var(--dmrs-muted);
+    font-size: 0.92rem;
 }
 
-/* ---------- Alerts ---------- */
+/* ============================================================
+   Social / identity-provider buttons
+   ============================================================ */
+#kc-social-providers ul {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0;
+    margin-top: 0.4rem;
+}
+
+#kc-social-providers li {
+    list-style: none;
+}
+
+#kc-social-providers .pf-c-button,
+#kc-social-providers a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    border-radius: var(--dmrs-radius-md);
+    border: 1px solid var(--dmrs-border);
+    background: #fff;
+    color: var(--dmrs-text);
+    font-weight: 600;
+    padding: 0.6rem 0.9rem;
+}
+
+#kc-social-providers .pf-c-button:hover,
+#kc-social-providers a:hover {
+    background: rgba(15, 109, 147, 0.05);
+    text-decoration: none;
+}
+
+/* ============================================================
+   OTP / one-time-code inputs
+   ============================================================ */
+.pf-c-form-control.otp-input,
+input[name="otp"],
+input[id^="otp"] {
+    letter-spacing: 0.4em;
+    text-align: center;
+    font-weight: 700;
+}
+
+/* ============================================================
+   Alerts / feedback
+   ============================================================ */
 .pf-c-alert,
 .alert {
     border-radius: var(--dmrs-radius-md);
     border: 1px solid var(--dmrs-border);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
 }
 
 .pf-c-alert.pf-m-danger,
 .alert-error {
     background: rgba(254, 226, 226, 0.92);
     color: #b91c1c;
+    border-color: rgba(220, 38, 38, 0.2);
 }
 
 .pf-c-alert.pf-m-success,
 .alert-success {
     background: rgba(209, 250, 229, 0.92);
     color: #065f46;
+    border-color: rgba(5, 150, 105, 0.2);
 }
 
 .pf-c-alert.pf-m-warning,
 .alert-warning {
     background: rgba(254, 243, 199, 0.92);
     color: #92400e;
+    border-color: rgba(217, 119, 6, 0.2);
 }
 
-/* ---------- Footer / locale ---------- */
+.pf-c-alert.pf-m-info,
+.alert-info {
+    background: rgba(224, 242, 254, 0.92);
+    color: #075985;
+    border-color: rgba(2, 132, 199, 0.2);
+}
+
+/* ============================================================
+   Footer: info text + language selector
+   ============================================================ */
 #kc-info,
-#kc-locale {
+#kc-info-wrapper {
     color: var(--dmrs-muted);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+#kc-locale {
+    margin-top: 0.5rem;
+}
+
+#kc-locale .pf-c-dropdown__toggle,
+#kc-locale a {
+    color: var(--dmrs-muted);
+    font-weight: 600;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 575.98px) {
+    .card-pf,
+    .login-pf-page .card-pf {
+        padding: 1.5rem 1.3rem;
+        margin: 0 0.9rem;
+    }
+
+    #kc-header-wrapper {
+        font-size: 1.45rem;
+    }
 }
