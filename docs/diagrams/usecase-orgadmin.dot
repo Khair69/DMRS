@@ -1,0 +1,40 @@
+// Use-case diagram — Org Admin / مدير المؤسسة
+// Verified roles: clinical pages allow ROLE_ORG_ADMIN (inherits Practitioner);
+// Staff (Index/Create/Details) = SYS+ORG; Organizations/Details = SYS+ORG; External AI Admin = SYS+ORG;
+// CDS Admin (Cds/Admin) = SYS+ORG  -> CDS authoring is an Org-Admin use case (System Admin inherits it).
+// Render: dot -Tpng usecase-orgadmin.dot -o usecase-orgadmin.png
+digraph UC {
+  rankdir=RL;
+  graph [fontname="Arial", fontsize=13, labelloc="t",
+         label="مخطّط حالات الاستخدام — مدير المؤسسة (Org Admin)", pad=0.3, nodesep=0.3, ranksep=1.3];
+  node  [fontname="Arial", fontsize=11];
+  edge  [fontname="Arial", fontsize=9, dir=none, color="#555555"];
+
+  actor [shape=box, style="rounded,filled", fillcolor="#8E44AD", fontcolor="white",
+         label="مدير المؤسسة\nOrg Admin", width=1.7];
+  practitioner [shape=box, style="rounded,filled", fillcolor="#1F6FB2", fontcolor="white",
+         label="الطبيب / الممارس\nPractitioner", width=1.7];
+
+  // actor generalization: Org Admin inherits all Practitioner use cases
+  actor -> practitioner [dir=back, arrowtail=onormal, style=solid, color="#333333",
+                         label="يرث قدراته\n(generalization)", fontcolor="#333333"];
+
+  subgraph cluster_sys {
+    label="نظام DMRS  (قدرات إضافية لمدير المؤسسة)"; fontname="Arial"; fontsize=13;
+    style="rounded"; color="#8E44AD"; bgcolor="#FBF7FD"; margin=12;
+    node [shape=ellipse, style=filled, fillcolor="#F1E6F7", color="#8E44AD"];
+
+    u_org    [label="عرض تفاصيل المؤسسة\nView Organization Details"];
+    u_staff  [label="إدارة الكادر\nManage Staff"];
+    u_invite [label="إنشاء دعوة كادر\nCreate Staff Invite"];
+    u_extreg [label="تسجيل نموذج ذكاء خارجي\nRegister External AI Model"];
+    u_extrun [label="تشغيل نموذج خارجي\nRun External AI Model"];
+    u_cds    [label="تأليف قواعد دعم القرار\nAuthor CDS Rules"];
+    u_cdspub [label="تحقّق / معاينة / نشر / تفعيل / أرشفة\nValidate · Preview · Publish · Activate · Retire",
+              fillcolor="#FBF3FD"];
+  }
+
+  actor -> { u_org u_staff u_invite u_extreg u_extrun u_cds };
+  // authoring a rule includes the validate→publish→activate lifecycle
+  u_cds -> u_cdspub [style=dashed, dir=back, arrowtail=vee, label="«include»", fontcolor="#8E44AD", color="#8E44AD"];
+}

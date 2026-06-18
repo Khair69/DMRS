@@ -1,0 +1,42 @@
+// System architecture — DMRS (verified vs README + architecture-and-data-model.md + code)
+// Render: dot -Tpng architecture.dot -o architecture.png
+digraph ARCH {
+  rankdir=LR;
+  graph [fontname="Arial", fontsize=13, labelloc="t",
+         label="البنية العامة لنظام DMRS — System Architecture", pad=0.3, nodesep=0.4, ranksep=1.0, compound=true];
+  node  [fontname="Arial", fontsize=11, shape=box, style="rounded,filled", fontcolor="black"];
+  edge  [fontname="Arial", fontsize=9, color="#555555"];
+
+  client [label="DMRS.Client\nBlazor WebAssembly\n(:7099)", fillcolor="#E8F1F8", color="#1F6FB2"];
+  kc     [label="Keycloak\nOAuth2 / OIDC\n(realm: DMRS, :8080)", fillcolor="#FDF3E3", color="#C8902A"];
+
+  subgraph cluster_api {
+    label="DMRS.Api — ASP.NET Core 10  (:7029)"; fontname="Arial"; fontsize=12;
+    style="rounded"; color="#1F6FB2"; bgcolor="#F7FBFD"; margin=12;
+    node [fillcolor="#FFFFFF", color="#1F6FB2"];
+    fhir [label="موارد FHIR R5\nCRUD · بحث · تاريخ · تحقّق"];
+    cds  [label="محرّك دعم القرار\nCDS Hooks · JSON-Logic · بطاقات"];
+    ai   [label="خدمات المخاطر بالذكاء الاصطناعي\nسكري · قلب · إعادة دخول"];
+    ext  [label="النماذج الخارجية + الوثائق\nExternal AI · Documents"];
+  }
+
+  onnx [label="نماذج ONNX\nDMRS.Api/Ai/*.onnx", fillcolor="#EFE8F8", color="#8E44AD"];
+  med  [label="DMRS.MedicineInfo.Api\n(:5041)", fillcolor="#E3F2E9", color="#2E8B57"];
+  rx   [label="RxNorm REST API\n(مزوّد حيّ اختياري)", fillcolor="#F2F2F2", color="#999999", style="rounded,filled,dashed"];
+
+  pg    [label="PostgreSQL — DMRS", shape=cylinder, fillcolor="#E8F1F8", color="#1F6FB2"];
+  pgmed [label="PostgreSQL — DMRSMedicine", shape=cylinder, fillcolor="#E3F2E9", color="#2E8B57"];
+
+  client -> kc   [label="تسجيل الدخول (OIDC)"];
+  client -> fhir [label="HTTPS + JWT", lhead=cluster_api];
+  fhir -> kc     [label="التحقّق من JWT", style=dashed, dir=back];
+
+  fhir -> pg;
+  cds  -> pg;
+  ext  -> pg;
+  ai   -> onnx [label="InferenceSession"];
+  ai   -> pg;
+  cds  -> med  [label="معرفة الأدوية"];
+  med  -> pgmed;
+  med  -> rx   [style=dashed, label="اختياري"];
+}

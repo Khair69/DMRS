@@ -1,0 +1,23 @@
+// Use-case diagram — Visitor / الزائر (verified: Welcome = [AllowAnonymous]; no clinical access)
+// Render: dot -Tpng usecase-visitor.dot -o usecase-visitor.png
+digraph UC {
+  rankdir=RL;
+  graph [fontname="Arial", fontsize=13, labelloc="t",
+         label="مخطّط حالات الاستخدام — الزائر (غير المسجّل / Visitor)", pad=0.3, nodesep=0.35, ranksep=1.4];
+  node  [fontname="Arial", fontsize=11];
+  edge  [fontname="Arial", fontsize=9, dir=none, color="#555555"];
+
+  actor [shape=box, style="rounded,filled", fillcolor="#777777", fontcolor="white",
+         label="الزائر\nVisitor", width=1.5];
+
+  subgraph cluster_sys {
+    label="نظام DMRS"; fontname="Arial"; fontsize=13; style="rounded"; color="#777777"; bgcolor="#FAFAFA"; margin=12;
+    node [shape=ellipse, style=filled, fillcolor="#EEEEEE", color="#777777"];
+
+    u_welcome [label="تصفّح صفحة الترحيب\nBrowse Welcome Page"];
+    u_lang    [label="تبديل اللغة\nSwitch Language"];
+    u_login   [label="بدء تسجيل الدخول\nBegin Login (Keycloak)"];
+  }
+
+  actor -> { u_welcome u_lang u_login };
+}

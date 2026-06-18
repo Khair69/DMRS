@@ -1,0 +1,43 @@
+// Use-case diagram — Practitioner / الطبيب (verified vs page [Authorize] roles: ROLE_PRACTITIONER)
+// Render: dot -Tpng usecase-practitioner.dot -o usecase-practitioner.png
+digraph UC {
+  rankdir=RL;
+  graph [fontname="Arial", fontsize=13, labelloc="t",
+         label="مخطّط حالات الاستخدام — الطبيب / الممارس (Practitioner)", pad=0.3, nodesep=0.28, ranksep=1.3];
+  node  [fontname="Arial", fontsize=11];
+  edge  [fontname="Arial", fontsize=9, dir=none, color="#555555"];
+
+  actor [shape=box, style="rounded,filled", fillcolor="#1F6FB2", fontcolor="white",
+         label="الطبيب / الممارس\nPractitioner", width=1.7];
+
+  subgraph cluster_sys {
+    label="نظام DMRS"; fontname="Arial"; fontsize=13; style="rounded"; color="#1F6FB2"; bgcolor="#F7FBFD"; margin=12;
+    node [shape=ellipse, style=filled, fillcolor="#E8F1F8", color="#1F6FB2"];
+
+    u_login   [label="تسجيل الدخول\nLogin"];
+    u_dash    [label="عرض اللوحة الرئيسية\nView Dashboard"];
+    u_search  [label="البحث عن المرضى\nSearch Patients"];
+    u_pat     [label="إدارة المرضى\nManage Patients"];
+    u_chart   [label="فتح مخطّط المريض\nOpen Patient Chart"];
+    u_cond    [label="تسجيل حالة مرضية\nRecord Condition"];
+    u_obs     [label="تسجيل ملاحظة\nRecord Observation"];
+    u_proc    [label="تسجيل إجراء\nRecord Procedure"];
+    u_allergy [label="تسجيل حساسية\nRecord Allergy"];
+    u_enc     [label="تسجيل زيارة\nRecord Encounter"];
+    u_med     [label="وصف دواء\nPrescribe Medication"];
+    u_cds     [label="عرض بطاقة دعم القرار\nShow CDS Card", fillcolor="#FDF3E3", color="#C8902A"];
+    u_svc     [label="إنشاء طلب خدمة\nCreate Service Request"];
+    u_appt    [label="جدولة موعد\nSchedule Appointment"];
+    u_loc     [label="إدارة المواقع\nManage Locations"];
+    u_risk    [label="عرض بطاقات المخاطر\nView AI Risk Cards"];
+    u_hist    [label="استعراض تاريخ النسخ\nView Version History"];
+    u_doc     [label="إدارة وثائق المريض\nManage Documents"];
+    u_ins     [label="عرض الرؤى الذكية\nView AI Insights"];
+  }
+
+  actor -> { u_login u_dash u_search u_pat u_chart u_cond u_obs u_proc u_allergy
+             u_enc u_med u_svc u_appt u_loc u_risk u_hist u_doc u_ins };
+
+  // include relationship: prescribing a medication triggers CDS evaluation
+  u_med -> u_cds [style=dashed, dir=back, arrowtail=vee, label="«include»", fontcolor="#C8902A", color="#C8902A"];
+}

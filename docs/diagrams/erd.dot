@@ -1,0 +1,180 @@
+// ERD — DMRS (verified against AppDbContext + Domain entities + migrations)
+// Render:  dot -Tpng erd.dot -o erd.png      dot -Tsvg erd.dot -o erd.svg
+digraph ERD {
+  rankdir=LR;
+  graph [fontname="Arial", fontsize=12, labelloc="t",
+         label="مخطّط الكيانات والعلاقات (ERD) لنظام DMRS", splines=spline, nodesep=0.5, ranksep=1.0, pad=0.3];
+  node  [shape=plaintext, fontname="Consolas"];
+  edge  [fontname="Arial", fontsize=10, color="#444444"];
+
+  // ===================== Database 1: DMRS (main API) =====================
+  subgraph cluster_dmrs {
+    label="قاعدة بيانات DMRS  (الواجهة البرمجية الرئيسية)";
+    fontname="Arial"; fontsize=13; style="rounded"; color="#1F6FB2"; bgcolor="#F7FBFD"; margin=14;
+
+    FhirResource [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+      <TR><TD COLSPAN="2" BGCOLOR="#1F6FB2"><FONT COLOR="white"><B>FhirResource</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#E3EEF6"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3EEF6">ResourceType : string</TD></TR>
+      <TR><TD BGCOLOR="#E3EEF6"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3EEF6">Id : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">VersionId : int  (concurrency token)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">IsDeleted : bool</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">LastUpdated : timestamptz</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">RawContent : text  (FHIR JSON)</TD></TR>
+      </TABLE>>];
+
+    FhirResourceVersion [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+      <TR><TD COLSPAN="2" BGCOLOR="#1F6FB2"><FONT COLOR="white"><B>FhirResourceVersion</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#E3EEF6"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3EEF6">ResourceType : string</TD></TR>
+      <TR><TD BGCOLOR="#E3EEF6"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3EEF6">Id : string</TD></TR>
+      <TR><TD BGCOLOR="#E3EEF6"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3EEF6">VersionId : int</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">LastUpdated : timestamptz</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">RawContent : text  (FHIR JSON)</TD></TR>
+      </TABLE>>];
+
+    ResourceIndex [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+      <TR><TD COLSPAN="2" BGCOLOR="#1F6FB2"><FONT COLOR="white"><B>ResourceIndex</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#E3EEF6"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3EEF6">Id : int</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">ResourceType : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">ResourceId : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">SearchParamCode : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Value : string</TD></TR>
+      <TR><TD COLSPAN="2" ALIGN="LEFT"><FONT POINT-SIZE="9">idx (ResourceType, SearchParamCode, Value)</FONT></TD></TR>
+      </TABLE>>];
+
+    CdsRuleDefinition [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+      <TR><TD COLSPAN="2" BGCOLOR="#1F6FB2"><FONT COLOR="white"><B>CdsRuleDefinition</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#E3EEF6"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3EEF6">Id : guid</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">HookId : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Name : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Description : string?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Priority : int</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">IsActive : bool</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Status : enum (Draft/Published/Archived)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">HasUnpublishedChanges : bool</TD></TR>
+      <TR><TD BGCOLOR="#FDF3E3"><B>FK</B></TD><TD ALIGN="LEFT" BGCOLOR="#FDF3E3">PublishedVersionId : guid?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">PublishedVersionNumber : int?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">PublishedAt : timestamptz?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">CreatedBy / UpdatedBy / PublishedBy : string?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">ExpressionJson : jsonb</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">CardTemplateJson : jsonb</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">CreatedAt / UpdatedAt : timestamptz</TD></TR>
+      </TABLE>>];
+
+    CdsRuleVersion [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+      <TR><TD COLSPAN="2" BGCOLOR="#1F6FB2"><FONT COLOR="white"><B>CdsRuleVersion</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#E3EEF6"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3EEF6">Id : guid</TD></TR>
+      <TR><TD BGCOLOR="#FDF3E3"><B>FK</B></TD><TD ALIGN="LEFT" BGCOLOR="#FDF3E3">RuleDefinitionId : guid</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">VersionNumber : int</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">HookId : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Name : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Description : string?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Priority : int</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">ExpressionJson : jsonb</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">CardTemplateJson : jsonb</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">IsActive : bool</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">PublishedAt : timestamptz</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">PublishedBy : string?</TD></TR>
+      <TR><TD COLSPAN="2" ALIGN="LEFT"><FONT POINT-SIZE="9">unique (RuleDefinitionId, VersionNumber)</FONT></TD></TR>
+      </TABLE>>];
+
+    MedicineKnowledgeRecord [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+      <TR><TD COLSPAN="2" BGCOLOR="#1F6FB2"><FONT COLOR="white"><B>MedicineKnowledgeRecord</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#E3EEF6"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3EEF6">RxCui : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Name : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">MaxDailyMg / MaxSingleMg : decimal?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">WarningThresholdMg : decimal?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">PregnancyCategory : string?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">IsControlled : bool?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">IngredientCodesJson : jsonb</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">IngredientNamesJson : jsonb</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">IndicationCodesJson : jsonb</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">IngredientSearchText : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">IndicationSearchText : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Source : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">FetchedAt / ExpiresAt : timestamptz</TD></TR>
+      </TABLE>>];
+
+    ExternalAiModel [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+      <TR><TD COLSPAN="2" BGCOLOR="#1F6FB2"><FONT COLOR="white"><B>ExternalAiModel</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#E3EEF6"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3EEF6">Id : guid</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Name : string  (unique)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Description : string?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">EndpointUrl : string  (HTTPS only)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">AuthType : enum (None/ApiKey/Bearer)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">AuthHeaderName : string?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">EncryptedSecret : string?  (Data Protection)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">TimeoutSeconds : int</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">DecisionJsonPath : string?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">IsActive : bool</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">CreatedBy / UpdatedBy : string?</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">CreatedAt / UpdatedAt : timestamptz</TD></TR>
+      </TABLE>>];
+
+    // relationships (DMRS)
+    FhirResource -> FhirResourceVersion
+        [style=dashed, taillabel="1", headlabel="0..*", arrowhead=none,
+         label="تاريخ النسخ\n(منطقي: ResourceType+Id)"];
+    FhirResource -> ResourceIndex
+        [style=dashed, taillabel="1", headlabel="0..*", arrowhead=none,
+         label="فهرس البحث\n(منطقي: ResourceType+ResourceId)"];
+    CdsRuleDefinition -> CdsRuleVersion
+        [taillabel="1", headlabel="0..*", arrowhead=crow,
+         label="RuleDefinitionId\n(FK, Cascade)"];
+    CdsRuleDefinition -> CdsRuleVersion
+        [taillabel="0..1", headlabel="1", arrowhead=vee, color="#1F6FB2",
+         label="PublishedVersionId\n(FK, Set Null)", constraint=false];
+  }
+
+  // ===================== Database 2: DMRSMedicine (MedicineInfo API) =====================
+  subgraph cluster_med {
+    label="قاعدة بيانات DMRSMedicine  (خدمة معلومات الأدوية)";
+    fontname="Arial"; fontsize=13; style="rounded"; color="#2E8B57"; bgcolor="#F6FCF8"; margin=14;
+
+    Medicines [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+      <TR><TD COLSPAN="2" BGCOLOR="#2E8B57"><FONT COLOR="white"><B>Medicines</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#E3F2E9"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3F2E9">RxCui : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Name : string</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Dosing_MaxDailyMg : numeric  (owned)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Dosing_MaxSingleMg : numeric  (owned)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Dosing_WarningThreshold : numeric  (owned)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Safety_PregnancyCategory : text  (owned)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Safety_IsControlled : bool  (owned)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Indications : text[]  (array)</TD></TR>
+      </TABLE>>];
+
+    MedicineIngredients [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+      <TR><TD COLSPAN="2" BGCOLOR="#2E8B57"><FONT COLOR="white"><B>MedicineIngredients</B>  (join)</FONT></TD></TR>
+      <TR><TD BGCOLOR="#FDF3E3"><B>PK,FK</B></TD><TD ALIGN="LEFT" BGCOLOR="#FDF3E3">MedicinesRxCui : string</TD></TR>
+      <TR><TD BGCOLOR="#FDF3E3"><B>PK,FK</B></TD><TD ALIGN="LEFT" BGCOLOR="#FDF3E3">IngredientsId : int</TD></TR>
+      </TABLE>>];
+
+    Ingredients [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+      <TR><TD COLSPAN="2" BGCOLOR="#2E8B57"><FONT COLOR="white"><B>Ingredients</B></FONT></TD></TR>
+      <TR><TD BGCOLOR="#E3F2E9"><B>PK</B></TD><TD ALIGN="LEFT" BGCOLOR="#E3F2E9">Id : int</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Code : string  (UNII)</TD></TR>
+      <TR><TD>  </TD><TD ALIGN="LEFT">Name : string</TD></TR>
+      </TABLE>>];
+
+    Medicines -> MedicineIngredients
+        [taillabel="1", headlabel="0..*", arrowhead=crow, color="#2E8B57",
+         label="MedicinesRxCui (FK)"];
+    Ingredients -> MedicineIngredients
+        [taillabel="1", headlabel="0..*", arrowhead=crow, color="#2E8B57",
+         label="IngredientsId (FK)"];
+  }
+
+  // cross-service note (NOT a DB foreign key — populated over HTTP from the MedicineInfo service)
+  Medicines -> MedicineKnowledgeRecord
+     [style=dotted, arrowhead=open, color="#999999", constraint=false,
+      label="يُملأ كذاكرة مؤقّتة عبر HTTP\n(ليست علاقة قاعدة بيانات)"];
+}

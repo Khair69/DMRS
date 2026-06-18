@@ -1,0 +1,29 @@
+// Use-case diagram — Patient / المريض (verified: ROLE_PATIENT; Portal pages + Home + Claim)
+// Render: dot -Tpng usecase-patient.dot -o usecase-patient.png
+digraph UC {
+  rankdir=RL;
+  graph [fontname="Arial", fontsize=13, labelloc="t",
+         label="مخطّط حالات الاستخدام — المريض (Patient)", pad=0.3, nodesep=0.3, ranksep=1.3];
+  node  [fontname="Arial", fontsize=11];
+  edge  [fontname="Arial", fontsize=9, dir=none, color="#555555"];
+
+  actor [shape=box, style="rounded,filled", fillcolor="#2E8B57", fontcolor="white",
+         label="المريض\nPatient", width=1.6];
+
+  subgraph cluster_sys {
+    label="نظام DMRS"; fontname="Arial"; fontsize=13; style="rounded"; color="#2E8B57"; bgcolor="#F6FCF8"; margin=12;
+    node [shape=ellipse, style=filled, fillcolor="#E3F2E9", color="#2E8B57"];
+
+    u_login [label="تسجيل الدخول\nLogin"];
+    u_lang  [label="تبديل اللغة\nSwitch Language"];
+    u_claim [label="ربط الحساب بالسجل\nClaim Patient Invite"];
+    u_dash  [label="عرض اللوحة الرئيسية\nView Dashboard"];
+    u_health[label="الاطّلاع على سجلّي الصحّي\nView My Health"];
+    u_appt  [label="متابعة المواعيد\nView Appointments"];
+    u_prof  [label="إدارة ملفّي الشخصي\nManage My Profile"];
+  }
+
+  actor -> { u_login u_lang u_claim u_dash u_health u_prof };
+  // appointments are surfaced within My Health
+  u_health -> u_appt [style=dashed, dir=back, arrowtail=vee, label="«include»", fontcolor="#2E8B57", color="#2E8B57"];
+}

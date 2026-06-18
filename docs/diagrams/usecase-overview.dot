@@ -1,0 +1,46 @@
+// Use-case OVERVIEW — all actors + capability groups (verified vs page [Authorize] roles)
+// Generalization: System Admin ▷ Org Admin ▷ Practitioner.  Patient & Visitor are separate.
+// Render: dot -Tpng usecase-overview.dot -o usecase-overview.png
+digraph UC {
+  rankdir=RL;
+  graph [fontname="Arial", fontsize=14, labelloc="t",
+         label="مخطّط حالات الاستخدام العام لنظام DMRS", pad=0.3, nodesep=0.35, ranksep=1.6];
+  node  [fontname="Arial", fontsize=11];
+  edge  [fontname="Arial", fontsize=9, dir=none, color="#666666"];
+
+  // ---- actors (right side) ----
+  { rank=same;
+    sysadmin [shape=box, style="rounded,filled", fillcolor="#C0392B", fontcolor="white", label="مدير النظام\nSystem Admin"];
+    orgadmin [shape=box, style="rounded,filled", fillcolor="#8E44AD", fontcolor="white", label="مدير المؤسسة\nOrg Admin"];
+    pract    [shape=box, style="rounded,filled", fillcolor="#1F6FB2", fontcolor="white", label="الطبيب / الممارس\nPractitioner"];
+    patient  [shape=box, style="rounded,filled", fillcolor="#2E8B57", fontcolor="white", label="المريض\nPatient"];
+    visitor  [shape=box, style="rounded,filled", fillcolor="#777777", fontcolor="white", label="الزائر\nVisitor"];
+  }
+
+  // actor generalization (hollow triangle points to parent)
+  sysadmin -> orgadmin [dir=back, arrowtail=onormal, color="#333333", constraint=false];
+  orgadmin -> pract    [dir=back, arrowtail=onormal, color="#333333", constraint=false];
+
+  // ---- capability groups inside the system ----
+  subgraph cluster_sys {
+    label="نظام DMRS"; fontname="Arial"; fontsize=14; style="rounded"; color="#1F6FB2"; bgcolor="#F7FBFD"; margin=14;
+    node [shape=ellipse, style=filled, color="#1F6FB2"];
+
+    g_auth   [label="المصادقة وتبديل اللغة\nLogin & Language", fillcolor="#EEEEEE", color="#777777"];
+    g_portal [label="بوابة المريض\nPatient Portal", fillcolor="#E3F2E9", color="#2E8B57"];
+    g_clin   [label="السجل السريري للمرضى\nClinical Record", fillcolor="#E8F1F8"];
+    g_orders [label="الطلبات والمواعيد\nOrders & Scheduling", fillcolor="#E8F1F8"];
+    g_ai     [label="المخاطر والرؤى الذكية\nAI Risk & Insights", fillcolor="#E8F1F8"];
+    g_staff  [label="إدارة الكادر والدعوات\nStaff & Invites", fillcolor="#F1E6F7", color="#8E44AD"];
+    g_ext    [label="النماذج الخارجية\nExternal AI Models", fillcolor="#F1E6F7", color="#8E44AD"];
+    g_cds    [label="تأليف قواعد دعم القرار\nCDS Authoring", fillcolor="#F1E6F7", color="#8E44AD"];
+    g_orgs   [label="إدارة المؤسسات\nManage Organizations", fillcolor="#F7E3E1", color="#C0392B"];
+  }
+
+  // ---- access edges (per verified role authorization) ----
+  visitor -> g_auth;
+  patient -> { g_auth g_portal };
+  pract   -> { g_auth g_clin g_orders g_ai };
+  orgadmin-> { g_staff g_ext g_cds };    // CDS authoring is SYS+ORG; + inherited clinical/AI via generalization
+  sysadmin-> { g_orgs };                 // + inherited everything (incl. CDS) via generalization
+}

@@ -1,0 +1,32 @@
+// Use-case diagram — System Admin / مدير النظام
+// Verified roles: Organizations Index/Create/Edit/History = SYS only; Organizations/Admins/Create = SYS.
+// Inherits Org Admin (and therefore Practitioner) capabilities — incl. CDS authoring (Cds/Admin = SYS+ORG),
+// External AI models, staff management — so those are shown on the Org Admin diagram, not duplicated here.
+// Render: dot -Tpng usecase-sysadmin.dot -o usecase-sysadmin.png
+digraph UC {
+  rankdir=RL;
+  graph [fontname="Arial", fontsize=13, labelloc="t",
+         label="مخطّط حالات الاستخدام — مدير النظام (System Admin)", pad=0.3, nodesep=0.3, ranksep=1.3];
+  node  [fontname="Arial", fontsize=11];
+  edge  [fontname="Arial", fontsize=9, dir=none, color="#555555"];
+
+  actor [shape=box, style="rounded,filled", fillcolor="#C0392B", fontcolor="white",
+         label="مدير النظام\nSystem Admin", width=1.8];
+  orgadmin [shape=box, style="rounded,filled", fillcolor="#8E44AD", fontcolor="white",
+         label="مدير المؤسسة\nOrg Admin", width=1.7];
+
+  // actor generalization: System Admin inherits Org Admin (→ Practitioner) use cases
+  actor -> orgadmin [dir=back, arrowtail=onormal, style=solid, color="#333333",
+                     label="يرث قدراته\n(generalization)", fontcolor="#333333"];
+
+  subgraph cluster_sys {
+    label="نظام DMRS  (قدرات إضافية لمدير النظام)"; fontname="Arial"; fontsize=13;
+    style="rounded"; color="#C0392B"; bgcolor="#FDF6F5"; margin=12;
+    node [shape=ellipse, style=filled, fillcolor="#F7E3E1", color="#C0392B"];
+
+    u_orgs   [label="إدارة المؤسسات\nManage Organizations"];
+    u_assign [label="تعيين مدير مؤسسة\nAssign Org Admin"];
+  }
+
+  actor -> { u_orgs u_assign };
+}
