@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using DMRS.Shared.Constants;
 using Hl7.Fhir.Model;
 
 namespace DMRS.Client.Features.Patients.Models;
@@ -21,6 +22,9 @@ public sealed class PatientEditModel
     [Required]
     public DateTime? BirthDate { get; set; }
 
+    [MaxLength(60)]
+    public string? City { get; set; }
+
     [MaxLength(100)]
     public string? IdentifierSystem { get; set; }
 
@@ -30,10 +34,20 @@ public sealed class PatientEditModel
     [MaxLength(100)]
     public string? ManagingOrganizationId { get; set; }
 
+    // The system/value of the identifier that was surfaced into the editable fields when this model
+    // was loaded. Used by the update flow to replace exactly that identifier while preserving every
+    // other identifier on the resource (patient number, invite code, Keycloak account link, ...).
+    public string? OriginalIdentifierSystem { get; set; }
+    public string? OriginalIdentifierValue { get; set; }
+
     public static PatientEditModel FromPatient(Patient patient)
     {
         var name = patient.Name.FirstOrDefault();
-        var identifier = patient.Identifier.FirstOrDefault();
+        // The patient number is system-managed and immutable, so never surface it in the editable
+        // identifier fields. Prefer the national number; otherwise the first non-patient-number id.
+        var editable = patient.Identifier.FirstOrDefault(i => i.System == PatientIdentifierSystems.NationalId)
+            ?? patient.Identifier.FirstOrDefault(i => i.System != PatientIdentifierSystems.PatientNumber);
+        var city = patient.Address?.FirstOrDefault()?.City;
         var managingOrganizationId = ParseReferenceId(patient.ManagingOrganization?.Reference, "organization");
 
         DateTime? birthDate = null;
@@ -49,8 +63,11 @@ public sealed class PatientEditModel
             GivenName = name?.Given?.FirstOrDefault() ?? string.Empty,
             Gender = patient.Gender.ToString(),
             BirthDate = birthDate,
-            IdentifierSystem = identifier?.System,
-            IdentifierValue = identifier?.Value,
+            City = city,
+            IdentifierSystem = editable?.System,
+            IdentifierValue = editable?.Value,
+            OriginalIdentifierSystem = editable?.System,
+            OriginalIdentifierValue = editable?.Value,
             ManagingOrganizationId = managingOrganizationId
         };
     }
@@ -71,6 +88,14 @@ public sealed class PatientEditModel
             Gender = ParseGender(Gender),
             BirthDate = BirthDate?.ToString("yyyy-MM-dd")
         };
+
+        if (!string.IsNullOrWhiteSpace(City))
+        {
+            patient.Address =
+            [
+                new Address { City = City.Trim(), Country = "SY" }
+            ];
+        }
 
         if (!string.IsNullOrWhiteSpace(IdentifierSystem) && !string.IsNullOrWhiteSpace(IdentifierValue))
         {

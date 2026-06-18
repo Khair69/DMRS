@@ -1,27 +1,28 @@
 @page "/patients"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @using DMRS.Client.Features.Patients.Models
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
 @inject DMRS.Client.Services.OrganizationContextService OrgContextService
 
-<PageTitle>Patients</PageTitle>
+<PageTitle>@Loc["patients.title"]</PageTitle>
 
 <ResourceIndexPage TSummary="PatientSummaryViewModel"
-                   Title="Patients"
+                   Title="@Loc["patients.title"]"
                    NewLink="/patients/new"
-                   NewLabel="New Patient"
-                   EntityName="patients"
-                   EmptyText="No patients found."
-                   SearchFields="_searchFields"
+                   NewLabel="@Loc["patients.new"]"
+                   EntityName="@Loc["patients.entityName"]"
+                   EmptyText="@Loc["patients.empty"]"
+                   SearchFields="SearchFieldList"
                    LoadDefault="LoadPatients"
                    Search="(p, v) => PatientService.SearchAsync(p, v)"
                    Suggest="(p, v) => PatientService.SuggestAsync(p, v)">
     <HeaderTemplate>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Identifier</th>
-        <th>Gender</th>
-        <th>Birth Date</th>
+        <th>@Loc["common.field.id"]</th>
+        <th>@Loc["common.field.name"]</th>
+        <th>@Loc["common.field.identifier"]</th>
+        <th>@Loc["common.field.gender"]</th>
+        <th>@Loc["common.field.birthDate"]</th>
         <th></th>
     </HeaderTemplate>
     <RowTemplate Context="patient">
@@ -31,20 +32,22 @@
         <td>@patient.Gender</td>
         <td>@patient.BirthDate</td>
         <td class="text-nowrap">
-            <NavLink class="btn btn-sm btn-outline-primary me-1" href="@($"/patients/{patient.Id}")">Details</NavLink>
-            <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/patients/{patient.Id}/edit")">Edit</NavLink>
-            <NavLink class="btn btn-sm btn-outline-info" href="@($"/patients/{patient.Id}/history")">History</NavLink>
+            <NavLink class="btn btn-sm btn-outline-primary me-1" href="@($"/patients/{patient.Id}")">@Loc["common.details"]</NavLink>
+            <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/patients/{patient.Id}/edit")">@Loc["common.edit"]</NavLink>
+            <NavLink class="btn btn-sm btn-outline-info" href="@($"/patients/{patient.Id}/history")">@Loc["common.history"]</NavLink>
         </td>
     </RowTemplate>
 </ResourceIndexPage>
 
 @code {
-    private static readonly IReadOnlyList<SearchField> _searchFields =
+    // Identifier (patient number / national number) is first so it is the default search field —
+    // a precise lookup, unlike names which collide across patients.
+    private IReadOnlyList<SearchField> SearchFieldList =>
     [
-        new("family", "Family Name", "e.g. Smith"),
-        new("given", "Given Name", "e.g. John"),
-        new("identifier", "Identifier", "e.g. 12345"),
-        new("organization", "Organization", "e.g. 7 (organization id)"),
+        new("identifier", Loc["patients.search.identifier.label"], Loc["patients.search.identifier.placeholder"]),
+        new("family", Loc["common.field.familyName"], Loc["patients.search.family.placeholder"]),
+        new("given", Loc["common.field.givenName"], Loc["patients.search.given.placeholder"]),
+        new("organization", Loc["patients.search.organization.label"], Loc["patients.search.organization.placeholder"]),
     ];
 
     // Default view is scoped to the practitioner/admin's organization when there is one; a system

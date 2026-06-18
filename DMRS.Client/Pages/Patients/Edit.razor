@@ -1,12 +1,13 @@
 ﻿@page "/patients/{Id}/edit"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
 @inject DMRS.Client.Services.OrganizationContextService OrgContextService
 @inject NavigationManager Navigation
 
-<PageTitle>Edit Patient</PageTitle>
+<PageTitle>@Loc["patients.edit.title"]</PageTitle>
 
-<h1>Edit Patient</h1>
+<h1>@Loc["patients.edit.title"]</h1>
 
 @if (isLoading)
 {
@@ -19,7 +20,7 @@ else
         <div class="alert alert-danger">@errorMessage</div>
     }
 
-    <PatientForm Model="model" IsBusy="@isSaving" SubmitText="Update Patient" OnSave="Save" ShowOrganizationField="@showOrganizationField" />
+    <PatientForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["patients.edit.submit"]" OnSave="Save" ShowOrganizationField="@showOrganizationField" />
 }
 
 @code {
@@ -42,7 +43,7 @@ else
             var patient = await PatientService.GetAsync(Id);
             if (patient is null)
             {
-                errorMessage = $"Patient {Id} not found.";
+                errorMessage = Loc["patients.notFound", Id];
                 return;
             }
 
@@ -58,7 +59,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load patient: {ex.Message}";
+            errorMessage = Loc["patients.loadFailed", ex.Message];
         }
         finally
         {
@@ -75,16 +76,16 @@ else
         {
             if (showOrganizationField && string.IsNullOrWhiteSpace(model.ManagingOrganizationId))
             {
-                errorMessage = "Managing organization is required.";
+                errorMessage = Loc["patients.orgRequired"];
                 return;
             }
 
-            await PatientService.UpdateAsync(Id, model);
+            await PatientService.UpdatePatientAsync(Id, model);
             Navigation.NavigateTo($"/patients/{Id}");
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to update patient: {ex.Message}";
+            errorMessage = Loc["patients.updateFailed", ex.Message];
         }
         finally
         {

@@ -1,5 +1,6 @@
 ﻿using DMRS.Client.Features.Patients.Models;
 using DMRS.Client.Services;
+using DMRS.Shared.Constants;
 using Hl7.Fhir.Model;
 
 namespace DMRS.Client.Features.Patients.Services;
@@ -25,12 +26,53 @@ public class PatientFeatureService : FhirFeatureServiceBase<Patient, PatientEdit
         var name = patient.Name.FirstOrDefault();
         var displayName = string.Join(" ", new[] { name?.Given?.FirstOrDefault(), name?.Family }.Where(x => !string.IsNullOrWhiteSpace(x)));
 
+        // Headline identifier is the readable patient number; fall back to the first identifier for
+        // legacy rows that have not been backfilled yet.
+        var headline = patient.Identifier.FirstOrDefault(i => i.System == PatientIdentifierSystems.PatientNumber)?.Value
+            ?? patient.Identifier.FirstOrDefault()?.Value;
+
         return new PatientSummaryViewModel(
             patient.Id ?? "(no-id)",
             string.IsNullOrWhiteSpace(displayName) ? "Unnamed patient" : displayName,
             patient.Gender.ToString(),
             patient.BirthDate,
-            patient.Identifier.FirstOrDefault()?.Value);
+            headline);
+    }
+
+    // Patient updates must NOT clobber system-managed identifiers (patient number, invite code,
+    // Keycloak account link). The base UpdateAsync rebuilds the resource from the form alone, which
+    // would drop them — so patients use this merge-aware path instead: it overlays the edited
+    // demographics + city + the single editable identifier onto the existing resource.
+    public async Task<Patient?> UpdatePatientAsync(string id, PatientEditModel model)
+    {
+        var existing = await GetAsync(id)
+            ?? throw new InvalidOperationException($"Patient {id} was not found.");
+
+        var updated = model.ToFhirPatient();
+        updated.Id = id;
+
+        // Preserve every existing identifier except the slot the form owns (matched by its original
+        // system+value); then re-add the form's current editable identifier from `updated`.
+        var preserved = existing.Identifier
+            .Where(i => !(string.Equals(i.System, model.OriginalIdentifierSystem, StringComparison.OrdinalIgnoreCase)
+                          && string.Equals(i.Value, model.OriginalIdentifierValue, StringComparison.Ordinal)))
+            .ToList();
+        var editable = updated.Identifier?.ToList() ?? [];
+        updated.Identifier = [.. preserved, .. editable];
+
+        // Preserve any richer address captured elsewhere (e.g. the patient portal); only set the city.
+        var existingAddress = existing.Address?.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(model.City) || existingAddress is not null)
+        {
+            var address = existingAddress ?? new Address { Country = "SY" };
+            if (!string.IsNullOrWhiteSpace(model.City))
+            {
+                address.City = model.City.Trim();
+            }
+            updated.Address = [address];
+        }
+
+        return await _fhirApiService.UpdateResourceAsync(id, updated);
     }
 
     public async Task<PatientInviteResult> CreateInviteAsync(PatientEditModel model, string appBaseUri)
@@ -51,6 +93,7 @@ public class PatientFeatureService : FhirFeatureServiceBase<Patient, PatientEdit
                 FamilyName = model.FamilyName,
                 BirthDate = model.BirthDate,
                 Gender = model.Gender,
+                City = model.City,
                 IdentifierSystem = model.IdentifierSystem,
                 IdentifierValue = model.IdentifierValue
             });
@@ -133,6 +176,7 @@ internal sealed class CreatePatientInviteRequest
     public string FamilyName { get; set; } = string.Empty;
     public DateTime? BirthDate { get; set; }
     public string? Gender { get; set; }
+    public string? City { get; set; }
     public string? IdentifierSystem { get; set; }
     public string? IdentifierValue { get; set; }
 }

@@ -3,9 +3,11 @@ using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Infrastructure.Persistence;
 using DMRS.Api.Infrastructure.Search.Administrative;
 using DMRS.Api.Infrastructure.Security;
+using DMRS.Shared.Constants;
 using Hl7.Fhir.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DMRS.Api.Controllers.Security;
 
@@ -88,6 +90,18 @@ public sealed class PatientInviteController : ControllerBase
         }
 
         var patient = BuildPatient(request);
+
+        // Assign the readable patient number (XX12345) before persisting so it is indexed on create
+        // and becomes the patient's headline identifier. The GUID logical id is unaffected.
+        var patientNumberPrefix = SyrianGovernorates.PrefixForCity(request.City);
+        var patientNumber = await GeneratePatientNumberAsync(patientNumberPrefix, cancellationToken);
+        patient.Identifier ??= [];
+        patient.Identifier.Insert(0, new Identifier
+        {
+            System = PatientIdentifierSystems.PatientNumber,
+            Value = patientNumber,
+            Type = new CodeableConcept { Text = "Patient Number" }
+        });
 
         await using var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
@@ -216,6 +230,14 @@ public sealed class PatientInviteController : ControllerBase
             ManagingOrganization = new ResourceReference($"Organization/{request.OrganizationId.Trim()}")
         };
 
+        if (!string.IsNullOrWhiteSpace(request.City))
+        {
+            patient.Address =
+            [
+                new Address { City = request.City.Trim(), Country = "SY" }
+            ];
+        }
+
         if (!string.IsNullOrWhiteSpace(request.IdentifierSystem) && !string.IsNullOrWhiteSpace(request.IdentifierValue))
         {
             patient.Identifier =
@@ -266,6 +288,33 @@ public sealed class PatientInviteController : ControllerBase
         return Convert.ToHexString(bytes);
     }
 
+    // Builds a unique readable patient number "<prefix><5 digits>". The identifier search index
+    // stores values lower-cased (see ResourceSearchIndexerBase), so collisions are checked against
+    // the lower-cased candidate. Retries on the (rare) collision; widens to a guard cap.
+    private async Task<string> GeneratePatientNumberAsync(string prefix, CancellationToken cancellationToken)
+    {
+        const int maxAttempts = 25;
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            var candidate = $"{prefix}{RandomNumberGenerator.GetInt32(0, 100_000):D5}";
+            var indexValue = candidate.ToLowerInvariant();
+
+            var taken = await _dbContext.ResourceIndices.AnyAsync(
+                i => i.ResourceType == "Patient"
+                     && i.SearchParamCode == "identifier"
+                     && i.Value == indexValue,
+                cancellationToken);
+
+            if (!taken)
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Could not allocate a unique patient number for prefix '{prefix}' after {maxAttempts} attempts.");
+    }
+
     private static bool IsLinkedToKeycloak(Patient patient, string? keycloakAuthority)
     {
         var keycloakSystem = BuildKeycloakIdentifierSystem(keycloakAuthority);
@@ -301,6 +350,7 @@ public sealed class PatientInviteController : ControllerBase
         public string FamilyName { get; set; } = string.Empty;
         public DateTime? BirthDate { get; set; }
         public string? Gender { get; set; }
+        public string? City { get; set; }
         public string? IdentifierSystem { get; set; }
         public string? IdentifierValue { get; set; }
     }

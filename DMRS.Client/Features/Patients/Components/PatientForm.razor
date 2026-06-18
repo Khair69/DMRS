@@ -1,50 +1,63 @@
 ﻿@using DMRS.Client.Features.Patients.Models
+@using DMRS.Shared.Constants
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 <EditForm Model="Model" OnValidSubmit="OnSubmit">
     <DataAnnotationsValidator />
 
     <div class="row g-3">
         <div class="col-md-6">
-            <label class="form-label">Given Name</label>
+            <label class="form-label">@Loc["common.field.givenName"]</label>
             <InputText @bind-Value="Model.GivenName" class="form-control" />
             <ValidationMessage For="() => Model.GivenName" />
         </div>
         <div class="col-md-6">
-            <label class="form-label">Family Name</label>
+            <label class="form-label">@Loc["common.field.familyName"]</label>
             <InputText @bind-Value="Model.FamilyName" class="form-control" />
             <ValidationMessage For="() => Model.FamilyName" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Gender</label>
+            <label class="form-label">@Loc["common.field.gender"]</label>
             <InputSelect @bind-Value="Model.Gender" class="form-select">
-                <option value="Unknown">Unknown</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
+                <option value="Unknown">@Loc["common.unknown"]</option>
+                <option value="Male">@Loc["common.male"]</option>
+                <option value="Female">@Loc["common.female"]</option>
+                <option value="Other">@Loc["common.other"]</option>
             </InputSelect>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Birth Date</label>
+            <label class="form-label">@Loc["common.field.birthDate"]</label>
             <InputDate @bind-Value="Model.BirthDate" class="form-control" />
             <ValidationMessage For="() => Model.BirthDate" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Identifier System</label>
+            <label class="form-label">@Loc["patients.form.cityLabel"]</label>
+            <InputSelect @bind-Value="Model.City" class="form-select">
+                <option value="">@Loc["patients.form.cityUnknown"]</option>
+                @foreach (var gov in SyrianGovernorates.All)
+                {
+                    <option value="@gov.EnglishName">@GovernorateLabel(gov)</option>
+                }
+            </InputSelect>
+            <div class="form-text">@Loc["patients.form.cityHint"]</div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">@Loc["common.field.identifierSystem"]</label>
             <InputText @bind-Value="Model.IdentifierSystem" class="form-control" />
         </div>
         <div class="col-md-6">
-            <label class="form-label">Identifier Value</label>
+            <label class="form-label">@Loc["common.field.identifierValue"]</label>
             <InputText @bind-Value="Model.IdentifierValue" class="form-control" />
         </div>
         @if (ShowOrganizationField)
         {
             <div class="col-md-6">
-                <label class="form-label">Managing Organization Id</label>
+                <label class="form-label">@Loc["patients.form.orgIdLabel"]</label>
                 <InputText @bind-Value="Model.ManagingOrganizationId" class="form-control" readonly="@OrganizationReadOnly" />
                 <ValidationMessage For="() => Model.ManagingOrganizationId" />
                 @if (OrganizationReadOnly)
                 {
-                    <div class="form-text">This patient will be registered under your organization.</div>
+                    <div class="form-text">@Loc["patients.form.orgHint"]</div>
                 }
             </div>
         }
@@ -73,6 +86,9 @@
 
     [Parameter]
     public EventCallback OnSave { get; set; }
+
+    private string GovernorateLabel(SyrianGovernorate gov)
+        => Loc.CurrentLanguage == "ar" ? gov.ArabicName : gov.EnglishName;
 
     private async Task OnSubmit()
     {

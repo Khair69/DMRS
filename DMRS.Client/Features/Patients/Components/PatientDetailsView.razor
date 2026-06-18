@@ -1,37 +1,43 @@
 ﻿@using Hl7.Fhir.Model
+@using DMRS.Shared.Constants
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 @if (Patient is null)
 {
-    <div class="alert alert-warning">Patient not found.</div>
+    <div class="alert alert-warning">@Loc["patients.notFoundShort"]</div>
 }
 else
 {
     var primaryName = Patient.Name.FirstOrDefault();
-    var identifier = Patient.Identifier.FirstOrDefault();
+    var patientNumber = Patient.Identifier.FirstOrDefault(i => i.System == PatientIdentifierSystems.PatientNumber)?.Value;
+    var nationalNumber = Patient.Identifier.FirstOrDefault(i => i.System == PatientIdentifierSystems.NationalId)?.Value;
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Patient @Patient.Id</span>
+            <span>@Loc["patients.title"] @(patientNumber ?? Patient.Id)</span>
             <div>
-                <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/patients/{Patient.Id}/edit")">Edit</NavLink>
-                <NavLink class="btn btn-sm btn-outline-info" href="@($"/patients/{Patient.Id}/history")">History</NavLink>
+                <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/patients/{Patient.Id}/edit")">@Loc["common.edit"]</NavLink>
+                <NavLink class="btn btn-sm btn-outline-info" href="@($"/patients/{Patient.Id}/history")">@Loc["common.history"]</NavLink>
             </div>
         </div>
         <div class="card-body">
             <dl class="row mb-0">
-                <dt class="col-sm-3">Name</dt>
+                <dt class="col-sm-3">@Loc["common.field.name"]</dt>
                 <dd class="col-sm-9">@string.Join(" ", primaryName?.Given ?? []) @primaryName?.Family</dd>
 
-                <dt class="col-sm-3">Identifier</dt>
-                <dd class="col-sm-9">@identifier?.System / @identifier?.Value</dd>
+                <dt class="col-sm-3">@Loc["patients.field.patientNumber"]</dt>
+                <dd class="col-sm-9">@(patientNumber ?? Loc["common.notAvailable"])</dd>
 
-                <dt class="col-sm-3">Gender</dt>
+                <dt class="col-sm-3">@Loc["patients.field.nationalNumber"]</dt>
+                <dd class="col-sm-9">@(nationalNumber ?? Loc["common.notAvailable"])</dd>
+
+                <dt class="col-sm-3">@Loc["common.field.gender"]</dt>
                 <dd class="col-sm-9">@Patient.Gender.ToString()</dd>
 
-                <dt class="col-sm-3">Birth Date</dt>
+                <dt class="col-sm-3">@Loc["common.field.birthDate"]</dt>
                 <dd class="col-sm-9">@Patient.BirthDate</dd>
 
-                <dt class="col-sm-3">Managing Organization</dt>
+                <dt class="col-sm-3">@Loc["common.managingOrganization"]</dt>
                 <dd class="col-sm-9">@Patient.ManagingOrganization?.Reference</dd>
             </dl>
         </div>
