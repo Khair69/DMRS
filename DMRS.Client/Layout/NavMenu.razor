@@ -1,10 +1,11 @@
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject DMRS.Client.Services.OrganizationContextService OrgContext
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">DMRS Workspace</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+        <a class="navbar-brand" href="">@Loc["app.brand"]</a>
+        <button title="@Loc["nav.toggle"]" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>
@@ -15,62 +16,62 @@
         @* Standalone items — never grouped. *@
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                Home Dashboard
+                @Loc["nav.home"]
             </NavLink>
         </div>
 
         <AuthorizeView Roles="ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER">
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="patients">Patients</NavLink>
+                <NavLink class="nav-link" href="patients">@Loc["nav.patients"]</NavLink>
             </div>
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="ai-insights">AI Insights</NavLink>
+                <NavLink class="nav-link" href="ai-insights">@Loc["nav.aiInsights"]</NavLink>
             </div>
 
             <div class="nav-group">
                 <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("clinical")'>
-                    <span>Clinical Records</span>
+                    <span>@Loc["nav.group.clinical"]</span>
                     <svg class="nav-group-chevron @(IsExpanded("clinical") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
                 </button>
                 <div class="nav-group-items @(IsExpanded("clinical") ? "expanded" : "")">
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="documents">Documents</NavLink>
+                        <NavLink class="nav-link" href="documents">@Loc["nav.documents"]</NavLink>
                     </div>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="encounters">Encounters</NavLink>
+                        <NavLink class="nav-link" href="encounters">@Loc["nav.encounters"]</NavLink>
                     </div>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="conditions">Conditions</NavLink>
+                        <NavLink class="nav-link" href="conditions">@Loc["nav.conditions"]</NavLink>
                     </div>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="observations">Observations</NavLink>
+                        <NavLink class="nav-link" href="observations">@Loc["nav.observations"]</NavLink>
                     </div>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="procedures">Procedures</NavLink>
+                        <NavLink class="nav-link" href="procedures">@Loc["nav.procedures"]</NavLink>
                     </div>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="allergy-intolerances">Allergies</NavLink>
+                        <NavLink class="nav-link" href="allergy-intolerances">@Loc["nav.allergies"]</NavLink>
                     </div>
                 </div>
             </div>
 
             <div class="nav-group">
                 <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("orders")'>
-                    <span>Orders &amp; Scheduling</span>
+                    <span>@Loc["nav.group.orders"]</span>
                     <svg class="nav-group-chevron @(IsExpanded("orders") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
                 </button>
                 <div class="nav-group-items @(IsExpanded("orders") ? "expanded" : "")">
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="medication-requests">Medication Requests</NavLink>
+                        <NavLink class="nav-link" href="medication-requests">@Loc["nav.medicationRequests"]</NavLink>
                     </div>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="service-requests">Service Requests</NavLink>
+                        <NavLink class="nav-link" href="service-requests">@Loc["nav.serviceRequests"]</NavLink>
                     </div>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="appointments">Appointments</NavLink>
+                        <NavLink class="nav-link" href="appointments">@Loc["nav.appointments"]</NavLink>
                     </div>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="locations">Locations</NavLink>
+                        <NavLink class="nav-link" href="locations">@Loc["nav.locations"]</NavLink>
                     </div>
                 </div>
             </div>
@@ -78,12 +79,12 @@
             <AuthorizeView Roles="ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN" Context="adminContext">
                 <div class="nav-group">
                     <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("intelligence")'>
-                        <span>Intelligence</span>
+                        <span>@Loc["nav.group.intelligence"]</span>
                         <svg class="nav-group-chevron @(IsExpanded("intelligence") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
                     </button>
                     <div class="nav-group-items @(IsExpanded("intelligence") ? "expanded" : "")">
                         <div class="nav-item px-3">
-                            <NavLink class="nav-link" href="external-ai/admin">External AI Models</NavLink>
+                            <NavLink class="nav-link" href="external-ai/admin">@Loc["nav.externalAi"]</NavLink>
                         </div>
                     </div>
                 </div>
@@ -95,15 +96,15 @@
             {
                 <div class="nav-group">
                     <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("mycare")'>
-                        <span>My Care</span>
+                        <span>@Loc["nav.group.mycare"]</span>
                         <svg class="nav-group-chevron @(IsExpanded("mycare") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
                     </button>
                     <div class="nav-group-items @(IsExpanded("mycare") ? "expanded" : "")">
                         <div class="nav-item px-3">
-                            <NavLink class="nav-link" href="my-health">My Health Records</NavLink>
+                            <NavLink class="nav-link" href="my-health">@Loc["nav.myHealth"]</NavLink>
                         </div>
                         <div class="nav-item px-3">
-                            <NavLink class="nav-link" href="my-profile">My Profile</NavLink>
+                            <NavLink class="nav-link" href="my-profile">@Loc["nav.myProfile"]</NavLink>
                         </div>
                     </div>
                 </div>
@@ -115,33 +116,35 @@
             {
                 <div class="nav-group">
                     <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("myorg")'>
-                        <span>My Organization</span>
+                        <span>@Loc["nav.group.myorg"]</span>
                         <svg class="nav-group-chevron @(IsExpanded("myorg") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
                     </button>
                     <div class="nav-group-items @(IsExpanded("myorg") ? "expanded" : "")">
                         <div class="nav-item px-3">
-                            <NavLink class="nav-link" href="@($"/organizations/{orgAdminOrganizationId}")">Organization</NavLink>
+                            <NavLink class="nav-link" href="@($"/organizations/{orgAdminOrganizationId}")">@Loc["nav.organization"]</NavLink>
                         </div>
                         <div class="nav-item px-3">
-                            <NavLink class="nav-link" href="@($"/organizations/{orgAdminOrganizationId}/staff")">Staff</NavLink>
+                            <NavLink class="nav-link" href="@($"/organizations/{orgAdminOrganizationId}/staff")">@Loc["nav.staff"]</NavLink>
                         </div>
                     </div>
                 </div>
             }
         </AuthorizeView>
 
-        <AuthorizeView Roles="ROLE_SYSTEM_ADMIN">
+        <AuthorizeView Roles="ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN" Context="adminGroupContext">
             <div class="nav-group">
                 <button type="button" class="nav-group-header px-3" @onclick:stopPropagation="true" @onclick='() => ToggleGroup("admin")'>
-                    <span>Administration</span>
+                    <span>@Loc["nav.group.admin"]</span>
                     <svg class="nav-group-chevron @(IsExpanded("admin") ? "expanded" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
                 </button>
                 <div class="nav-group-items @(IsExpanded("admin") ? "expanded" : "")">
+                    <AuthorizeView Roles="ROLE_SYSTEM_ADMIN" Context="organizationsContext">
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="organizations">@Loc["nav.organizations"]</NavLink>
+                        </div>
+                    </AuthorizeView>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="organizations">Organizations</NavLink>
-                    </div>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="cds/admin">CDS Admin</NavLink>
+                        <NavLink class="nav-link" href="cds/admin">@Loc["nav.cdsAdmin"]</NavLink>
                     </div>
                 </div>
             </div>

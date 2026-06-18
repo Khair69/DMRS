@@ -1,21 +1,22 @@
 @using DMRS.Client.Features.AllergyIntolerances.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 <EditForm Model="Model" OnValidSubmit="OnSubmit">
     <DataAnnotationsValidator />
 
     <div class="row g-3">
         <div class="col-md-4">
-            <label class="form-label">Patient Id</label>
+            <label class="form-label">@Loc["common.field.patientId"]</label>
             <InputText @bind-Value="Model.PatientId" class="form-control" />
             <ValidationMessage For="() => Model.PatientId" />
         </div>
         <div class="col-md-8">
-            <label class="form-label">Code</label>
+            <label class="form-label">@Loc["common.field.code"]</label>
             <InputText @bind-Value="Model.CodeText" class="form-control" />
             <ValidationMessage For="() => Model.CodeText" />
         </div>
         <div class="col-md-6">
-            <label class="form-label">Clinical Status</label>
+            <label class="form-label">@Loc["common.field.clinicalStatus"]</label>
             <InputText @bind-Value="Model.ClinicalStatus" class="form-control" />
         </div>
     </div>

@@ -1,0 +1,18 @@
+@inherits DMRS.Client.Components.LocalizedComponentBase
+
+<div class="language-switcher" role="group" aria-label="@Loc["language.switcher.label"]">
+    @foreach (var lang in Loc.Languages)
+    {
+        <button type="button"
+                class="language-switcher__btn @(lang.Code == Loc.CurrentLanguage ? "active" : null)"
+                lang="@lang.Code"
+                aria-pressed="@(lang.Code == Loc.CurrentLanguage)"
+                @onclick="() => SetLanguageAsync(lang.Code)">
+            @lang.DisplayName
+        </button>
+    }
+</div>
+
+@code {
+    private Task SetLanguageAsync(string code) => Loc.SetLanguageAsync(code);
+}

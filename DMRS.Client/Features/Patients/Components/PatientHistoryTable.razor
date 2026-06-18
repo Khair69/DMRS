@@ -1,19 +1,20 @@
 ﻿@using Hl7.Fhir.Model
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 @if (History.Count == 0)
 {
-    <div class="alert alert-secondary">No history versions found for this patient.</div>
+    <div class="alert alert-secondary">@Loc["patients.history.empty"]</div>
 }
 else
 {
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Version</th>
-                <th>Last Updated</th>
-                <th>Name</th>
-                <th>Gender</th>
-                <th>Birth Date</th>
+                <th>@Loc["common.field.version"]</th>
+                <th>@Loc["common.field.lastUpdated"]</th>
+                <th>@Loc["common.field.name"]</th>
+                <th>@Loc["common.field.gender"]</th>
+                <th>@Loc["common.field.birthDate"]</th>
             </tr>
         </thead>
         <tbody>

@@ -1,18 +1,19 @@
 @page "/conditions/new"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Conditions.Services.ConditionFeatureService ConditionService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Create Condition</PageTitle>
+<PageTitle>@Loc["conditions.create.title"]</PageTitle>
 
-<h1>Create Condition</h1>
+<h1>@Loc["conditions.create.title"]</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<ConditionForm Model="model" IsBusy="@isSaving" SubmitText="Create Condition" OnSave="Save" />
+<ConditionForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["conditions.create.submit"]" OnSave="Save" />
 
 @code {
     private readonly DMRS.Client.Features.Conditions.Models.ConditionEditModel model = new();
@@ -28,7 +29,7 @@
             var created = await ConditionService.CreateAsync(model);
             if (created?.Id is null)
             {
-                errorMessage = "Condition was created but no id was returned.";
+                errorMessage = Loc["conditions.noIdReturned"];
                 return;
             }
 
@@ -36,7 +37,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred while creating the condition: {ex.Message}";
+            errorMessage = Loc["conditions.createError", ex.Message];
         }
         finally
         {

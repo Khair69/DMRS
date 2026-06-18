@@ -71,6 +71,15 @@
     transform: rotate(90deg);
 }
 
+/* In RTL the collapsed chevron should point left; expanded still points down. */
+[dir="rtl"] .nav-group-chevron {
+    transform: rotate(180deg);
+}
+
+[dir="rtl"] .nav-group-chevron.expanded {
+    transform: rotate(90deg);
+}
+
 .nav-group-items {
     overflow: hidden;
     max-height: 0;
@@ -109,6 +118,10 @@
     background-color: rgba(255, 255, 255, 0.08);
     color: white;
     transform: translateX(2px);
+}
+
+[dir="rtl"] .nav-item ::deep a:hover {
+    transform: translateX(-2px);
 }
 
 @media (min-width: 641px) {

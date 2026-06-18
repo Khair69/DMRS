@@ -1,10 +1,11 @@
 @page "/encounters/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Encounters.Services.EncounterFeatureService EncounterService
 
-<PageTitle>Encounter Details</PageTitle>
+<PageTitle>@Loc["encounters.details.title"]</PageTitle>
 
-<h1>Encounter Details</h1>
+<h1>@Loc["encounters.details.title"]</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
@@ -12,8 +13,8 @@
 }
 
 <div class="mb-3">
-    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/encounters/{Id}/edit")">Edit</NavLink>
-    <NavLink class="btn btn-sm btn-outline-info" href="@($"/encounters/{Id}/history")">History</NavLink>
+    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/encounters/{Id}/edit")">@Loc["common.edit"]</NavLink>
+    <NavLink class="btn btn-sm btn-outline-info" href="@($"/encounters/{Id}/history")">@Loc["common.history"]</NavLink>
 </div>
 
 <FhirJsonView Resource="encounter" />
@@ -33,12 +34,12 @@
             encounter = await EncounterService.GetAsync(Id);
             if (encounter is null)
             {
-                errorMessage = $"Encounter {Id} not found.";
+                errorMessage = Loc["encounters.notFound", Id];
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load encounter: {ex.Message}";
+            errorMessage = Loc["encounters.loadFailed", ex.Message];
         }
     }
 }

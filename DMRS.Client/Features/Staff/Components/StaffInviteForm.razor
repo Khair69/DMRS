@@ -1,49 +1,50 @@
 @using DMRS.Client.Features.Staff.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 <EditForm Model="Model" OnValidSubmit="OnSubmit">
     <DataAnnotationsValidator />
 
     <div class="row g-3">
         <div class="col-md-6">
-            <label class="form-label">Given Name</label>
+            <label class="form-label">@Loc["common.field.givenName"]</label>
             <InputText @bind-Value="Model.GivenName" class="form-control" />
             <ValidationMessage For="() => Model.GivenName" />
         </div>
         <div class="col-md-6">
-            <label class="form-label">Family Name</label>
+            <label class="form-label">@Loc["common.field.familyName"]</label>
             <InputText @bind-Value="Model.FamilyName" class="form-control" />
             <ValidationMessage For="() => Model.FamilyName" />
         </div>
         <div class="col-md-6">
-            <label class="form-label">Email</label>
+            <label class="form-label">@Loc["common.field.email"]</label>
             <InputText @bind-Value="Model.Email" class="form-control" />
             <ValidationMessage For="() => Model.Email" />
         </div>
         <div class="col-md-6">
-            <label class="form-label">Phone</label>
+            <label class="form-label">@Loc["common.field.phone"]</label>
             <InputText @bind-Value="Model.Phone" class="form-control" />
         </div>
         <div class="col-md-6">
-            <label class="form-label">Identifier System</label>
+            <label class="form-label">@Loc["common.field.identifierSystem"]</label>
             <InputText @bind-Value="Model.IdentifierSystem" class="form-control" />
         </div>
         <div class="col-md-6">
-            <label class="form-label">Identifier Value</label>
+            <label class="form-label">@Loc["common.field.identifierValue"]</label>
             <InputText @bind-Value="Model.IdentifierValue" class="form-control" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Role</label>
+            <label class="form-label">@Loc["common.field.role"]</label>
             <InputSelect @bind-Value="Model.RoleCode" class="form-select" @onchange="HandleRoleChange">
-                <option value="@StaffRoleCodes.Doctor">Doctor</option>
-                <option value="@StaffRoleCodes.OrganizationAdmin">Organization Admin</option>
+                <option value="@StaffRoleCodes.Doctor">@Loc["staff.role.doctor"]</option>
+                <option value="@StaffRoleCodes.OrganizationAdmin">@Loc["staff.role.orgAdmin"]</option>
             </InputSelect>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Role Display</label>
+            <label class="form-label">@Loc["common.field.roleDisplay"]</label>
             <InputText @bind-Value="Model.RoleDisplay" class="form-control" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Role System</label>
+            <label class="form-label">@Loc["common.field.roleSystem"]</label>
             <InputText @bind-Value="Model.RoleSystem" class="form-control" />
         </div>
     </div>

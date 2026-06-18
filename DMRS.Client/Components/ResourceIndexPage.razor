@@ -1,4 +1,5 @@
 @typeparam TSummary
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 @* Shared scaffold for every resource Index page: title + "new" button, an optional search form,
    loading/error/empty states, and a capped, paginated results table. Pages supply only what differs
@@ -19,7 +20,7 @@
             <EditForm Model="this" OnSubmit="RunSearch">
                 <div class="row g-2 align-items-end">
                     <div class="col-md-3">
-                        <label class="form-label">Search Field</label>
+                        <label class="form-label">@Loc["index.searchField"]</label>
                         <InputSelect @bind-Value="_searchParam" class="form-select">
                             @foreach (var field in SearchFields)
                             {
@@ -28,7 +29,7 @@
                         </InputSelect>
                     </div>
                     <div class="col-md-7">
-                        <label class="form-label">Search Value</label>
+                        <label class="form-label">@Loc["index.searchValue"]</label>
                         @if (Suggest is not null)
                         {
                             @* Type-ahead: a native datalist fed by debounced suggestion fetches. *@
@@ -47,7 +48,7 @@
                         }
                     </div>
                     <div class="col-md-2 d-grid">
-                        <button class="btn btn-primary" disabled="@_isBusy" type="submit">Search</button>
+                        <button class="btn btn-primary" disabled="@_isBusy" type="submit">@Loc["common.search"]</button>
                     </div>
                 </div>
             </EditForm>
@@ -62,7 +63,7 @@
 
 @if (_isBusy)
 {
-    <div class="text-muted py-3">Loading…</div>
+    <div class="text-muted py-3">@Loc["common.loading"]</div>
 }
 else if (_items.Count == 0)
 {
@@ -73,7 +74,7 @@ else
     @if (_isDefaultView && _capped)
     {
         <div class="alert alert-info py-2">
-            Showing the @Cap most recent @EntityName. Use search to find others.
+            @Loc["index.cap", Cap, EntityName]
         </div>
     }
     <Paginator Items="_items" PageSize="PageSize" Context="pageItems">
@@ -132,10 +133,13 @@ else
     private IReadOnlyList<TSummary> _items = [];
 
     private string CurrentPlaceholder =>
-        SearchFields.FirstOrDefault(f => f.Value == _searchParam)?.Placeholder ?? "Search value";
+        SearchFields.FirstOrDefault(f => f.Value == _searchParam)?.Placeholder ?? Loc["index.searchValuePlaceholder"];
 
     protected override void OnInitialized()
-        => _searchParam = SearchFields.FirstOrDefault()?.Value ?? string.Empty;
+    {
+        base.OnInitialized();
+        _searchParam = SearchFields.FirstOrDefault()?.Value ?? string.Empty;
+    }
 
     protected override Task OnInitializedAsync() => LoadDefaultAsync();
 
@@ -152,7 +156,7 @@ else
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Failed to load {EntityName}: {ex.Message}";
+            _errorMessage = Loc["index.loadFailed", EntityName, ex.Message];
             _items = [];
         }
         finally
@@ -185,7 +189,7 @@ else
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Failed to load {EntityName}: {ex.Message}";
+            _errorMessage = Loc["index.loadFailed", EntityName, ex.Message];
             _items = [];
         }
         finally

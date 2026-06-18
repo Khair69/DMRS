@@ -1,20 +1,21 @@
 @page "/medication-requests/new"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @using DMRS.Client.Features.MedicationRequests.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.MedicationRequests.Services.MedicationRequestFeatureService MedicationService
 @inject DMRS.Client.Features.MedicationRequests.Services.MedicationDecisionSupportService DecisionSupportService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Create Medication Request</PageTitle>
+<PageTitle>@Loc["medications.create.title"]</PageTitle>
 
 <div class="workspace-hero workspace-hero--patient">
     <div>
-        <span class="workspace-eyebrow">Medication Workflow</span>
-        <h1>Create Medication Request</h1>
-        <p>Capture a coded prescription and preview medication decision support before you save it.</p>
+        <span class="workspace-eyebrow">@Loc["medications.workflow.eyebrow"]</span>
+        <h1>@Loc["medications.create.title"]</h1>
+        <p>@Loc["medications.preview.heroSubtitle"]</p>
     </div>
     <div class="workspace-hero__actions">
-        <button class="btn btn-light" @onclick="PreviewDecisionSupportAsync" disabled="@isPreviewing">Preview CDS</button>
+        <button class="btn btn-light" @onclick="PreviewDecisionSupportAsync" disabled="@isPreviewing">@Loc["medications.preview.button"]</button>
     </div>
 </div>
 
@@ -28,12 +29,12 @@
         <div class="dmrs-panel">
             <div class="dmrs-panel__header">
                 <div>
-                    <div class="dmrs-panel__title">Prescription Draft</div>
-                    <div class="dmrs-panel__subtitle">Structured medication fields make CDS and medicine lookup work much better.</div>
+                    <div class="dmrs-panel__title">@Loc["medications.preview.draftTitle"]</div>
+                    <div class="dmrs-panel__subtitle">@Loc["medications.preview.draftSubtitle"]</div>
                 </div>
             </div>
 
-            <MedicationRequestForm Model="model" IsBusy="@isSaving" SubmitText="Create Medication Request" OnSave="Save" />
+            <MedicationRequestForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["medications.create.submit"]" OnSave="Save" />
         </div>
     </div>
 
@@ -41,16 +42,16 @@
         <div class="dmrs-panel">
             <div class="dmrs-panel__header">
                 <div>
-                    <div class="dmrs-panel__title">Clinical Decision Preview</div>
-                    <div class="dmrs-panel__subtitle">Use RxCUI plus dose and frequency to trigger the existing CDS rules.</div>
+                    <div class="dmrs-panel__title">@Loc["medications.preview.title"]</div>
+                    <div class="dmrs-panel__subtitle">@Loc["medications.preview.subtitle"]</div>
                 </div>
             </div>
 
             <div class="d-grid gap-3">
                 <div class="dmrs-note-card">
-                    <div class="dmrs-note-card__title">Try These Demo Values</div>
-                    <p class="mb-2"><strong>High-dose alert:</strong> Patient `cds-test-patient`, RxCUI `161`, dose `1500`, frequency `3`.</p>
-                    <p class="mb-0"><strong>Warmup/knowledge check:</strong> RxCUI `5640` for Ibuprofen.</p>
+                    <div class="dmrs-note-card__title">@Loc["medications.preview.demoTitle"]</div>
+                    <p class="mb-2"><strong>@Loc["medications.preview.demoHighDoseLabel"]</strong> @Loc["medications.preview.demoHighDoseBody"]</p>
+                    <p class="mb-0"><strong>@Loc["medications.preview.demoWarmupLabel"]</strong> @Loc["medications.preview.demoWarmupBody"]</p>
                 </div>
 
                 @if (isPreviewing)
@@ -65,26 +66,26 @@
                 }
                 else if (snapshot is null)
                 {
-                    <div class="dmrs-empty-state">Use the preview button to inspect medicine knowledge and CDS cards before saving.</div>
+                    <div class="dmrs-empty-state">@Loc["medications.preview.empty"]</div>
                 }
                 else
                 {
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Medicine Knowledge</div>
+                        <div class="dmrs-note-card__title">@Loc["medications.cds.medicineKnowledge"]</div>
                         @if (snapshot.Medicine is null)
                         {
-                            <p class="mb-0">No normalized medicine record was resolved from the current draft.</p>
+                            <p class="mb-0">@Loc["medications.preview.noMedicineDraft"]</p>
                         }
                         else
                         {
                             <p class="mb-1"><strong>@snapshot.Medicine.Name</strong> (RxCUI @snapshot.Medicine.RxCui)</p>
-                            <p class="mb-1">Max daily dose: @(snapshot.Medicine.MaxDailyMg?.ToString("0.##") ?? "n/a") mg</p>
-                            <p class="mb-0">Ingredients: @string.Join(", ", snapshot.Medicine.Ingredients.Select(i => i.Name))</p>
+                            <p class="mb-1">@Loc["medications.cds.maxDailyDose"] @(snapshot.Medicine.MaxDailyMg?.ToString("0.##") ?? Loc["common.notAvailable"]) mg</p>
+                            <p class="mb-0">@Loc["medications.cds.ingredients"] @string.Join(", ", snapshot.Medicine.Ingredients.Select(i => i.Name))</p>
                         }
                     </div>
 
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">CDS Result</div>
+                        <div class="dmrs-note-card__title">@Loc["medications.preview.cdsResult"]</div>
                         @if (snapshot.HookResponse?.Cards.Count > 0)
                         {
                             @foreach (var card in snapshot.HookResponse.Cards)
@@ -97,7 +98,7 @@
                         }
                         else
                         {
-                            <p class="mb-0">The current draft did not trigger any CDS cards.</p>
+                            <p class="mb-0">@Loc["medications.preview.noCardsDraft"]</p>
                         }
                     </div>
                 }
@@ -123,7 +124,7 @@
             var created = await MedicationService.CreateAsync(model);
             if (created?.Id is null)
             {
-                errorMessage = "Medication request was created but no id was returned.";
+                errorMessage = Loc["medications.noIdReturned"];
                 return;
             }
 
@@ -131,7 +132,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred while creating the medication request: {ex.Message}";
+            errorMessage = Loc["medications.createError", ex.Message];
         }
         finally
         {
@@ -145,7 +146,7 @@
         // so normal [Required] validation does not run before this handler is invoked.
         if (string.IsNullOrWhiteSpace(model.PatientId))
         {
-            previewError = "Enter a Patient ID before previewing CDS results.";
+            previewError = Loc["medications.preview.patientRequired"];
             return;
         }
 
@@ -158,7 +159,7 @@
         }
         catch (Exception ex)
         {
-            previewError = $"Unable to preview medication decision support: {ex.Message}";
+            previewError = Loc["medications.preview.failed", ex.Message];
         }
         finally
         {

@@ -1,11 +1,12 @@
 @page "/org-admin/claim"
 @attribute [Authorize]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Organizations.Services.OrganizationAdminFeatureService OrganizationAdminService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
-<PageTitle>Claim Organization Admin Invitation</PageTitle>
+<PageTitle>@Loc["organizations.admin.claimTitle"]</PageTitle>
 
-<h1>Claim Organization Admin Invitation</h1>
+<h1>@Loc["organizations.admin.claimTitle"]</h1>
 
 @if (isBusy)
 {
@@ -26,11 +27,11 @@ else
     <EditForm Model="this" OnSubmit="ClaimInvite">
         <div class="row g-3">
             <div class="col-md-8">
-                <label class="form-label">Invite Code</label>
+                <label class="form-label">@Loc["common.claim.codeLabel"]</label>
                 <InputText @bind-Value="Code" class="form-control" />
             </div>
             <div class="col-md-4 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100" disabled="@isBusy">Claim Invitation</button>
+                <button type="submit" class="btn btn-primary w-100" disabled="@isBusy">@Loc["common.claim.submit"]</button>
             </div>
         </div>
     </EditForm>
@@ -64,7 +65,7 @@ else
 
         if (string.IsNullOrWhiteSpace(Code))
         {
-            errorMessage = "Invite code is required.";
+            errorMessage = Loc["common.claim.codeRequired"];
             return;
         }
 
@@ -80,7 +81,7 @@ else
 
             if (string.IsNullOrWhiteSpace(keycloakUserId))
             {
-                errorMessage = "Could not resolve your Keycloak user id from token claims.";
+                errorMessage = Loc["common.claim.noKeycloakId"];
                 return;
             }
 
@@ -88,11 +89,11 @@ else
                                    ?? user.Identity?.Name;
 
             var result = await OrganizationAdminService.ClaimInviteAsync(Code.Trim(), keycloakUserId, keycloakUsername);
-            successMessage = $"Invitation claimed successfully. Linked to Practitioner/{result.PractitionerId}.";
+            successMessage = Loc["organizations.admin.claimSuccess", result.PractitionerId];
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to claim invitation: {ex.Message}";
+            errorMessage = Loc["common.claim.failed", ex.Message];
         }
         finally
         {

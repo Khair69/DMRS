@@ -1,10 +1,11 @@
 ﻿@page "/patients/{Id}/history"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
 
-<PageTitle>Patient History</PageTitle>
+<PageTitle>@Loc["patients.history.title"]</PageTitle>
 
-<h1>Patient History</h1>
+<h1>@Loc["patients.history.title"]</h1>
 
 @if (isBusy)
 {
@@ -39,7 +40,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load history: {ex.Message}";
+            errorMessage = Loc["patients.loadFailed", ex.Message];
             history = [];
         }
         finally

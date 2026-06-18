@@ -1,24 +1,25 @@
 @page "/observations"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @using DMRS.Client.Features.Observations.Models
 @inject DMRS.Client.Features.Observations.Services.ObservationFeatureService ObservationService
 
-<PageTitle>Observations</PageTitle>
+<PageTitle>@Loc["observations.title"]</PageTitle>
 
 <ResourceIndexPage TSummary="ObservationSummaryViewModel"
-                   Title="Observations"
+                   Title="@Loc["observations.title"]"
                    NewLink="/observations/new"
-                   NewLabel="New Observation"
-                   EntityName="observations"
-                   EmptyText="No observations found."
-                   SearchFields="_searchFields"
+                   NewLabel="@Loc["observations.new"]"
+                   EntityName="@Loc["observations.entityName"]"
+                   EmptyText="@Loc["observations.empty"]"
+                   SearchFields="SearchFieldList"
                    LoadDefault="cap => ObservationService.ListAsync(cap)"
                    Search="(p, v) => ObservationService.SearchAsync(p, v)">
     <HeaderTemplate>
-        <th>Id</th>
-        <th>Patient</th>
-        <th>Code</th>
-        <th>Status</th>
+        <th>@Loc["common.field.id"]</th>
+        <th>@Loc["common.field.patient"]</th>
+        <th>@Loc["common.field.code"]</th>
+        <th>@Loc["common.field.status"]</th>
     </HeaderTemplate>
     <RowTemplate Context="observation">
         <td><NavLink href="@($"/observations/{observation.Id}")">@observation.Id</NavLink></td>
@@ -29,9 +30,9 @@
 </ResourceIndexPage>
 
 @code {
-    private static readonly IReadOnlyList<SearchField> _searchFields =
+    private IReadOnlyList<SearchField> SearchFieldList =>
     [
-        new("patient", "Patient", "e.g. 123 (patient id)"),
-        new("code", "Code", "e.g. 8867-4"),
+        new("patient", Loc["common.field.patient"], Loc["observations.search.patient.placeholder"]),
+        new("code", Loc["common.field.code"], Loc["observations.search.code.placeholder"]),
     ];
 }

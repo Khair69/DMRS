@@ -1,19 +1,19 @@
 @page "/external-ai/admin"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
 @using DMRS.Client.Features.ExternalAi.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.ExternalAi.Services.ExternalAiFeatureService ExternalAiService
 
-<PageTitle>External AI Models</PageTitle>
+<PageTitle>@Loc["externalAi.panel.title"]</PageTitle>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
-        <h1 class="mb-1">External AI Models</h1>
+        <h1 class="mb-1">@Loc["externalAi.panel.title"]</h1>
         <p class="text-body-secondary mb-0">
-            Register remote ("away") AI model endpoints. A practitioner can then send a patient's FHIR
-            record to one and read back its decision. Endpoints must use HTTPS; secrets are encrypted at rest.
+            @Loc["externalAi.admin.subtitle"]
         </p>
     </div>
-    <button class="btn btn-primary" @onclick="StartCreate" disabled="@isSaving">+ Register model</button>
+    <button class="btn btn-primary" @onclick="StartCreate" disabled="@isSaving">@Loc["externalAi.admin.register"]</button>
 </div>
 
 @if (!string.IsNullOrWhiteSpace(loadError))
@@ -29,12 +29,12 @@
                 {
                     <div class="d-flex align-items-center gap-2 text-muted">
                         <div class="spinner-border spinner-border-sm" role="status"></div>
-                        <span>Loading…</span>
+                        <span>@Loc["externalAi.admin.loading"]</span>
                     </div>
                 }
                 else if (models.Count == 0)
                 {
-                    <div class="dmrs-empty-state mb-0">No external models registered yet.</div>
+                    <div class="dmrs-empty-state mb-0">@Loc["externalAi.admin.noneRegistered"]</div>
                 }
                 else
                 {
@@ -42,11 +42,11 @@
                         <table class="table align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Endpoint</th>
-                                    <th>Auth</th>
-                                    <th>Status</th>
-                                    <th class="text-end">Actions</th>
+                                    <th>@Loc["common.field.name"]</th>
+                                    <th>@Loc["externalAi.admin.colEndpoint"]</th>
+                                    <th>@Loc["externalAi.admin.colAuth"]</th>
+                                    <th>@Loc["common.field.status"]</th>
+                                    <th class="text-end">@Loc["common.actions"]</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -65,22 +65,22 @@
                                             <span class="badge bg-secondary">@model.AuthType</span>
                                             @if (model.AuthType != ExternalAiAuthType.None && model.HasSecret)
                                             {
-                                                <span class="small text-success ms-1" title="Secret stored">🔒</span>
+                                                <span class="small text-success ms-1" title="@Loc["externalAi.admin.secretStored"]">🔒</span>
                                             }
                                         </td>
                                         <td>
                                             @if (model.IsActive)
                                             {
-                                                <span class="badge bg-success">Active</span>
+                                                <span class="badge bg-success">@Loc["externalAi.admin.active"]</span>
                                             }
                                             else
                                             {
-                                                <span class="badge bg-light text-dark">Disabled</span>
+                                                <span class="badge bg-light text-dark">@Loc["externalAi.admin.disabled"]</span>
                                             }
                                         </td>
                                         <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => StartEdit(model)">Edit</button>
-                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(model)">Delete</button>
+                                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => StartEdit(model)">@Loc["common.edit"]</button>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(model)">@Loc["common.delete"]</button>
                                         </td>
                                     </tr>
                                 }
@@ -97,34 +97,34 @@
         <div class="col-12 col-xl-5">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white border-0 pb-0">
-                    <h2 class="h5 mb-0">@(editingId is null ? "Register model" : "Edit model")</h2>
+                    <h2 class="h5 mb-0">@(editingId is null ? Loc["externalAi.admin.registerTitle"] : Loc["externalAi.admin.editTitle"])</h2>
                 </div>
                 <div class="card-body">
                     <EditForm Model="editing" OnValidSubmit="SaveAsync">
                         <DataAnnotationsValidator />
                         <div class="mb-3">
-                            <label class="form-label">Name</label>
+                            <label class="form-label">@Loc["common.field.name"]</label>
                             <InputText @bind-Value="editing.Name" class="form-control" />
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Description</label>
+                            <label class="form-label">@Loc["common.field.description"]</label>
                             <InputTextArea @bind-Value="editing.Description" class="form-control" rows="2" />
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Endpoint URL (HTTPS)</label>
+                            <label class="form-label">@Loc["externalAi.admin.endpointLabel"]</label>
                             <InputText @bind-Value="editing.EndpointUrl" class="form-control" placeholder="https://…" />
                         </div>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label">Auth type</label>
+                                <label class="form-label">@Loc["externalAi.admin.authType"]</label>
                                 <InputSelect @bind-Value="editing.AuthType" class="form-select">
-                                    <option value="@ExternalAiAuthType.None">None</option>
-                                    <option value="@ExternalAiAuthType.ApiKey">API key (header)</option>
-                                    <option value="@ExternalAiAuthType.Bearer">Bearer token</option>
+                                    <option value="@ExternalAiAuthType.None">@Loc["externalAi.admin.authNone"]</option>
+                                    <option value="@ExternalAiAuthType.ApiKey">@Loc["externalAi.admin.authApiKey"]</option>
+                                    <option value="@ExternalAiAuthType.Bearer">@Loc["externalAi.admin.authBearer"]</option>
                                 </InputSelect>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Timeout (seconds)</label>
+                                <label class="form-label">@Loc["externalAi.admin.timeout"]</label>
                                 <InputNumber @bind-Value="editing.TimeoutSeconds" class="form-control" />
                             </div>
                         </div>
@@ -132,7 +132,7 @@
                         @if (editing.AuthType == ExternalAiAuthType.ApiKey)
                         {
                             <div class="mt-3">
-                                <label class="form-label">API key header name</label>
+                                <label class="form-label">@Loc["externalAi.admin.apiKeyHeader"]</label>
                                 <InputText @bind-Value="editing.AuthHeaderName" class="form-control" placeholder="X-API-Key" />
                             </div>
                         }
@@ -140,20 +140,20 @@
                         @if (editing.AuthType != ExternalAiAuthType.None)
                         {
                             <div class="mt-3">
-                                <label class="form-label">Secret (@(editingId is null ? "required" : "leave blank to keep current"))</label>
+                                <label class="form-label">@Loc["externalAi.admin.secret"] (@(editingId is null ? Loc["externalAi.admin.secretRequired"] : Loc["externalAi.admin.secretKeep"]))</label>
                                 <InputText type="password" @bind-Value="editing.Secret" class="form-control" autocomplete="new-password" />
                             </div>
                         }
 
                         <div class="mt-3">
-                            <label class="form-label">Decision JSON path (optional)</label>
+                            <label class="form-label">@Loc["externalAi.admin.decisionPath"]</label>
                             <InputText @bind-Value="editing.DecisionJsonPath" class="form-control" placeholder="e.g. result.label" />
-                            <div class="form-text">Dot-path into the response to surface as the decision. Leave blank to return the whole body.</div>
+                            <div class="form-text">@Loc["externalAi.admin.decisionPathHelp"]</div>
                         </div>
 
                         <div class="form-check mt-3">
                             <InputCheckbox @bind-Value="editing.IsActive" class="form-check-input" id="isActive" />
-                            <label class="form-check-label" for="isActive">Active</label>
+                            <label class="form-check-label" for="isActive">@Loc["externalAi.admin.active"]</label>
                         </div>
 
                         @if (!string.IsNullOrWhiteSpace(formError))
@@ -163,9 +163,9 @@
 
                         <div class="d-flex gap-2 mt-4">
                             <button class="btn btn-primary" type="submit" disabled="@isSaving">
-                                @(isSaving ? "Saving…" : "Save")
+                                @(isSaving ? Loc["externalAi.admin.saving"] : Loc["common.save"])
                             </button>
-                            <button class="btn btn-outline-secondary" type="button" @onclick="CancelEdit" disabled="@isSaving">Cancel</button>
+                            <button class="btn btn-outline-secondary" type="button" @onclick="CancelEdit" disabled="@isSaving">@Loc["common.cancel"]</button>
                         </div>
                     </EditForm>
                 </div>
@@ -196,7 +196,7 @@
         }
         catch (Exception ex)
         {
-            loadError = $"Unable to load models: {ex.Message}";
+            loadError = Loc["externalAi.admin.loadFailed", ex.Message];
         }
         finally
         {
@@ -261,7 +261,7 @@
         }
         catch (Exception ex)
         {
-            formError = $"Save failed: {ex.Message}";
+            formError = Loc["externalAi.admin.saveFailed", ex.Message];
         }
         finally
         {
@@ -283,7 +283,7 @@
         }
         catch (Exception ex)
         {
-            loadError = $"Delete failed: {ex.Message}";
+            loadError = Loc["externalAi.admin.deleteFailed", ex.Message];
         }
         finally
         {

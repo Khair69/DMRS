@@ -1,14 +1,15 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject NavigationManager Navigation
 
 <AuthorizeView>
     <Authorized>
-        Hello, @context.User.Identity?.Name!
-        <button class="nav-link btn btn-link" @onclick="BeginLogOut">Log out</button>
+        @Loc["auth.hello", context.User.Identity?.Name ?? ""]
+        <button class="nav-link btn btn-link" @onclick="BeginLogOut">@Loc["auth.logout"]</button>
     </Authorized>
     <NotAuthorized>
-        <button class="btn btn-primary" @onclick="BeginLogin">Log in</button>
+        <button class="btn btn-primary" @onclick="BeginLogin">@Loc["auth.login"]</button>
     </NotAuthorized>
 </AuthorizeView>
 

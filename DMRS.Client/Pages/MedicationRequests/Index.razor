@@ -1,25 +1,26 @@
 @page "/medication-requests"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @using DMRS.Client.Features.MedicationRequests.Models
 @inject DMRS.Client.Features.MedicationRequests.Services.MedicationRequestFeatureService MedicationService
 
-<PageTitle>Medication Requests</PageTitle>
+<PageTitle>@Loc["medications.title"]</PageTitle>
 
 <ResourceIndexPage TSummary="MedicationRequestSummaryViewModel"
-                   Title="Medication Requests"
+                   Title="@Loc["medications.title"]"
                    NewLink="/medication-requests/new"
-                   NewLabel="New Medication Request"
-                   EntityName="medication requests"
-                   EmptyText="No medication requests found."
-                   SearchFields="_searchFields"
+                   NewLabel="@Loc["medications.new"]"
+                   EntityName="@Loc["medications.entityName"]"
+                   EmptyText="@Loc["medications.empty"]"
+                   SearchFields="SearchFieldList"
                    LoadDefault="cap => MedicationService.ListAsync(cap)"
                    Search="(p, v) => MedicationService.SearchAsync(p, v)">
     <HeaderTemplate>
-        <th>Id</th>
-        <th>Patient</th>
-        <th>Medication</th>
-        <th>Status</th>
-        <th>Intent</th>
+        <th>@Loc["common.field.id"]</th>
+        <th>@Loc["common.field.patient"]</th>
+        <th>@Loc["common.field.medication"]</th>
+        <th>@Loc["common.field.status"]</th>
+        <th>@Loc["common.field.intent"]</th>
     </HeaderTemplate>
     <RowTemplate Context="request">
         <td><NavLink href="@($"/medication-requests/{request.Id}")">@request.Id</NavLink></td>
@@ -31,9 +32,9 @@
 </ResourceIndexPage>
 
 @code {
-    private static readonly IReadOnlyList<SearchField> _searchFields =
+    private IReadOnlyList<SearchField> SearchFieldList =>
     [
-        new("patient", "Patient", "e.g. 123 (patient id)"),
-        new("code", "Medication", "e.g. 197361 (medication code)"),
+        new("patient", Loc["common.field.patient"], Loc["medications.search.patient.placeholder"]),
+        new("code", Loc["common.field.medication"], Loc["medications.search.code.placeholder"]),
     ];
 }

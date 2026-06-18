@@ -1,16 +1,17 @@
 @page "/documents"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @using DMRS.Client.Features.Documents.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Services.FhirApiService FhirApi
 @inject DMRS.Client.Features.Documents.Services.PatientDocumentFeatureService DocumentService
 
-<PageTitle>Documents</PageTitle>
+<PageTitle>@Loc["documents.title"]</PageTitle>
 
 <div class="workspace-hero workspace-hero--documents">
     <div>
-        <span class="workspace-eyebrow">Clinical Records</span>
-        <h1>Documents</h1>
-        <p>All uploaded patient documents across the workspace — reports, imaging, referrals, and clinical notes.</p>
+        <span class="workspace-eyebrow">@Loc["documents.eyebrow"]</span>
+        <h1>@Loc["documents.title"]</h1>
+        <p>@Loc["documents.subtitle"]</p>
     </div>
 </div>
 
@@ -29,39 +30,39 @@ else
     <!-- Summary metrics -->
     <div class="dmrs-metrics-grid dmrs-metrics-grid--compact mb-4">
         <div class="dmrs-metric-card metric-ocean">
-            <div class="dmrs-metric-card__label">Total Documents</div>
+            <div class="dmrs-metric-card__label">@Loc["documents.metric.total"]</div>
             <div class="dmrs-metric-card__value">@allDocuments.Count</div>
-            <div class="dmrs-metric-card__helper">Across all patients</div>
+            <div class="dmrs-metric-card__helper">@Loc["documents.metric.totalHelper"]</div>
         </div>
         <div class="dmrs-metric-card metric-sky">
-            <div class="dmrs-metric-card__label">Patients with Files</div>
+            <div class="dmrs-metric-card__label">@Loc["documents.metric.patientsWithFiles"]</div>
             <div class="dmrs-metric-card__value">@allDocuments.Select(d => d.PatientId).Distinct().Count()</div>
-            <div class="dmrs-metric-card__helper">At least one upload</div>
+            <div class="dmrs-metric-card__helper">@Loc["documents.metric.patientsWithFilesHelper"]</div>
         </div>
         <div class="dmrs-metric-card metric-gold">
-            <div class="dmrs-metric-card__label">Total Size</div>
+            <div class="dmrs-metric-card__label">@Loc["documents.metric.totalSize"]</div>
             <div class="dmrs-metric-card__value">@FormatTotalSize(allDocuments.Sum(d => d.Document.SizeBytes))</div>
-            <div class="dmrs-metric-card__helper">Combined storage used</div>
+            <div class="dmrs-metric-card__helper">@Loc["documents.metric.totalSizeHelper"]</div>
         </div>
         <div class="dmrs-metric-card metric-emerald">
-            <div class="dmrs-metric-card__label">Most Recent</div>
+            <div class="dmrs-metric-card__label">@Loc["documents.metric.mostRecent"]</div>
             <div class="dmrs-metric-card__value">@(allDocuments.Count > 0 ? TimeAgo(allDocuments[0].Document.UploadedAt) : "—")</div>
-            <div class="dmrs-metric-card__helper">Last upload</div>
+            <div class="dmrs-metric-card__helper">@Loc["documents.metric.mostRecentHelper"]</div>
         </div>
     </div>
 
     <div class="dmrs-panel">
         <div class="dmrs-panel__header">
             <div>
-                <div class="dmrs-panel__title">Document Vault</div>
-                <div class="dmrs-panel__subtitle">All files ordered by most recently uploaded. Click a patient name to manage their records.</div>
+                <div class="dmrs-panel__title">@Loc["documents.vault.title"]</div>
+                <div class="dmrs-panel__subtitle">@Loc["documents.vault.subtitle"]</div>
             </div>
         </div>
 
         @if (allDocuments.Count == 0)
         {
             <div class="dmrs-empty-state">
-                No documents uploaded yet. Open a patient record and use the Documents panel to upload files.
+                @Loc["documents.empty"]
             </div>
         }
         else
@@ -71,12 +72,12 @@ else
                     <thead>
                         <tr>
                             <th style="width:2rem;"></th>
-                            <th>File Name</th>
-                            <th>Patient</th>
-                            <th>Size</th>
-                            <th>Uploaded</th>
-                            <th>Uploaded By</th>
-                            <th class="text-end">Actions</th>
+                            <th>@Loc["documents.col.fileName"]</th>
+                            <th>@Loc["common.field.patient"]</th>
+                            <th>@Loc["documents.col.size"]</th>
+                            <th>@Loc["documents.col.uploaded"]</th>
+                            <th>@Loc["documents.col.uploadedBy"]</th>
+                            <th class="text-end">@Loc["common.actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -102,7 +103,7 @@ else
                                     <a class="btn btn-sm btn-outline-primary"
                                        href="@DocumentService.GetDownloadUrl(row.PatientId, row.Document.Id)"
                                        target="_blank">
-                                        Download
+                                        @Loc["common.download"]
                                     </a>
                                 </td>
                             </tr>
@@ -146,7 +147,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Unable to load documents: {ex.Message}";
+            errorMessage = Loc["documents.loadFailed", ex.Message];
         }
         finally
         {
@@ -171,13 +172,13 @@ else
         _                => $"{bytes} B"
     };
 
-    private static string TimeAgo(DateTimeOffset uploadedAt)
+    private string TimeAgo(DateTimeOffset uploadedAt)
     {
         var elapsed = DateTimeOffset.UtcNow - uploadedAt;
-        if (elapsed.TotalSeconds < 60)  return "just now";
-        if (elapsed.TotalMinutes < 60)  return $"{(int)elapsed.TotalMinutes}m ago";
-        if (elapsed.TotalHours < 24)    return $"{(int)elapsed.TotalHours}h ago";
-        if (elapsed.TotalDays < 30)     return $"{(int)elapsed.TotalDays}d ago";
+        if (elapsed.TotalSeconds < 60)  return Loc["common.time.justNow"];
+        if (elapsed.TotalMinutes < 60)  return Loc["common.time.minutesAgo", (int)elapsed.TotalMinutes];
+        if (elapsed.TotalHours < 24)    return Loc["common.time.hoursAgo", (int)elapsed.TotalHours];
+        if (elapsed.TotalDays < 30)     return Loc["common.time.daysAgo", (int)elapsed.TotalDays];
         return uploadedAt.ToLocalTime().ToString("dd MMM yyyy");
     }
 }

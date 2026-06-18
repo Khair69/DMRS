@@ -1,8 +1,9 @@
 @using Hl7.Fhir.Model
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 @if (Organization is null)
 {
-    <div class="alert alert-warning">Organization not found.</div>
+    <div class="alert alert-warning">@Loc["organizations.notFoundShort"]</div>
 }
 else
 {
@@ -13,37 +14,37 @@ else
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Organization @Organization.Id</span>
+            <span>@Loc["common.field.organization"] @Organization.Id</span>
             <div>
-                <NavLink class="btn btn-sm btn-outline-primary me-1" href="@($"/organizations/{Organization.Id}/staff")">Manage Staff</NavLink>
+                <NavLink class="btn btn-sm btn-outline-primary me-1" href="@($"/organizations/{Organization.Id}/staff")">@Loc["organizations.manageStaff"]</NavLink>
                 <AuthorizeView Roles="ROLE_SYSTEM_ADMIN">
-                    <NavLink class="btn btn-sm btn-outline-success me-1" href="@($"/organizations/{Organization.Id}/admins/new")">Add Admin</NavLink>
-                    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/organizations/{Organization.Id}/edit")">Edit</NavLink>
-                    <NavLink class="btn btn-sm btn-outline-info" href="@($"/organizations/{Organization.Id}/history")">History</NavLink>
+                    <NavLink class="btn btn-sm btn-outline-success me-1" href="@($"/organizations/{Organization.Id}/admins/new")">@Loc["organizations.addAdmin"]</NavLink>
+                    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/organizations/{Organization.Id}/edit")">@Loc["common.edit"]</NavLink>
+                    <NavLink class="btn btn-sm btn-outline-info" href="@($"/organizations/{Organization.Id}/history")">@Loc["common.history"]</NavLink>
                 </AuthorizeView>
             </div>
         </div>
         <div class="card-body">
             <dl class="row mb-0">
-                <dt class="col-sm-3">Name</dt>
+                <dt class="col-sm-3">@Loc["common.field.name"]</dt>
                 <dd class="col-sm-9">@Organization.Name</dd>
 
-                <dt class="col-sm-3">Alias</dt>
+                <dt class="col-sm-3">@Loc["common.field.alias"]</dt>
                 <dd class="col-sm-9">@string.Join(", ", Organization.Alias)</dd>
 
-                <dt class="col-sm-3">Active</dt>
+                <dt class="col-sm-3">@Loc["common.field.active"]</dt>
                 <dd class="col-sm-9">@Organization.Active</dd>
 
-                <dt class="col-sm-3">Identifier</dt>
+                <dt class="col-sm-3">@Loc["common.field.identifier"]</dt>
                 <dd class="col-sm-9">@identifier?.System / @identifier?.Value</dd>
 
-                <dt class="col-sm-3">Email</dt>
+                <dt class="col-sm-3">@Loc["common.field.email"]</dt>
                 <dd class="col-sm-9">@email</dd>
 
-                <dt class="col-sm-3">Phone</dt>
+                <dt class="col-sm-3">@Loc["common.field.phone"]</dt>
                 <dd class="col-sm-9">@phone</dd>
 
-                <dt class="col-sm-3">Address</dt>
+                <dt class="col-sm-3">@Loc["common.field.address"]</dt>
                 <dd class="col-sm-9">
                     @if (contact?.Address is null)
                     {

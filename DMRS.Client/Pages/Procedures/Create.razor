@@ -1,18 +1,19 @@
 @page "/procedures/new"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Procedures.Services.ProcedureFeatureService ProcedureService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Create Procedure</PageTitle>
+<PageTitle>@Loc["procedures.create.title"]</PageTitle>
 
-<h1>Create Procedure</h1>
+<h1>@Loc["procedures.create.title"]</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<ProcedureForm Model="model" IsBusy="@isSaving" SubmitText="Create Procedure" OnSave="Save" />
+<ProcedureForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["procedures.create.submit"]" OnSave="Save" />
 
 @code {
     private readonly DMRS.Client.Features.Procedures.Models.ProcedureEditModel model = new();
@@ -28,7 +29,7 @@
             var created = await ProcedureService.CreateAsync(model);
             if (created?.Id is null)
             {
-                errorMessage = "Procedure was created but no id was returned.";
+                errorMessage = Loc["procedures.noIdReturned"];
                 return;
             }
 
@@ -36,7 +37,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred while creating the procedure: {ex.Message}";
+            errorMessage = Loc["procedures.createError", ex.Message];
         }
         finally
         {

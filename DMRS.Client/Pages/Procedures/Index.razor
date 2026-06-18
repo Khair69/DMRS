@@ -1,24 +1,25 @@
 @page "/procedures"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @using DMRS.Client.Features.Procedures.Models
 @inject DMRS.Client.Features.Procedures.Services.ProcedureFeatureService ProcedureService
 
-<PageTitle>Procedures</PageTitle>
+<PageTitle>@Loc["procedures.title"]</PageTitle>
 
 <ResourceIndexPage TSummary="ProcedureSummaryViewModel"
-                   Title="Procedures"
+                   Title="@Loc["procedures.title"]"
                    NewLink="/procedures/new"
-                   NewLabel="New Procedure"
-                   EntityName="procedures"
-                   EmptyText="No procedures found."
-                   SearchFields="_searchFields"
+                   NewLabel="@Loc["procedures.new"]"
+                   EntityName="@Loc["procedures.entityName"]"
+                   EmptyText="@Loc["procedures.empty"]"
+                   SearchFields="SearchFieldList"
                    LoadDefault="cap => ProcedureService.ListAsync(cap)"
                    Search="(p, v) => ProcedureService.SearchAsync(p, v)">
     <HeaderTemplate>
-        <th>Id</th>
-        <th>Patient</th>
-        <th>Code</th>
-        <th>Status</th>
+        <th>@Loc["common.field.id"]</th>
+        <th>@Loc["common.field.patient"]</th>
+        <th>@Loc["common.field.code"]</th>
+        <th>@Loc["common.field.status"]</th>
     </HeaderTemplate>
     <RowTemplate Context="procedure">
         <td><NavLink href="@($"/procedures/{procedure.Id}")">@procedure.Id</NavLink></td>
@@ -29,9 +30,9 @@
 </ResourceIndexPage>
 
 @code {
-    private static readonly IReadOnlyList<SearchField> _searchFields =
+    private IReadOnlyList<SearchField> SearchFieldList =>
     [
-        new("patient", "Patient", "e.g. 123 (patient id)"),
-        new("code", "Code", "e.g. 80146002"),
+        new("patient", Loc["common.field.patient"], Loc["procedures.search.patient.placeholder"]),
+        new("code", Loc["common.field.code"], Loc["procedures.search.code.placeholder"]),
     ];
 }

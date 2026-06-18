@@ -4,18 +4,19 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using DMRS.Client.Features.Patients.Models
 @using Task = System.Threading.Tasks.Task
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Patients.Services.PatientPortalFeatureService PortalService
 
-<PageTitle>My Profile</PageTitle>
+<PageTitle>@Loc["portal.profile.title"]</PageTitle>
 
 <div class="workspace-hero workspace-hero--patient">
     <div>
-        <span class="workspace-eyebrow">Patient Portal</span>
-        <h1>My Profile</h1>
-        <p>Keep your personal and contact details up to date so your care team can reach you.</p>
+        <span class="workspace-eyebrow">@Loc["portal.dashboard.eyebrow"]</span>
+        <h1>@Loc["portal.profile.title"]</h1>
+        <p>@Loc["portal.profile.subtitle"]</p>
     </div>
     <div class="workspace-hero__actions">
-        <a class="btn btn-outline-light" href="/my-health">My Health Records</a>
+        <a class="btn btn-outline-light" href="/my-health">@Loc["nav.myHealth"]</a>
     </div>
 </div>
 
@@ -33,8 +34,7 @@ else if (model is null)
 {
     <div class="dmrs-panel mt-4">
         <div class="dmrs-empty-state">
-            We couldn't find a medical record linked to your account. If you have an invitation,
-            <a href="/patients/claim">claim it here</a>.
+            @Loc["portal.health.noRecordPre"] <a href="/patients/claim">@Loc["portal.dashboard.claimHere"]</a>@Loc["portal.health.noRecordPost"]
         </div>
     </div>
 }
@@ -45,8 +45,8 @@ else
             <div class="dmrs-panel">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Personal Details</div>
-                        <div class="dmrs-panel__subtitle">This information is shared with your care team.</div>
+                        <div class="dmrs-panel__title">@Loc["portal.profile.personalDetails"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["portal.profile.personalSubtitle"]</div>
                     </div>
                 </div>
 
@@ -63,81 +63,81 @@ else
                     <DataAnnotationsValidator />
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Given Name</label>
+                            <label class="form-label">@Loc["common.field.givenName"]</label>
                             <InputText @bind-Value="model.GivenName" class="form-control" />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Family Name</label>
+                            <label class="form-label">@Loc["common.field.familyName"]</label>
                             <InputText @bind-Value="model.FamilyName" class="form-control" />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Gender</label>
+                            <label class="form-label">@Loc["common.field.gender"]</label>
                             <InputSelect @bind-Value="model.Gender" class="form-select">
-                                <option value="">Prefer not to say</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                                <option value="unknown">Unknown</option>
+                                <option value="">@Loc["portal.profile.preferNotToSay"]</option>
+                                <option value="male">@Loc["common.male"]</option>
+                                <option value="female">@Loc["common.female"]</option>
+                                <option value="other">@Loc["common.other"]</option>
+                                <option value="unknown">@Loc["common.unknown"]</option>
                             </InputSelect>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Birth Date</label>
+                            <label class="form-label">@Loc["common.field.birthDate"]</label>
                             <InputText type="date" @bind-Value="model.BirthDate" class="form-control" />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Marital Status</label>
+                            <label class="form-label">@Loc["portal.profile.maritalStatus"]</label>
                             <InputSelect @bind-Value="model.MaritalStatus" class="form-select">
-                                <option value="">Not specified</option>
-                                <option value="S">Single</option>
-                                <option value="M">Married</option>
-                                <option value="D">Divorced</option>
-                                <option value="W">Widowed</option>
-                                <option value="U">Unknown</option>
+                                <option value="">@Loc["portal.profile.marital.notSpecified"]</option>
+                                <option value="S">@Loc["portal.profile.marital.single"]</option>
+                                <option value="M">@Loc["portal.profile.marital.married"]</option>
+                                <option value="D">@Loc["portal.profile.marital.divorced"]</option>
+                                <option value="W">@Loc["portal.profile.marital.widowed"]</option>
+                                <option value="U">@Loc["portal.profile.marital.unknown"]</option>
                             </InputSelect>
                         </div>
 
                         <div class="col-12"><hr class="my-1" /></div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Phone</label>
+                            <label class="form-label">@Loc["common.field.phone"]</label>
                             <InputText @bind-Value="model.Phone" class="form-control" />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Email</label>
+                            <label class="form-label">@Loc["common.field.email"]</label>
                             <InputText @bind-Value="model.Email" class="form-control" />
                         </div>
 
                         <div class="col-12"><hr class="my-1" /></div>
 
                         <div class="col-12">
-                            <label class="form-label">Address</label>
+                            <label class="form-label">@Loc["common.field.address"]</label>
                             <InputTextArea @bind-Value="model.AddressLine" class="form-control" rows="2"
-                                           placeholder="Street address" />
+                                           placeholder="@Loc["portal.profile.addressPlaceholder"]" />
                         </div>
                         <div class="col-md-5">
-                            <label class="form-label">City</label>
+                            <label class="form-label">@Loc["common.field.city"]</label>
                             <InputText @bind-Value="model.City" class="form-control" />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">State / Region</label>
+                            <label class="form-label">@Loc["portal.profile.stateRegion"]</label>
                             <InputText @bind-Value="model.State" class="form-control" />
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Postal Code</label>
+                            <label class="form-label">@Loc["common.field.postalCode"]</label>
                             <InputText @bind-Value="model.PostalCode" class="form-control" />
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Country</label>
+                            <label class="form-label">@Loc["common.field.country"]</label>
                             <InputText @bind-Value="model.Country" class="form-control" />
                         </div>
                     </div>
 
                     <div class="mt-4 d-flex gap-2">
                         <button type="submit" class="btn btn-primary" disabled="@isSaving">
-                            @(isSaving ? "Saving…" : "Save Changes")
+                            @(isSaving ? Loc["portal.profile.saving"] : Loc["portal.profile.saveChanges"])
                         </button>
                         <button type="button" class="btn btn-outline-secondary" disabled="@isSaving" @onclick="ResetAsync">
-                            Reset
+                            @Loc["portal.profile.reset"]
                         </button>
                     </div>
                 </EditForm>
@@ -148,18 +148,18 @@ else
             <div class="dmrs-panel">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Account</div>
-                        <div class="dmrs-panel__subtitle">Details managed by your clinic.</div>
+                        <div class="dmrs-panel__title">@Loc["portal.profile.account"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["portal.profile.accountSubtitle"]</div>
                     </div>
                 </div>
                 <dl class="row mb-0 small">
-                    <dt class="col-5 text-muted">Record ID</dt>
+                    <dt class="col-5 text-muted">@Loc["portal.profile.recordId"]</dt>
                     <dd class="col-7">@patient?.Id</dd>
-                    <dt class="col-5 text-muted">Managing clinic</dt>
+                    <dt class="col-5 text-muted">@Loc["portal.profile.managingClinic"]</dt>
                     <dd class="col-7">@(patient?.ManagingOrganization?.Display ?? patient?.ManagingOrganization?.Reference ?? "—")</dd>
                 </dl>
                 <div class="dmrs-empty-state dmrs-empty-state--inline mt-3">
-                    To change your clinic or other restricted details, please contact your care team.
+                    @Loc["portal.profile.restrictedNote"]
                 </div>
             </div>
         </div>
@@ -188,7 +188,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Unable to load your profile: {ex.Message}";
+            errorMessage = Loc["portal.profile.loadFailed", ex.Message];
         }
         finally
         {
@@ -221,11 +221,11 @@ else
             {
                 model = MapToEditModel(patient);
             }
-            successMessage = "Your profile has been updated.";
+            successMessage = Loc["portal.profile.saveSuccess"];
         }
         catch (Exception ex)
         {
-            saveError = $"We couldn't save your changes: {ex.Message}";
+            saveError = Loc["portal.profile.saveFailed", ex.Message];
         }
         finally
         {

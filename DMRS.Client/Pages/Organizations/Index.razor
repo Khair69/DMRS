@@ -1,25 +1,26 @@
 @page "/organizations"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @using DMRS.Client.Features.Organizations.Models
 @inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
 
-<PageTitle>Organizations</PageTitle>
+<PageTitle>@Loc["organizations.title"]</PageTitle>
 
 <ResourceIndexPage TSummary="OrganizationSummaryViewModel"
-                   Title="Organizations"
+                   Title="@Loc["organizations.title"]"
                    NewLink="/organizations/new"
-                   NewLabel="New Organization"
-                   EntityName="organizations"
-                   EmptyText="No organizations found."
-                   SearchFields="_searchFields"
+                   NewLabel="@Loc["organizations.new"]"
+                   EntityName="@Loc["organizations.entityName"]"
+                   EmptyText="@Loc["organizations.empty"]"
+                   SearchFields="SearchFieldList"
                    LoadDefault="cap => OrganizationService.ListAsync(cap)"
                    Search="(p, v) => OrganizationService.SearchAsync(p, v)">
     <HeaderTemplate>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Active</th>
-        <th>Identifier</th>
-        <th>Email</th>
+        <th>@Loc["common.field.id"]</th>
+        <th>@Loc["common.field.name"]</th>
+        <th>@Loc["common.field.active"]</th>
+        <th>@Loc["common.field.identifier"]</th>
+        <th>@Loc["common.field.email"]</th>
         <th></th>
     </HeaderTemplate>
     <RowTemplate Context="organization">
@@ -29,19 +30,19 @@
         <td>@organization.Identifier</td>
         <td>@organization.Email</td>
         <td class="text-nowrap">
-            <NavLink class="btn btn-sm btn-outline-primary me-1" href="@($"/organizations/{organization.Id}")">Details</NavLink>
-            <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/organizations/{organization.Id}/edit")">Edit</NavLink>
-            <NavLink class="btn btn-sm btn-outline-info" href="@($"/organizations/{organization.Id}/history")">History</NavLink>
+            <NavLink class="btn btn-sm btn-outline-primary me-1" href="@($"/organizations/{organization.Id}")">@Loc["common.details"]</NavLink>
+            <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/organizations/{organization.Id}/edit")">@Loc["common.edit"]</NavLink>
+            <NavLink class="btn btn-sm btn-outline-info" href="@($"/organizations/{organization.Id}/history")">@Loc["common.history"]</NavLink>
         </td>
     </RowTemplate>
 </ResourceIndexPage>
 
 @code {
-    private static readonly IReadOnlyList<SearchField> _searchFields =
+    private IReadOnlyList<SearchField> SearchFieldList =>
     [
-        new("name", "Name", "e.g. General Hospital"),
-        new("identifier", "Identifier", "e.g. 12345"),
-        new("email", "Email", "e.g. contact@hospital.org"),
-        new("phone", "Phone", "e.g. 555-1234"),
+        new("name", Loc["common.field.name"], Loc["organizations.search.name.placeholder"]),
+        new("identifier", Loc["common.field.identifier"], Loc["organizations.search.identifier.placeholder"]),
+        new("email", Loc["common.field.email"], Loc["organizations.search.email.placeholder"]),
+        new("phone", Loc["common.field.phone"], Loc["organizations.search.phone.placeholder"]),
     ];
 }

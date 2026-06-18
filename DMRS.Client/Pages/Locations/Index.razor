@@ -1,24 +1,25 @@
 @page "/locations"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @using DMRS.Client.Features.Locations.Models
 @inject DMRS.Client.Features.Locations.Services.LocationFeatureService LocationService
 
-<PageTitle>Locations</PageTitle>
+<PageTitle>@Loc["locations.title"]</PageTitle>
 
 <ResourceIndexPage TSummary="LocationSummaryViewModel"
-                   Title="Locations"
+                   Title="@Loc["locations.title"]"
                    NewLink="/locations/new"
-                   NewLabel="New Location"
-                   EntityName="locations"
-                   EmptyText="No locations found."
-                   SearchFields="_searchFields"
+                   NewLabel="@Loc["locations.new"]"
+                   EntityName="@Loc["locations.entityName"]"
+                   EmptyText="@Loc["locations.empty"]"
+                   SearchFields="SearchFieldList"
                    LoadDefault="cap => LocationService.ListAsync(cap)"
                    Search="(p, v) => LocationService.SearchAsync(p, v)">
     <HeaderTemplate>
-        <th>Id</th>
-        <th>Name</th>
-        <th>Status</th>
-        <th>Org</th>
+        <th>@Loc["common.field.id"]</th>
+        <th>@Loc["common.field.name"]</th>
+        <th>@Loc["common.field.status"]</th>
+        <th>@Loc["common.field.org"]</th>
     </HeaderTemplate>
     <RowTemplate Context="location">
         <td><NavLink href="@($"/locations/{location.Id}")">@location.Id</NavLink></td>
@@ -29,9 +30,9 @@
 </ResourceIndexPage>
 
 @code {
-    private static readonly IReadOnlyList<SearchField> _searchFields =
+    private IReadOnlyList<SearchField> SearchFieldList =>
     [
-        new("name", "Name", "e.g. Main Clinic"),
-        new("organization", "Organization", "e.g. 7 (organization id)"),
+        new("name", Loc["common.field.name"], Loc["locations.search.name.placeholder"]),
+        new("organization", Loc["patients.search.organization.label"], Loc["locations.search.organization.placeholder"]),
     ];
 }

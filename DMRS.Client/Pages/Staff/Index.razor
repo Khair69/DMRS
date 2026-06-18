@@ -1,18 +1,19 @@
 @page "/organizations/{OrganizationId}/staff"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
 @inject DMRS.Client.Features.Staff.Services.StaffFeatureService StaffService
 
-<PageTitle>Organization Staff</PageTitle>
+<PageTitle>@Loc["staff.index.title"]</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Organization Staff</h1>
-    <NavLink class="btn btn-primary" href="@($"/organizations/{OrganizationId}/staff/new")">Invite Staff</NavLink>
+    <h1 class="mb-0">@Loc["staff.index.title"]</h1>
+    <NavLink class="btn btn-primary" href="@($"/organizations/{OrganizationId}/staff/new")">@Loc["staff.index.invite"]</NavLink>
 </div>
 
 @if (organization is not null)
 {
-    <div class="alert alert-info">Organization: <strong>@organization.Name</strong> (@organization.Id)</div>
+    <div class="alert alert-info">@Loc["staff.index.orgLabel"] <strong>@organization.Name</strong> (@organization.Id)</div>
 }
 
 <StaffSearchForm RoleFilter="@roleFilter" TextFilter="@textFilter" IsBusy="@isBusy" OnSearch="RunSearch" />
@@ -68,7 +69,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load staff: {ex.Message}";
+            errorMessage = Loc["staff.index.loadFailed", ex.Message];
             staff = [];
         }
         finally

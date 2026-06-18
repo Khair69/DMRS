@@ -1,8 +1,9 @@
 @using DMRS.Client.Features.Staff.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 @if (Staff.Count == 0)
 {
-    <div class="alert alert-secondary">No staff found.</div>
+    <div class="alert alert-secondary">@Loc["staff.table.empty"]</div>
 }
 else
 {
@@ -10,12 +11,12 @@ else
         <table class="table table-striped align-middle">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Specialty</th>
-                    <th>Phone</th>
-                    <th>Role</th>
-                    <th>Active</th>
-                    <th>Login</th>
+                    <th>@Loc["common.field.name"]</th>
+                    <th>@Loc["common.field.specialty"]</th>
+                    <th>@Loc["common.field.phone"]</th>
+                    <th>@Loc["common.field.role"]</th>
+                    <th>@Loc["common.field.active"]</th>
+                    <th>@Loc["common.field.login"]</th>
                     <th></th>
                 </tr>
             </thead>
@@ -35,15 +36,15 @@ else
                         <td>
                             @if (staff.HasLoginAccount)
                             {
-                                <span class="badge bg-success">Linked</span>
+                                <span class="badge bg-success">@Loc["staff.table.linked"]</span>
                             }
                             else
                             {
-                                <span class="badge bg-secondary">No account</span>
+                                <span class="badge bg-secondary">@Loc["staff.table.noAccount"]</span>
                             }
                         </td>
                         <td>
-                            <NavLink class="btn btn-sm btn-outline-primary" href="@($"/organizations/{OrganizationId}/staff/{staff.PractitionerId}")">Details</NavLink>
+                            <NavLink class="btn btn-sm btn-outline-primary" href="@($"/organizations/{OrganizationId}/staff/{staff.PractitionerId}")">@Loc["common.details"]</NavLink>
                         </td>
                     </tr>
                 }

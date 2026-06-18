@@ -16,6 +16,12 @@ main {
     border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+::deep [dir="rtl"] .sidebar,
+[dir="rtl"] .sidebar {
+    border-right: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .top-row {
     background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(12px);
@@ -29,6 +35,13 @@ main {
 
 .top-row__intro {
     min-width: 0;
+}
+
+.top-row__actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .top-row__title {

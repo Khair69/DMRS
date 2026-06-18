@@ -1,10 +1,11 @@
 @page "/service-requests/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.ServiceRequests.Services.ServiceRequestFeatureService ServiceRequestService
 
-<PageTitle>Service Request Details</PageTitle>
+<PageTitle>@Loc["serviceRequests.details.title"]</PageTitle>
 
-<h1>Service Request Details</h1>
+<h1>@Loc["serviceRequests.details.title"]</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
@@ -12,8 +13,8 @@
 }
 
 <div class="mb-3">
-    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/service-requests/{Id}/edit")">Edit</NavLink>
-    <NavLink class="btn btn-sm btn-outline-info" href="@($"/service-requests/{Id}/history")">History</NavLink>
+    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/service-requests/{Id}/edit")">@Loc["common.edit"]</NavLink>
+    <NavLink class="btn btn-sm btn-outline-info" href="@($"/service-requests/{Id}/history")">@Loc["common.history"]</NavLink>
 </div>
 
 <FhirJsonView Resource="request" />
@@ -33,12 +34,12 @@
             request = await ServiceRequestService.GetAsync(Id);
             if (request is null)
             {
-                errorMessage = $"Service request {Id} not found.";
+                errorMessage = Loc["serviceRequests.notFound", Id];
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load service request: {ex.Message}";
+            errorMessage = Loc["serviceRequests.loadFailed", ex.Message];
         }
     }
 }

@@ -1,0 +1,33 @@
+.language-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.2rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--dmrs-border, rgba(15, 23, 42, 0.08));
+}
+
+.language-switcher__btn {
+    border: 0;
+    background: transparent;
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.language-switcher__btn:hover {
+    color: #0f172a;
+}
+
+.language-switcher__btn.active {
+    background: linear-gradient(135deg, #0f6d93, #0b8f86);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(15, 109, 147, 0.25);
+}

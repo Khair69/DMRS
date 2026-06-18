@@ -1,24 +1,25 @@
 @page "/encounters"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @using DMRS.Client.Features.Encounters.Models
 @inject DMRS.Client.Features.Encounters.Services.EncounterFeatureService EncounterService
 
-<PageTitle>Encounters</PageTitle>
+<PageTitle>@Loc["encounters.title"]</PageTitle>
 
 <ResourceIndexPage TSummary="EncounterSummaryViewModel"
-                   Title="Encounters"
+                   Title="@Loc["encounters.title"]"
                    NewLink="/encounters/new"
-                   NewLabel="New Encounter"
-                   EntityName="encounters"
-                   EmptyText="No encounters found."
-                   SearchFields="_searchFields"
+                   NewLabel="@Loc["encounters.new"]"
+                   EntityName="@Loc["encounters.entityName"]"
+                   EmptyText="@Loc["encounters.empty"]"
+                   SearchFields="SearchFieldList"
                    LoadDefault="cap => EncounterService.ListAsync(cap)"
                    Search="(p, v) => EncounterService.SearchAsync(p, v)">
     <HeaderTemplate>
-        <th>Id</th>
-        <th>Patient</th>
-        <th>Status</th>
-        <th>Class</th>
+        <th>@Loc["common.field.id"]</th>
+        <th>@Loc["common.field.patient"]</th>
+        <th>@Loc["common.field.status"]</th>
+        <th>@Loc["common.field.classLabel"]</th>
     </HeaderTemplate>
     <RowTemplate Context="encounter">
         <td><NavLink href="@($"/encounters/{encounter.Id}")">@encounter.Id</NavLink></td>
@@ -29,9 +30,9 @@
 </ResourceIndexPage>
 
 @code {
-    private static readonly IReadOnlyList<SearchField> _searchFields =
+    private IReadOnlyList<SearchField> SearchFieldList =>
     [
-        new("patient", "Patient", "e.g. 123 (patient id)"),
-        new("status", "Status", "e.g. in-progress"),
+        new("patient", Loc["common.field.patient"], Loc["encounters.search.patient.placeholder"]),
+        new("status", Loc["common.field.status"], Loc["encounters.search.status.placeholder"]),
     ];
 }

@@ -1,4 +1,5 @@
 @typeparam TItem
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 @ChildContent(PageItems)
 
@@ -6,7 +7,7 @@
 {
     <nav aria-label="Pagination" class="dmrs-paginator d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
         <small class="text-muted">
-            Showing @_rangeStart–@_rangeEnd of @_totalItems
+            @Loc["common.showingRange", _rangeStart, _rangeEnd, _totalItems]
         </small>
         <ul class="pagination mb-0">
             <li class="page-item @(_currentPage == 1 ? "disabled" : null)">

@@ -20,6 +20,7 @@ using Hl7.Fhir.Serialization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.JSInterop;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -74,4 +75,14 @@ builder.Services.AddScoped<EncounterFeatureService>();
 builder.Services.AddScoped<LocationFeatureService>();
 builder.Services.AddScoped<PatientDocumentFeatureService>();
 
-await builder.Build().RunAsync();
+// Localization: its own HttpClient points at the app host so it can fetch wwwroot/i18n/*.json.
+builder.Services.AddSingleton(sp => new LocalizationService(
+    new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) },
+    sp.GetRequiredService<IJSRuntime>()));
+
+var host = builder.Build();
+
+// Load dictionaries and apply the persisted language (and RTL) before the first render.
+await host.Services.GetRequiredService<LocalizationService>().InitializeAsync();
+
+await host.RunAsync();

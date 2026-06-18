@@ -1,10 +1,11 @@
 @page "/locations/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Locations.Services.LocationFeatureService LocationService
 
-<PageTitle>Location Details</PageTitle>
+<PageTitle>@Loc["locations.details.title"]</PageTitle>
 
-<h1>Location Details</h1>
+<h1>@Loc["locations.details.title"]</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
@@ -12,8 +13,8 @@
 }
 
 <div class="mb-3">
-    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/locations/{Id}/edit")">Edit</NavLink>
-    <NavLink class="btn btn-sm btn-outline-info" href="@($"/locations/{Id}/history")">History</NavLink>
+    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/locations/{Id}/edit")">@Loc["common.edit"]</NavLink>
+    <NavLink class="btn btn-sm btn-outline-info" href="@($"/locations/{Id}/history")">@Loc["common.history"]</NavLink>
 </div>
 
 <FhirJsonView Resource="location" />
@@ -33,12 +34,12 @@
             location = await LocationService.GetAsync(Id);
             if (location is null)
             {
-                errorMessage = $"Location {Id} not found.";
+                errorMessage = Loc["locations.notFound", Id];
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load location: {ex.Message}";
+            errorMessage = Loc["locations.loadFailed", ex.Message];
         }
     }
 }

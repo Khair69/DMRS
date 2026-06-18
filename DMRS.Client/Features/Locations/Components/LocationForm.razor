@@ -1,25 +1,26 @@
 @using DMRS.Client.Features.Locations.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 <EditForm Model="Model" OnValidSubmit="OnSubmit">
     <DataAnnotationsValidator />
 
     <div class="row g-3">
         <div class="col-md-6">
-            <label class="form-label">Name</label>
+            <label class="form-label">@Loc["common.field.name"]</label>
             <InputText @bind-Value="Model.Name" class="form-control" />
             <ValidationMessage For="() => Model.Name" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Status</label>
+            <label class="form-label">@Loc["common.field.status"]</label>
             <InputSelect @bind-Value="Model.Status" class="form-select">
-                <option value="active">Active</option>
-                <option value="suspended">Suspended</option>
-                <option value="inactive">Inactive</option>
-                <option value="unknown">Unknown</option>
+                <option value="active">@Loc["common.status.active"]</option>
+                <option value="suspended">@Loc["common.status.suspended"]</option>
+                <option value="inactive">@Loc["common.status.inactive"]</option>
+                <option value="unknown">@Loc["common.status.unknown"]</option>
             </InputSelect>
         </div>
         <div class="col-md-6">
-            <label class="form-label">Managing Organization Id</label>
+            <label class="form-label">@Loc["common.field.managingOrgId"]</label>
             <InputText @bind-Value="Model.ManagingOrganizationId" class="form-control" />
         </div>
     </div>

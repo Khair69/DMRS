@@ -1,12 +1,13 @@
 @page "/organizations/{OrganizationId}/staff/new"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
 @inject DMRS.Client.Features.Staff.Services.StaffFeatureService StaffService
 @inject NavigationManager Navigation
 
-<PageTitle>Invite Staff</PageTitle>
+<PageTitle>@Loc["staff.invite.title"]</PageTitle>
 
-<h1>Invite Staff</h1>
+<h1>@Loc["staff.invite.title"]</h1>
 
 @if (isLoadingOrganization)
 {
@@ -19,7 +20,7 @@ else if (organization is null)
 else
 {
     <div class="alert alert-info">
-        Inviting staff for organization: <strong>@organization.Name</strong> (@organization.Id)
+        @Loc["staff.invite.invitingFor"] <strong>@organization.Name</strong> (@organization.Id)
     </div>
 
     @if (!string.IsNullOrWhiteSpace(errorMessage))
@@ -35,16 +36,16 @@ else
     @if (inviteResult is not null)
     {
         <div class="card mt-3 mb-3">
-            <div class="card-header">Invitation Generated</div>
+            <div class="card-header">@Loc["common.invite.generatedTitle"]</div>
             <div class="card-body">
-                <p class="mb-2"><strong>Invite code</strong>: <code>@inviteResult.InviteCode</code></p>
-                <p class="mb-2"><strong>Self-registration (auto-claim)</strong>: <a href="@inviteResult.RegistrationLink" target="_blank">@inviteResult.RegistrationLink</a></p>
-                <p class="mb-0"><strong>Manual claim fallback</strong>: <a href="@inviteResult.ClaimLink" target="_blank">@inviteResult.ClaimLink</a></p>
+                <p class="mb-2"><strong>@Loc["common.invite.code"]</strong>: <code>@inviteResult.InviteCode</code></p>
+                <p class="mb-2"><strong>@Loc["common.invite.selfRegistration"]</strong>: <a href="@inviteResult.RegistrationLink" target="_blank">@inviteResult.RegistrationLink</a></p>
+                <p class="mb-0"><strong>@Loc["common.invite.manualFallback"]</strong>: <a href="@inviteResult.ClaimLink" target="_blank">@inviteResult.ClaimLink</a></p>
             </div>
         </div>
     }
 
-    <StaffInviteForm Model="model" IsBusy="@isSaving" SubmitText="Create Invitation" OnSave="Save" />
+    <StaffInviteForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["staff.invite.submit"]" OnSave="Save" />
 }
 
 @code {
@@ -72,12 +73,12 @@ else
             organization = await OrganizationService.GetAsync(OrganizationId);
             if (organization is null)
             {
-                organizationError = $"Organization {OrganizationId} not found.";
+                organizationError = Loc["organizations.notFound", OrganizationId];
             }
         }
         catch (Exception ex)
         {
-            organizationError = $"Unable to load organization: {ex.Message}";
+            organizationError = Loc["organizations.loadError", ex.Message];
         }
         finally
         {
@@ -100,11 +101,11 @@ else
         try
         {
             inviteResult = await StaffService.CreateInviteAsync(OrganizationId, model, Navigation.BaseUri);
-            successMessage = $"Staff invitation created. Practitioner: {inviteResult.PractitionerId}, PractitionerRole: {inviteResult.PractitionerRoleId}.";
+            successMessage = Loc["staff.invite.success", inviteResult.PractitionerId, inviteResult.PractitionerRoleId];
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to create invitation: {ex.Message}";
+            errorMessage = Loc["staff.invite.failed", ex.Message];
         }
         finally
         {

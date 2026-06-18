@@ -1,15 +1,16 @@
 @page "/medication-requests/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @using DMRS.Client.Features.MedicationRequests.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.MedicationRequests.Services.MedicationRequestFeatureService MedicationService
 @inject DMRS.Client.Features.MedicationRequests.Services.MedicationDecisionSupportService DecisionSupportService
 
-<PageTitle>Medication Request Details</PageTitle>
+<PageTitle>@Loc["medications.details.title"]</PageTitle>
 
 @if (isLoading)
 {
     <div class="dmrs-loading-shell">
-        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">@Loc["common.loading"]</span></div>
     </div>
 }
 else if (!string.IsNullOrWhiteSpace(errorMessage))
@@ -20,13 +21,13 @@ else if (request is not null)
 {
     <div class="workspace-hero workspace-hero--patient">
         <div>
-            <span class="workspace-eyebrow">Medication Workflow</span>
+            <span class="workspace-eyebrow">@Loc["medications.workflow.eyebrow"]</span>
             <h1>@DisplayMedicationName</h1>
-            <p>Patient @PatientIdDisplay | @request.Status | @request.Intent</p>
+            <p>@Loc["medications.details.subline", PatientIdDisplay, request.Status?.ToString() ?? "", request.Intent?.ToString() ?? ""]</p>
         </div>
         <div class="workspace-hero__actions">
-            <NavLink class="btn btn-light" href="@($"/medication-requests/{Id}/edit")">Edit</NavLink>
-            <NavLink class="btn btn-outline-light" href="@($"/medication-requests/{Id}/history")">History</NavLink>
+            <NavLink class="btn btn-light" href="@($"/medication-requests/{Id}/edit")">@Loc["common.edit"]</NavLink>
+            <NavLink class="btn btn-outline-light" href="@($"/medication-requests/{Id}/history")">@Loc["common.history"]</NavLink>
         </div>
     </div>
 
@@ -35,8 +36,8 @@ else if (request is not null)
             <div class="dmrs-panel">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Medication Request Payload</div>
-                        <div class="dmrs-panel__subtitle">The underlying FHIR resource for this order.</div>
+                        <div class="dmrs-panel__title">@Loc["medications.payload.title"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["medications.payload.subtitle"]</div>
                     </div>
                 </div>
                 <FhirJsonView Resource="request" />
@@ -47,11 +48,11 @@ else if (request is not null)
             <div class="dmrs-panel">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Clinical Decision Snapshot</div>
-                        <div class="dmrs-panel__subtitle">Knowledge resolution plus live CDS hook evaluation for this request.</div>
+                        <div class="dmrs-panel__title">@Loc["medications.cds.snapshotTitle"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["medications.cds.snapshotSubtitle"]</div>
                     </div>
                     <button class="btn btn-sm btn-outline-primary" @onclick="RefreshSnapshotAsync" disabled="@isRefreshing">
-                        @(isRefreshing ? "Refreshing..." : "Refresh")
+                        @(isRefreshing ? Loc["common.refreshing"] : Loc["common.refresh"])
                     </button>
                 </div>
 
@@ -69,21 +70,21 @@ else if (request is not null)
                 {
                     <div class="dmrs-stack">
                         <div class="dmrs-note-card">
-                            <div class="dmrs-note-card__title">Medicine Knowledge</div>
+                            <div class="dmrs-note-card__title">@Loc["medications.cds.medicineKnowledge"]</div>
                             @if (snapshot.Medicine is null)
                             {
-                                <p class="mb-0">No medicine knowledge record was resolved for this request.</p>
+                                <p class="mb-0">@Loc["medications.cds.noMedicineResolved"]</p>
                             }
                             else
                             {
                                 <p class="mb-1"><strong>@snapshot.Medicine.Name</strong> (RxCUI @snapshot.Medicine.RxCui)</p>
-                                <p class="mb-1">Max daily dose: @(snapshot.Medicine.MaxDailyMg?.ToString("0.##") ?? "n/a") mg</p>
-                                <p class="mb-0">Ingredients: @string.Join(", ", snapshot.Medicine.Ingredients.Select(i => i.Name))</p>
+                                <p class="mb-1">@Loc["medications.cds.maxDailyDose"] @(snapshot.Medicine.MaxDailyMg?.ToString("0.##") ?? Loc["common.notAvailable"]) mg</p>
+                                <p class="mb-0">@Loc["medications.cds.ingredients"] @string.Join(", ", snapshot.Medicine.Ingredients.Select(i => i.Name))</p>
                             }
                         </div>
 
                         <div class="dmrs-note-card">
-                            <div class="dmrs-note-card__title">Triggered CDS Cards</div>
+                            <div class="dmrs-note-card__title">@Loc["medications.cds.triggeredCards"]</div>
                             @if (snapshot.HookResponse?.Cards.Count > 0)
                             {
                                 @foreach (var card in snapshot.HookResponse.Cards)
@@ -96,7 +97,7 @@ else if (request is not null)
                             }
                             else
                             {
-                                <p class="mb-0">No CDS cards were triggered for this request.</p>
+                                <p class="mb-0">@Loc["medications.cds.noCards"]</p>
                             }
                         </div>
                     </div>
@@ -137,7 +138,7 @@ else if (request is not null)
             request = await MedicationService.GetAsync(Id);
             if (request is null)
             {
-                errorMessage = $"Medication request {Id} not found.";
+                errorMessage = Loc["medications.notFound", Id];
                 return;
             }
 
@@ -145,7 +146,7 @@ else if (request is not null)
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load medication request: {ex.Message}";
+            errorMessage = Loc["medications.loadFailed", ex.Message];
         }
         finally
         {
@@ -163,7 +164,7 @@ else if (request is not null)
         var patientId = PatientIdDisplay;
         if (string.IsNullOrWhiteSpace(patientId) || patientId == "unknown")
         {
-            snapshotError = "Cannot evaluate CDS: this medication request has no resolvable patient reference.";
+            snapshotError = Loc["medications.cds.cannotEvaluate"];
             return;
         }
 
@@ -175,7 +176,7 @@ else if (request is not null)
         }
         catch (Exception ex)
         {
-            snapshotError = $"Unable to refresh medication decision support: {ex.Message}";
+            snapshotError = Loc["medications.cds.refreshFailed", ex.Message];
         }
         finally
         {

@@ -1,11 +1,12 @@
 @page "/allergy-intolerances/{Id}/edit"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.AllergyIntolerances.Services.AllergyIntoleranceFeatureService AllergyService
 @inject NavigationManager Navigation
 
-<PageTitle>Edit Allergy</PageTitle>
+<PageTitle>@Loc["allergies.edit.title"]</PageTitle>
 
-<h1>Edit Allergy</h1>
+<h1>@Loc["allergies.edit.title"]</h1>
 
 @if (isLoading)
 {
@@ -18,7 +19,7 @@ else
         <div class="alert alert-danger">@errorMessage</div>
     }
 
-    <AllergyIntoleranceForm Model="model" IsBusy="@isSaving" SubmitText="Update Allergy" OnSave="Save" />
+    <AllergyIntoleranceForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["allergies.edit.submit"]" OnSave="Save" />
 }
 
 @code {
@@ -40,7 +41,7 @@ else
             var allergy = await AllergyService.GetAsync(Id);
             if (allergy is null)
             {
-                errorMessage = $"Allergy {Id} not found.";
+                errorMessage = Loc["allergies.notFound", Id];
                 return;
             }
 
@@ -48,7 +49,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load allergy: {ex.Message}";
+            errorMessage = Loc["allergies.loadFailed", ex.Message];
         }
         finally
         {
@@ -68,7 +69,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to update allergy: {ex.Message}";
+            errorMessage = Loc["allergies.updateFailed", ex.Message];
         }
         finally
         {

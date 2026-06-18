@@ -1,10 +1,11 @@
 @page "/service-requests/{Id}/history"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.ServiceRequests.Services.ServiceRequestFeatureService ServiceRequestService
 
-<PageTitle>Service Request History</PageTitle>
+<PageTitle>@Loc["serviceRequests.history.title"]</PageTitle>
 
-<h1>Service Request History</h1>
+<h1>@Loc["serviceRequests.history.title"]</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
@@ -31,7 +32,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load history: {ex.Message}";
+            errorMessage = Loc["common.historyLoadFailed", ex.Message];
             historyResources = [];
         }
     }

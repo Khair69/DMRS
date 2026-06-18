@@ -1,17 +1,18 @@
 @using Hl7.Fhir.Model
 @using DMRS.Client.Features.Patients.Models
 @using Task = System.Threading.Tasks.Task
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Patients.Services.PatientPortalFeatureService PortalService
 
 <div class="workspace-hero workspace-hero--patient">
     <div>
-        <span class="workspace-eyebrow">Patient Portal</span>
+        <span class="workspace-eyebrow">@Loc["portal.dashboard.eyebrow"]</span>
         <h1>@Greeting</h1>
-        <p>Your health summary, upcoming care, and everything in your medical record — all in one place.</p>
+        <p>@Loc["portal.dashboard.subtitle"]</p>
     </div>
     <div class="workspace-hero__actions">
-        <a class="btn btn-light" href="/my-health">View My Records</a>
-        <a class="btn btn-outline-light" href="/my-profile">Edit My Profile</a>
+        <a class="btn btn-light" href="/my-health">@Loc["portal.dashboard.viewRecords"]</a>
+        <a class="btn btn-outline-light" href="/my-profile">@Loc["portal.dashboard.editProfile"]</a>
     </div>
 </div>
 
@@ -29,8 +30,7 @@ else if (model is null)
 {
     <div class="dmrs-panel mt-4">
         <div class="dmrs-empty-state">
-            We couldn't find a medical record linked to your account yet. If you recently received an
-            invitation, please <a href="/patients/claim">claim it here</a>, or contact your clinic.
+            @Loc["portal.dashboard.noRecordPre"] <a href="/patients/claim">@Loc["portal.dashboard.claimHere"]</a>@Loc["portal.dashboard.noRecordPost"]
         </div>
     </div>
 }
@@ -38,24 +38,24 @@ else
 {
     <section class="dmrs-metrics-grid">
         <a class="dmrs-metric-card metric-sky" href="/my-health?tab=appointments">
-            <div class="dmrs-metric-card__label">Upcoming Visits</div>
+            <div class="dmrs-metric-card__label">@Loc["portal.dashboard.upcomingVisits"]</div>
             <div class="dmrs-metric-card__value">@model.UpcomingAppointmentCount</div>
-            <div class="dmrs-metric-card__helper">Scheduled appointments ahead</div>
+            <div class="dmrs-metric-card__helper">@Loc["portal.dashboard.upcomingVisitsHelper"]</div>
         </a>
         <a class="dmrs-metric-card metric-gold" href="/my-health?tab=medications">
-            <div class="dmrs-metric-card__label">Active Medications</div>
+            <div class="dmrs-metric-card__label">@Loc["portal.dashboard.activeMedications"]</div>
             <div class="dmrs-metric-card__value">@model.ActiveMedicationCount</div>
-            <div class="dmrs-metric-card__helper">Currently on your plan</div>
+            <div class="dmrs-metric-card__helper">@Loc["portal.dashboard.activeMedicationsHelper"]</div>
         </a>
         <a class="dmrs-metric-card metric-emerald" href="/my-health?tab=conditions">
-            <div class="dmrs-metric-card__label">Conditions</div>
+            <div class="dmrs-metric-card__label">@Loc["portal.dashboard.conditions"]</div>
             <div class="dmrs-metric-card__value">@model.ConditionCount</div>
-            <div class="dmrs-metric-card__helper">Tracked in your record</div>
+            <div class="dmrs-metric-card__helper">@Loc["portal.dashboard.conditionsHelper"]</div>
         </a>
         <a class="dmrs-metric-card metric-rose" href="/my-health?tab=allergies">
-            <div class="dmrs-metric-card__label">Allergies</div>
+            <div class="dmrs-metric-card__label">@Loc["portal.dashboard.allergies"]</div>
             <div class="dmrs-metric-card__value">@model.AllergyCount</div>
-            <div class="dmrs-metric-card__helper">Known allergies on file</div>
+            <div class="dmrs-metric-card__helper">@Loc["portal.dashboard.allergiesHelper"]</div>
         </a>
     </section>
 
@@ -64,14 +64,14 @@ else
             <div class="dmrs-panel h-100">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Upcoming Appointments</div>
-                        <div class="dmrs-panel__subtitle">Your next scheduled visits and care moments.</div>
+                        <div class="dmrs-panel__title">@Loc["portal.dashboard.upcomingTitle"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["portal.dashboard.upcomingSubtitle"]</div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary" href="/my-health?tab=appointments">View all</a>
+                    <a class="btn btn-sm btn-outline-primary" href="/my-health?tab=appointments">@Loc["common.viewAll"]</a>
                 </div>
                 @if (model.UpcomingAppointments.Count == 0)
                 {
-                    <div class="dmrs-empty-state">You have no upcoming appointments scheduled.</div>
+                    <div class="dmrs-empty-state">@Loc["portal.dashboard.upcomingEmpty"]</div>
                 }
                 else
                 {
@@ -96,7 +96,7 @@ else
                 <div class="dmrs-panel__header">
                     <div>
                         <div class="dmrs-panel__title">@model.Wellness.Headline</div>
-                        <div class="dmrs-panel__subtitle">A friendly look at how things are going.</div>
+                        <div class="dmrs-panel__subtitle">@Loc["portal.dashboard.wellnessSubtitle"]</div>
                     </div>
                     <span class="dmrs-pill @WellnessPillClass">@WellnessBadge</span>
                 </div>
@@ -104,7 +104,7 @@ else
                 @if (model.Wellness.Tips.Count > 0)
                 {
                     <div class="dmrs-subpanel">
-                        <div class="dmrs-subpanel__title">Helpful tips</div>
+                        <div class="dmrs-subpanel__title">@Loc["portal.dashboard.wellnessTips"]</div>
                         <ul class="mb-0 ps-3" style="line-height:1.9;">
                             @foreach (var tip in model.Wellness.Tips)
                             {
@@ -122,14 +122,14 @@ else
             <div class="dmrs-panel h-100">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Current Medications</div>
-                        <div class="dmrs-panel__subtitle">Medications that are active on your care plan.</div>
+                        <div class="dmrs-panel__title">@Loc["portal.dashboard.medsTitle"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["portal.dashboard.medsSubtitle"]</div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary" href="/my-health?tab=medications">View all</a>
+                    <a class="btn btn-sm btn-outline-primary" href="/my-health?tab=medications">@Loc["common.viewAll"]</a>
                 </div>
                 @if (model.ActiveMedications.Count == 0)
                 {
-                    <div class="dmrs-empty-state">No active medications are on file.</div>
+                    <div class="dmrs-empty-state">@Loc["portal.dashboard.medsEmpty"]</div>
                 }
                 else
                 {
@@ -153,15 +153,15 @@ else
             <div class="dmrs-panel h-100">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Health Snapshot</div>
-                        <div class="dmrs-panel__subtitle">Conditions and recent measurements.</div>
+                        <div class="dmrs-panel__title">@Loc["portal.dashboard.healthTitle"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["portal.dashboard.healthSubtitle"]</div>
                     </div>
                 </div>
                 <div class="dmrs-subpanel">
-                    <div class="dmrs-subpanel__title">Conditions</div>
+                    <div class="dmrs-subpanel__title">@Loc["portal.dashboard.healthConditions"]</div>
                     @if (model.Conditions.Count == 0)
                     {
-                        <div class="dmrs-empty-state dmrs-empty-state--inline">No conditions recorded.</div>
+                        <div class="dmrs-empty-state dmrs-empty-state--inline">@Loc["portal.dashboard.noConditions"]</div>
                     }
                     else
                     {
@@ -175,10 +175,10 @@ else
                     }
                 </div>
                 <div class="dmrs-subpanel mt-3">
-                    <div class="dmrs-subpanel__title">Recent Measurements</div>
+                    <div class="dmrs-subpanel__title">@Loc["portal.dashboard.recentMeasurements"]</div>
                     @if (model.RecentObservations.Count == 0)
                     {
-                        <div class="dmrs-empty-state dmrs-empty-state--inline">No recent measurements.</div>
+                        <div class="dmrs-empty-state dmrs-empty-state--inline">@Loc["portal.dashboard.noMeasurements"]</div>
                     }
                     else
                     {
@@ -209,7 +209,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Unable to load your portal: {ex.Message}";
+            errorMessage = Loc["portal.dashboard.loadFailed", ex.Message];
         }
         finally
         {
@@ -222,15 +222,17 @@ else
         get
         {
             var given = model?.Patient?.Name.FirstOrDefault()?.Given?.FirstOrDefault();
-            return string.IsNullOrWhiteSpace(given) ? "Welcome back" : $"Welcome back, {given}";
+            return string.IsNullOrWhiteSpace(given)
+                ? Loc["portal.dashboard.greetingDefault"]
+                : Loc["portal.dashboard.greetingNamed", given];
         }
     }
 
     private string WellnessBadge => model?.Wellness.Tone switch
     {
-        "attention" => "Stay connected",
-        "watch" => "Keep it up",
-        _ => "Looking good"
+        "attention" => Loc["portal.dashboard.wellnessAttention"],
+        "watch" => Loc["portal.dashboard.wellnessWatch"],
+        _ => Loc["portal.dashboard.wellnessGood"]
     };
 
     private string WellnessPillClass => model?.Wellness.Tone switch

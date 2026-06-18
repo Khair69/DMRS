@@ -1,34 +1,35 @@
 @using DMRS.Client.Features.Procedures.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 <EditForm Model="Model" OnValidSubmit="OnSubmit">
     <DataAnnotationsValidator />
 
     <div class="row g-3">
         <div class="col-md-4">
-            <label class="form-label">Patient Id</label>
+            <label class="form-label">@Loc["common.field.patientId"]</label>
             <InputText @bind-Value="Model.PatientId" class="form-control" />
             <ValidationMessage For="() => Model.PatientId" />
         </div>
         <div class="col-md-8">
-            <label class="form-label">Code</label>
+            <label class="form-label">@Loc["common.field.code"]</label>
             <InputText @bind-Value="Model.CodeText" class="form-control" />
             <ValidationMessage For="() => Model.CodeText" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Status</label>
+            <label class="form-label">@Loc["common.field.status"]</label>
             <InputSelect @bind-Value="Model.Status" class="form-select">
-                <option value="preparation">Preparation</option>
-                <option value="in-progress">In Progress</option>
-                <option value="not-done">Not Done</option>
-                <option value="on-hold">On Hold</option>
-                <option value="stopped">Stopped</option>
-                <option value="completed">Completed</option>
-                <option value="entered-in-error">Entered in Error</option>
-                <option value="unknown">Unknown</option>
+                <option value="preparation">@Loc["common.status.preparation"]</option>
+                <option value="in-progress">@Loc["common.status.inProgress"]</option>
+                <option value="not-done">@Loc["common.status.notDone"]</option>
+                <option value="on-hold">@Loc["common.status.onHold"]</option>
+                <option value="stopped">@Loc["common.status.stopped"]</option>
+                <option value="completed">@Loc["common.status.completed"]</option>
+                <option value="entered-in-error">@Loc["common.status.enteredInError"]</option>
+                <option value="unknown">@Loc["common.status.unknown"]</option>
             </InputSelect>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Performed Date</label>
+            <label class="form-label">@Loc["common.field.performedDate"]</label>
             <InputDate @bind-Value="Model.PerformedDateTime" class="form-control" />
         </div>
     </div>

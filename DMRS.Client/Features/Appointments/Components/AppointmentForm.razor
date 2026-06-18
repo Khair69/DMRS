@@ -1,33 +1,34 @@
 @using DMRS.Client.Features.Appointments.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 <EditForm Model="Model" OnValidSubmit="OnSubmit">
     <DataAnnotationsValidator />
 
     <div class="row g-3">
         <div class="col-md-4">
-            <label class="form-label">Patient Id</label>
+            <label class="form-label">@Loc["common.field.patientId"]</label>
             <InputText @bind-Value="Model.PatientId" class="form-control" />
             <ValidationMessage For="() => Model.PatientId" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Status</label>
+            <label class="form-label">@Loc["common.field.status"]</label>
             <InputSelect @bind-Value="Model.Status" class="form-select">
-                <option value="proposed">Proposed</option>
-                <option value="pending">Pending</option>
-                <option value="booked">Booked</option>
-                <option value="arrived">Arrived</option>
-                <option value="fulfilled">Fulfilled</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="noshow">No Show</option>
-                <option value="entered-in-error">Entered in Error</option>
+                <option value="proposed">@Loc["common.status.proposed"]</option>
+                <option value="pending">@Loc["common.status.pending"]</option>
+                <option value="booked">@Loc["common.status.booked"]</option>
+                <option value="arrived">@Loc["common.status.arrived"]</option>
+                <option value="fulfilled">@Loc["common.status.fulfilled"]</option>
+                <option value="cancelled">@Loc["common.status.cancelled"]</option>
+                <option value="noshow">@Loc["common.status.noshow"]</option>
+                <option value="entered-in-error">@Loc["common.status.enteredInError"]</option>
             </InputSelect>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Start</label>
+            <label class="form-label">@Loc["common.field.start"]</label>
             <InputDate @bind-Value="Model.Start" class="form-control" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">End</label>
+            <label class="form-label">@Loc["common.field.end"]</label>
             <InputDate @bind-Value="Model.End" class="form-control" />
         </div>
     </div>

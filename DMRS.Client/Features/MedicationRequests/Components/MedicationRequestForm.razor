@@ -1,58 +1,59 @@
 @using DMRS.Client.Features.MedicationRequests.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 <EditForm Model="Model" OnValidSubmit="OnSubmit">
     <DataAnnotationsValidator />
 
     <div class="row g-3">
         <div class="col-md-4">
-            <label class="form-label">Patient Id</label>
+            <label class="form-label">@Loc["common.field.patientId"]</label>
             <InputText @bind-Value="Model.PatientId" class="form-control" />
             <ValidationMessage For="() => Model.PatientId" />
         </div>
         <div class="col-md-8">
-            <label class="form-label">Medication</label>
+            <label class="form-label">@Loc["common.field.medication"]</label>
             <InputText @bind-Value="Model.MedicationText" class="form-control" />
             <ValidationMessage For="() => Model.MedicationText" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Medication RxCUI</label>
+            <label class="form-label">@Loc["medications.form.rxcui"]</label>
             <InputText @bind-Value="Model.MedicationRxCui" class="form-control" />
-            <div class="form-text">Use a mock medicine code like <code>161</code> or <code>5640</code> for CDS demos.</div>
+            <div class="form-text">@Loc["medications.form.rxcuiHint"]</div>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Dose (mg)</label>
+            <label class="form-label">@Loc["medications.form.dose"]</label>
             <InputNumber @bind-Value="Model.DoseMg" class="form-control" />
             <ValidationMessage For="() => Model.DoseMg" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Frequency Per Day</label>
+            <label class="form-label">@Loc["medications.form.frequency"]</label>
             <InputNumber @bind-Value="Model.FrequencyPerDay" class="form-control" />
             <ValidationMessage For="() => Model.FrequencyPerDay" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Status</label>
+            <label class="form-label">@Loc["common.field.status"]</label>
             <InputSelect @bind-Value="Model.Status" class="form-select">
-                <option value="active">Active</option>
-                <option value="on-hold">On Hold</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="completed">Completed</option>
-                <option value="entered-in-error">Entered in Error</option>
-                <option value="stopped">Stopped</option>
-                <option value="draft">Draft</option>
-                <option value="unknown">Unknown</option>
+                <option value="active">@Loc["common.status.active"]</option>
+                <option value="on-hold">@Loc["common.status.onHold"]</option>
+                <option value="cancelled">@Loc["common.status.cancelled"]</option>
+                <option value="completed">@Loc["common.status.completed"]</option>
+                <option value="entered-in-error">@Loc["common.status.enteredInError"]</option>
+                <option value="stopped">@Loc["common.status.stopped"]</option>
+                <option value="draft">@Loc["common.status.draft"]</option>
+                <option value="unknown">@Loc["common.status.unknown"]</option>
             </InputSelect>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Intent</label>
+            <label class="form-label">@Loc["common.field.intent"]</label>
             <InputSelect @bind-Value="Model.Intent" class="form-select">
-                <option value="order">Order</option>
-                <option value="plan">Plan</option>
-                <option value="proposal">Proposal</option>
-                <option value="original-order">Original Order</option>
-                <option value="reflex-order">Reflex Order</option>
-                <option value="filler-order">Filler Order</option>
-                <option value="instance-order">Instance Order</option>
-                <option value="option">Option</option>
+                <option value="order">@Loc["medications.intent.order"]</option>
+                <option value="plan">@Loc["medications.intent.plan"]</option>
+                <option value="proposal">@Loc["medications.intent.proposal"]</option>
+                <option value="original-order">@Loc["medications.intent.originalOrder"]</option>
+                <option value="reflex-order">@Loc["medications.intent.reflexOrder"]</option>
+                <option value="filler-order">@Loc["medications.intent.fillerOrder"]</option>
+                <option value="instance-order">@Loc["medications.intent.instanceOrder"]</option>
+                <option value="option">@Loc["medications.intent.option"]</option>
             </InputSelect>
         </div>
     </div>

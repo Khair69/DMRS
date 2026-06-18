@@ -1,11 +1,12 @@
 @page "/encounters/{Id}/edit"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Encounters.Services.EncounterFeatureService EncounterService
 @inject NavigationManager Navigation
 
-<PageTitle>Edit Encounter</PageTitle>
+<PageTitle>@Loc["encounters.edit.title"]</PageTitle>
 
-<h1>Edit Encounter</h1>
+<h1>@Loc["encounters.edit.title"]</h1>
 
 @if (isLoading)
 {
@@ -18,7 +19,7 @@ else
         <div class="alert alert-danger">@errorMessage</div>
     }
 
-    <EncounterForm Model="model" IsBusy="@isSaving" SubmitText="Update Encounter" OnSave="Save" />
+    <EncounterForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["encounters.edit.submit"]" OnSave="Save" />
 }
 
 @code {
@@ -40,7 +41,7 @@ else
             var encounter = await EncounterService.GetAsync(Id);
             if (encounter is null)
             {
-                errorMessage = $"Encounter {Id} not found.";
+                errorMessage = Loc["encounters.notFound", Id];
                 return;
             }
 
@@ -48,7 +49,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load encounter: {ex.Message}";
+            errorMessage = Loc["encounters.loadFailed", ex.Message];
         }
         finally
         {
@@ -68,7 +69,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to update encounter: {ex.Message}";
+            errorMessage = Loc["encounters.updateFailed", ex.Message];
         }
         finally
         {

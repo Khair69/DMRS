@@ -1,36 +1,37 @@
 @using DMRS.Client.Features.Observations.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 <EditForm Model="Model" OnValidSubmit="OnSubmit">
     <DataAnnotationsValidator />
 
     <div class="row g-3">
         <div class="col-md-4">
-            <label class="form-label">Patient Id</label>
+            <label class="form-label">@Loc["common.field.patientId"]</label>
             <InputText @bind-Value="Model.PatientId" class="form-control" />
             <ValidationMessage For="() => Model.PatientId" />
         </div>
         <div class="col-md-8">
-            <label class="form-label">Code</label>
+            <label class="form-label">@Loc["common.field.code"]</label>
             <InputText @bind-Value="Model.CodeText" class="form-control" />
             <ValidationMessage For="() => Model.CodeText" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Status</label>
+            <label class="form-label">@Loc["common.field.status"]</label>
             <InputSelect @bind-Value="Model.Status" class="form-select">
-                <option value="registered">Registered</option>
-                <option value="preliminary">Preliminary</option>
-                <option value="final">Final</option>
-                <option value="amended">Amended</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="unknown">Unknown</option>
+                <option value="registered">@Loc["observations.status.registered"]</option>
+                <option value="preliminary">@Loc["observations.status.preliminary"]</option>
+                <option value="final">@Loc["observations.status.final"]</option>
+                <option value="amended">@Loc["observations.status.amended"]</option>
+                <option value="cancelled">@Loc["observations.status.cancelled"]</option>
+                <option value="unknown">@Loc["observations.status.unknown"]</option>
             </InputSelect>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Effective Date</label>
+            <label class="form-label">@Loc["common.field.effectiveDate"]</label>
             <InputDate @bind-Value="Model.EffectiveDateTime" class="form-control" />
         </div>
         <div class="col-md-8">
-            <label class="form-label">Value</label>
+            <label class="form-label">@Loc["common.field.value"]</label>
             <InputText @bind-Value="Model.ValueText" class="form-control" />
         </div>
     </div>

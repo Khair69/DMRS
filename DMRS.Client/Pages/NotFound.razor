@@ -1,11 +1,12 @@
 @page "/not-found"
 @layout MainLayout
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject NavigationManager Navigation
 
-<PageTitle>Page not found · DMRS</PageTitle>
+<PageTitle>@Loc["errors.notFound.pageTitle"]</PageTitle>
 
-<StatusCard Title="We couldn't find that page"
-            Subtitle="The page you're looking for may have been moved, renamed, or never existed. Let's get you back on track."
+<StatusCard Title="@Loc["errors.notFound.title"]"
+            Subtitle="@Loc["errors.notFound.subtitle"]"
             Tone="StatusCard.CardTone.Brand">
     <Icon>
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -20,8 +21,8 @@
         </svg>
     </Icon>
     <Actions>
-        <button class="btn btn-primary" @onclick="GoHome">Return to dashboard</button>
-        <button class="btn btn-outline-primary" @onclick="GoBack">Go back</button>
+        <button class="btn btn-primary" @onclick="GoHome">@Loc["common.returnToDashboard"]</button>
+        <button class="btn btn-outline-primary" @onclick="GoBack">@Loc["common.goBack"]</button>
     </Actions>
 </StatusCard>
 

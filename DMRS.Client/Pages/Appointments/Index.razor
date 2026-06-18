@@ -1,24 +1,25 @@
 @page "/appointments"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @using DMRS.Client.Features.Appointments.Models
 @inject DMRS.Client.Features.Appointments.Services.AppointmentFeatureService AppointmentService
 
-<PageTitle>Appointments</PageTitle>
+<PageTitle>@Loc["appointments.title"]</PageTitle>
 
 <ResourceIndexPage TSummary="AppointmentSummaryViewModel"
-                   Title="Appointments"
+                   Title="@Loc["appointments.title"]"
                    NewLink="/appointments/new"
-                   NewLabel="New Appointment"
-                   EntityName="appointments"
-                   EmptyText="No appointments found."
-                   SearchFields="_searchFields"
+                   NewLabel="@Loc["appointments.new"]"
+                   EntityName="@Loc["appointments.entityName"]"
+                   EmptyText="@Loc["appointments.empty"]"
+                   SearchFields="SearchFieldList"
                    LoadDefault="cap => AppointmentService.ListAsync(cap)"
                    Search="(p, v) => AppointmentService.SearchAsync(p, v)">
     <HeaderTemplate>
-        <th>Id</th>
-        <th>Patient</th>
-        <th>Status</th>
-        <th>Start</th>
+        <th>@Loc["common.field.id"]</th>
+        <th>@Loc["common.field.patient"]</th>
+        <th>@Loc["common.field.status"]</th>
+        <th>@Loc["common.field.start"]</th>
     </HeaderTemplate>
     <RowTemplate Context="appointment">
         <td><NavLink href="@($"/appointments/{appointment.Id}")">@appointment.Id</NavLink></td>
@@ -29,9 +30,9 @@
 </ResourceIndexPage>
 
 @code {
-    private static readonly IReadOnlyList<SearchField> _searchFields =
+    private IReadOnlyList<SearchField> SearchFieldList =>
     [
-        new("patient", "Patient", "e.g. 123 (patient id)"),
-        new("date", "Date", "e.g. 2026-06-11"),
+        new("patient", Loc["common.field.patient"], Loc["appointments.search.patient.placeholder"]),
+        new("date", Loc["common.field.date"], Loc["appointments.search.date.placeholder"]),
     ];
 }

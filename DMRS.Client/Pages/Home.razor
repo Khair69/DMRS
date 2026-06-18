@@ -2,10 +2,11 @@
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER,ROLE_PATIENT")]
 @using DMRS.Client.Features.Dashboard.Models
 @using DMRS.Client.Features.Dashboard.Components
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Dashboard.Services.DashboardFeatureService DashboardService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
-<PageTitle>DMRS Workspace</PageTitle>
+<PageTitle>@Loc["app.brand"]</PageTitle>
 
 @if (showOrgAdminDashboard)
 {
@@ -24,13 +25,13 @@ else
 
 <div class="workspace-hero">
     <div>
-        <span class="workspace-eyebrow">Digital Medical Records System</span>
-        <h1>Clinical Workspace</h1>
-        <p>One operational view for patient flow, medication safety, and predictive insights.</p>
+        <span class="workspace-eyebrow">@Loc["dashboard.workspace.eyebrow"]</span>
+        <h1>@Loc["dashboard.workspace.title"]</h1>
+        <p>@Loc["dashboard.workspace.subtitle"]</p>
     </div>
     <div class="workspace-hero__actions">
-        <a class="btn btn-light" href="/patients/new">Register Patient</a>
-        <a class="btn btn-outline-light" href="/cds/admin">Open CDS Admin</a>
+        <a class="btn btn-light" href="/patients/new">@Loc["dashboard.registerPatient"]</a>
+        <a class="btn btn-outline-light" href="/cds/admin">@Loc["dashboard.openCdsAdmin"]</a>
     </div>
 </div>
 
@@ -62,8 +63,8 @@ else
             <div class="dmrs-panel">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Predictive Watchlist</div>
-                        <div class="dmrs-panel__subtitle">Patients surfaced by the AI readmission-risk model.</div>
+                        <div class="dmrs-panel__title">@Loc["dashboard.watchlist.title"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["dashboard.watchlist.subtitle"]</div>
                     </div>
                     @{
                         var _total = snapshot.HighRiskCount + snapshot.MediumRiskCount + snapshot.LowRiskCount;
@@ -98,29 +99,29 @@ else
                                 }
                             </g>
                             <text x="40" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">@_total</text>
-                            <text x="40" y="49" text-anchor="middle" font-size="9" fill="#6b7280">assessed</text>
+                            <text x="40" y="49" text-anchor="middle" font-size="9" fill="#6b7280">@Loc["dashboard.assessed"]</text>
                         </svg>
                         <div style="font-size:0.78rem;line-height:1.7;">
                             <div class="d-flex align-items-center gap-1">
                                 <span style="width:9px;height:9px;border-radius:50%;background:#ef4444;flex-shrink:0;"></span>
-                                <span>@snapshot.HighRiskCount High</span>
+                                <span>@snapshot.HighRiskCount @Loc["dashboard.level.high"]</span>
                             </div>
                             <div class="d-flex align-items-center gap-1">
                                 <span style="width:9px;height:9px;border-radius:50%;background:#f59e0b;flex-shrink:0;"></span>
-                                <span>@snapshot.MediumRiskCount Medium</span>
+                                <span>@snapshot.MediumRiskCount @Loc["dashboard.level.medium"]</span>
                             </div>
                             <div class="d-flex align-items-center gap-1">
                                 <span style="width:9px;height:9px;border-radius:50%;background:#22c55e;flex-shrink:0;"></span>
-                                <span>@snapshot.LowRiskCount Low</span>
+                                <span>@snapshot.LowRiskCount @Loc["dashboard.level.low"]</span>
                             </div>
                         </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary" href="/ai-insights">All AI Insights</a>
+                    <a class="btn btn-sm btn-outline-primary" href="/ai-insights">@Loc["dashboard.allAiInsights"]</a>
                 </div>
                 <div class="dmrs-list">
                     @if (snapshot.HighRiskPatients.Count == 0)
                     {
-                        <div class="dmrs-empty-state">No assessable patients yet. Import sample patients with birth date and gender to activate the risk panel.</div>
+                        <div class="dmrs-empty-state">@Loc["dashboard.watchlist.empty"]</div>
                     }
                     else
                     {
@@ -145,18 +146,18 @@ else
             <div class="dmrs-panel h-100">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">CDS Activity</div>
+                        <div class="dmrs-panel__title">@Loc["dashboard.cds.title"]</div>
                         <div class="dmrs-panel__subtitle">
-                            <span class="me-3">@snapshot.ActiveRuleCount live rule@(snapshot.ActiveRuleCount == 1 ? "" : "s")</span>
-                            <span>@snapshot.DraftRuleCount draft@(snapshot.DraftRuleCount == 1 ? "" : "s")</span>
+                            <span class="me-3">@Loc["dashboard.cds.liveRules", snapshot.ActiveRuleCount]</span>
+                            <span>@Loc["dashboard.cds.draftRules", snapshot.DraftRuleCount]</span>
                         </div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary" href="/cds/admin">Manage Rules</a>
+                    <a class="btn btn-sm btn-outline-primary" href="/cds/admin">@Loc["dashboard.manageRules"]</a>
                 </div>
 
                 @if (snapshot.RecentAlerts.Count == 0)
                 {
-                    <div class="dmrs-empty-state">No CDS alerts have fired yet. Open a patient detail page or create a medication request to trigger rules.</div>
+                    <div class="dmrs-empty-state">@Loc["dashboard.cds.empty"]</div>
                 }
                 else
                 {
@@ -186,15 +187,15 @@ else
             <div class="dmrs-panel">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Upcoming Appointments</div>
-                        <div class="dmrs-panel__subtitle">The next scheduled patient touchpoints.</div>
+                        <div class="dmrs-panel__title">@Loc["dashboard.upcoming.title"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["dashboard.upcoming.subtitle"]</div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary" href="/appointments">Appointments</a>
+                    <a class="btn btn-sm btn-outline-primary" href="/appointments">@Loc["nav.appointments"]</a>
                 </div>
                 <div class="dmrs-list">
                     @if (snapshot.UpcomingAppointments.Count == 0)
                     {
-                        <div class="dmrs-empty-state">No upcoming appointments are available yet.</div>
+                        <div class="dmrs-empty-state">@Loc["dashboard.upcoming.empty"]</div>
                     }
                     else
                     {
@@ -217,15 +218,15 @@ else
             <div class="dmrs-panel">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Recent Medication Activity</div>
-                        <div class="dmrs-panel__subtitle">Prescribing activity and CDS entry points.</div>
+                        <div class="dmrs-panel__title">@Loc["dashboard.recentMed.title"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["dashboard.recentMed.subtitle"]</div>
                     </div>
-                    <a class="btn btn-sm btn-outline-primary" href="/medication-requests">Medication Requests</a>
+                    <a class="btn btn-sm btn-outline-primary" href="/medication-requests">@Loc["nav.medicationRequests"]</a>
                 </div>
                 <div class="dmrs-list">
                     @if (snapshot.RecentMedicationRequests.Count == 0)
                     {
-                        <div class="dmrs-empty-state">No medication requests are available yet.</div>
+                        <div class="dmrs-empty-state">@Loc["dashboard.recentMed.empty"]</div>
                     }
                     else
                     {
@@ -282,7 +283,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Unable to load the workspace dashboard: {ex.Message}";
+            errorMessage = Loc["dashboard.loadFailed", ex.Message];
         }
         finally
         {
@@ -304,12 +305,12 @@ else
         _           => "dmrs-pill--neutral"
     };
 
-    private static string TimeAgo(DateTimeOffset firedAt)
+    private string TimeAgo(DateTimeOffset firedAt)
     {
         var elapsed = DateTimeOffset.UtcNow - firedAt;
-        if (elapsed.TotalSeconds < 60)  return "just now";
-        if (elapsed.TotalMinutes < 60)  return $"{(int)elapsed.TotalMinutes}m ago";
-        if (elapsed.TotalHours < 24)    return $"{(int)elapsed.TotalHours}h ago";
-        return $"{(int)elapsed.TotalDays}d ago";
+        if (elapsed.TotalSeconds < 60)  return Loc["common.time.justNow"];
+        if (elapsed.TotalMinutes < 60)  return Loc["common.time.minutesAgo", (int)elapsed.TotalMinutes];
+        if (elapsed.TotalHours < 24)    return Loc["common.time.hoursAgo", (int)elapsed.TotalHours];
+        return Loc["common.time.daysAgo", (int)elapsed.TotalDays];
     }
 }

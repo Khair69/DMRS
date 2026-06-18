@@ -1,11 +1,12 @@
 @page "/procedures/{Id}/edit"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Procedures.Services.ProcedureFeatureService ProcedureService
 @inject NavigationManager Navigation
 
-<PageTitle>Edit Procedure</PageTitle>
+<PageTitle>@Loc["procedures.edit.title"]</PageTitle>
 
-<h1>Edit Procedure</h1>
+<h1>@Loc["procedures.edit.title"]</h1>
 
 @if (isLoading)
 {
@@ -18,7 +19,7 @@ else
         <div class="alert alert-danger">@errorMessage</div>
     }
 
-    <ProcedureForm Model="model" IsBusy="@isSaving" SubmitText="Update Procedure" OnSave="Save" />
+    <ProcedureForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["procedures.edit.submit"]" OnSave="Save" />
 }
 
 @code {
@@ -40,7 +41,7 @@ else
             var procedure = await ProcedureService.GetAsync(Id);
             if (procedure is null)
             {
-                errorMessage = $"Procedure {Id} not found.";
+                errorMessage = Loc["procedures.notFound", Id];
                 return;
             }
 
@@ -48,7 +49,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load procedure: {ex.Message}";
+            errorMessage = Loc["procedures.loadFailed", ex.Message];
         }
         finally
         {
@@ -68,7 +69,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to update procedure: {ex.Message}";
+            errorMessage = Loc["procedures.updateFailed", ex.Message];
         }
         finally
         {

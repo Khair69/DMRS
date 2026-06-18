@@ -1,9 +1,10 @@
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject NavigationManager Navigation
 
-<PageTitle>Access denied · DMRS</PageTitle>
+<PageTitle>@Loc["errors.accessDenied.pageTitle"]</PageTitle>
 
-<StatusCard Title="You don't have access to this"
-            Subtitle="Your account doesn't have permission to view this resource. If you believe this is a mistake, contact your administrator."
+<StatusCard Title="@Loc["errors.accessDenied.title"]"
+            Subtitle="@Loc["errors.accessDenied.subtitle"]"
             Tone="StatusCard.CardTone.Danger">
     <Icon>
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -16,7 +17,7 @@
         </svg>
     </Icon>
     <Actions>
-        <button class="btn btn-primary" @onclick="GoHome">Return to dashboard</button>
+        <button class="btn btn-primary" @onclick="GoHome">@Loc["common.returnToDashboard"]</button>
     </Actions>
 </StatusCard>
 

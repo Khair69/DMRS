@@ -1,25 +1,26 @@
 @page "/service-requests"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @using DMRS.Client.Features.ServiceRequests.Models
 @inject DMRS.Client.Features.ServiceRequests.Services.ServiceRequestFeatureService ServiceRequestService
 
-<PageTitle>Service Requests</PageTitle>
+<PageTitle>@Loc["serviceRequests.title"]</PageTitle>
 
 <ResourceIndexPage TSummary="ServiceRequestSummaryViewModel"
-                   Title="Service Requests"
+                   Title="@Loc["serviceRequests.title"]"
                    NewLink="/service-requests/new"
-                   NewLabel="New Service Request"
-                   EntityName="service requests"
-                   EmptyText="No service requests found."
-                   SearchFields="_searchFields"
+                   NewLabel="@Loc["serviceRequests.new"]"
+                   EntityName="@Loc["serviceRequests.entityName"]"
+                   EmptyText="@Loc["serviceRequests.empty"]"
+                   SearchFields="SearchFieldList"
                    LoadDefault="cap => ServiceRequestService.ListAsync(cap)"
                    Search="(p, v) => ServiceRequestService.SearchAsync(p, v)">
     <HeaderTemplate>
-        <th>Id</th>
-        <th>Patient</th>
-        <th>Code</th>
-        <th>Status</th>
-        <th>Intent</th>
+        <th>@Loc["common.field.id"]</th>
+        <th>@Loc["common.field.patient"]</th>
+        <th>@Loc["common.field.code"]</th>
+        <th>@Loc["common.field.status"]</th>
+        <th>@Loc["common.field.intent"]</th>
     </HeaderTemplate>
     <RowTemplate Context="request">
         <td><NavLink href="@($"/service-requests/{request.Id}")">@request.Id</NavLink></td>
@@ -31,9 +32,9 @@
 </ResourceIndexPage>
 
 @code {
-    private static readonly IReadOnlyList<SearchField> _searchFields =
+    private IReadOnlyList<SearchField> SearchFieldList =>
     [
-        new("patient", "Patient", "e.g. 123 (patient id)"),
-        new("code", "Code", "e.g. 24627-2"),
+        new("patient", Loc["common.field.patient"], Loc["serviceRequests.search.patient.placeholder"]),
+        new("code", Loc["common.field.code"], Loc["serviceRequests.search.code.placeholder"]),
     ];
 }

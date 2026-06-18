@@ -1,24 +1,25 @@
 @page "/allergy-intolerances"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @using DMRS.Client.Features.AllergyIntolerances.Models
 @inject DMRS.Client.Features.AllergyIntolerances.Services.AllergyIntoleranceFeatureService AllergyService
 
-<PageTitle>Allergy Intolerances</PageTitle>
+<PageTitle>@Loc["allergies.title"]</PageTitle>
 
 <ResourceIndexPage TSummary="AllergyIntoleranceSummaryViewModel"
-                   Title="Allergy Intolerances"
+                   Title="@Loc["allergies.title"]"
                    NewLink="/allergy-intolerances/new"
-                   NewLabel="New Allergy"
-                   EntityName="allergies"
-                   EmptyText="No allergies found."
-                   SearchFields="_searchFields"
+                   NewLabel="@Loc["allergies.new"]"
+                   EntityName="@Loc["allergies.entityName"]"
+                   EmptyText="@Loc["allergies.empty"]"
+                   SearchFields="SearchFieldList"
                    LoadDefault="cap => AllergyService.ListAsync(cap)"
                    Search="(p, v) => AllergyService.SearchAsync(p, v)">
     <HeaderTemplate>
-        <th>Id</th>
-        <th>Patient</th>
-        <th>Code</th>
-        <th>Status</th>
+        <th>@Loc["common.field.id"]</th>
+        <th>@Loc["common.field.patient"]</th>
+        <th>@Loc["common.field.code"]</th>
+        <th>@Loc["common.field.status"]</th>
     </HeaderTemplate>
     <RowTemplate Context="allergy">
         <td><NavLink href="@($"/allergy-intolerances/{allergy.Id}")">@allergy.Id</NavLink></td>
@@ -29,9 +30,9 @@
 </ResourceIndexPage>
 
 @code {
-    private static readonly IReadOnlyList<SearchField> _searchFields =
+    private IReadOnlyList<SearchField> SearchFieldList =>
     [
-        new("patient", "Patient", "e.g. 123 (patient id)"),
-        new("code", "Code", "e.g. 227493005"),
+        new("patient", Loc["common.field.patient"], Loc["allergies.search.patient.placeholder"]),
+        new("code", Loc["common.field.code"], Loc["allergies.search.code.placeholder"]),
     ];
 }

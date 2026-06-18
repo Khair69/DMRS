@@ -1,4 +1,7 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject DMRS.Client.Services.LocalizationService Loc
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -7,10 +10,13 @@
     <main>
         <div class="top-row px-4 auth">
             <div class="top-row__intro">
-                <div class="top-row__title">DMRS</div>
-                <div class="top-row__subtitle">Clinical workspace, CDS, and predictive insights</div>
+                <div class="top-row__title">@Loc["app.title"]</div>
+                <div class="top-row__subtitle">@Loc["app.subtitle"]</div>
             </div>
-            <LoginDisplay />
+            <div class="top-row__actions">
+                <LanguageSwitcher />
+                <LoginDisplay />
+            </div>
         </div>
 
         <article class="content px-4 py-4">
@@ -18,3 +24,11 @@
         </article>
     </main>
 </div>
+
+@code {
+    protected override void OnInitialized() => Loc.OnChange += OnLanguageChanged;
+
+    private void OnLanguageChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Loc.OnChange -= OnLanguageChanged;
+}

@@ -1,10 +1,11 @@
 @page "/organizations/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
 
-<PageTitle>Organization Details</PageTitle>
+<PageTitle>@Loc["organizations.details.title"]</PageTitle>
 
-<h1>Organization Details</h1>
+<h1>@Loc["organizations.details.title"]</h1>
 
 @if (isBusy)
 {
@@ -37,12 +38,12 @@ else
             organization = await OrganizationService.GetAsync(Id);
             if (organization is null)
             {
-                errorMessage = $"Organization {Id} not found.";
+                errorMessage = Loc["organizations.notFound", Id];
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Unable to load organization: {ex.Message}";
+            errorMessage = Loc["organizations.loadError", ex.Message];
         }
         finally
         {

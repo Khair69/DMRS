@@ -1,10 +1,11 @@
 @page "/organizations/{OrganizationId}/staff/{PractitionerId}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Staff.Services.StaffFeatureService StaffService
 
-<PageTitle>Staff Details</PageTitle>
+<PageTitle>@Loc["staff.details.title"]</PageTitle>
 
-<h1>Staff Details</h1>
+<h1>@Loc["staff.details.title"]</h1>
 
 @if (isBusy)
 {
@@ -51,7 +52,7 @@ else
 
             if (practitioner is null)
             {
-                errorMessage = $"Practitioner {PractitionerId} not found.";
+                errorMessage = Loc["staff.details.notFound", PractitionerId];
                 roles = [];
                 return;
             }
@@ -62,7 +63,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to load practitioner details: {ex.Message}";
+            errorMessage = Loc["staff.details.loadFailed", ex.Message];
         }
         finally
         {
@@ -85,7 +86,7 @@ else
         }
         catch (Exception ex)
         {
-            provisionError = $"Failed to create login account: {ex.Message}";
+            provisionError = Loc["staff.details.provisionFailed", ex.Message];
         }
         finally
         {

@@ -4,19 +4,20 @@
 @using DMRS.Client.Features.Patients.Models
 @using DMRS.Client.Features.Documents.Models
 @using Task = System.Threading.Tasks.Task
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Patients.Services.PatientPortalFeatureService PortalService
 @inject DMRS.Client.Features.Documents.Services.PatientDocumentFeatureService DocumentService
 
-<PageTitle>My Health Records</PageTitle>
+<PageTitle>@Loc["portal.health.title"]</PageTitle>
 
 <div class="workspace-hero workspace-hero--patient">
     <div>
-        <span class="workspace-eyebrow">Patient Portal</span>
-        <h1>My Health Records</h1>
-        <p>Everything in your medical file — conditions, medications, results, visits, and documents.</p>
+        <span class="workspace-eyebrow">@Loc["portal.dashboard.eyebrow"]</span>
+        <h1>@Loc["portal.health.title"]</h1>
+        <p>@Loc["portal.health.subtitle"]</p>
     </div>
     <div class="workspace-hero__actions">
-        <a class="btn btn-outline-light" href="/my-profile">Edit My Profile</a>
+        <a class="btn btn-outline-light" href="/my-profile">@Loc["portal.dashboard.editProfile"]</a>
     </div>
 </div>
 
@@ -34,8 +35,7 @@ else if (records is null)
 {
     <div class="dmrs-panel mt-4">
         <div class="dmrs-empty-state">
-            We couldn't find a medical record linked to your account. If you have an invitation,
-            <a href="/patients/claim">claim it here</a>.
+            @Loc["portal.health.noRecordPre"] <a href="/patients/claim">@Loc["portal.dashboard.claimHere"]</a>@Loc["portal.health.noRecordPost"]
         </div>
     </div>
 }
@@ -61,33 +61,33 @@ else
         {
             <div class="dmrs-panel__header">
                 <div>
-                    <div class="dmrs-panel__title">Overview</div>
-                    <div class="dmrs-panel__subtitle">A quick summary of your record.</div>
+                    <div class="dmrs-panel__title">@Loc["portal.health.overview.title"]</div>
+                    <div class="dmrs-panel__subtitle">@Loc["portal.health.overview.subtitle"]</div>
                 </div>
             </div>
             <div class="dmrs-metrics-grid dmrs-metrics-grid--compact">
                 <div class="dmrs-metric-card metric-emerald">
-                    <div class="dmrs-metric-card__label">Conditions</div>
+                    <div class="dmrs-metric-card__label">@Loc["portal.health.tab.conditions"]</div>
                     <div class="dmrs-metric-card__value">@records.Conditions.Count</div>
                 </div>
                 <div class="dmrs-metric-card metric-gold">
-                    <div class="dmrs-metric-card__label">Medications</div>
+                    <div class="dmrs-metric-card__label">@Loc["portal.health.tab.medications"]</div>
                     <div class="dmrs-metric-card__value">@records.Medications.Count</div>
                 </div>
                 <div class="dmrs-metric-card metric-rose">
-                    <div class="dmrs-metric-card__label">Allergies</div>
+                    <div class="dmrs-metric-card__label">@Loc["portal.health.tab.allergies"]</div>
                     <div class="dmrs-metric-card__value">@records.Allergies.Count</div>
                 </div>
                 <div class="dmrs-metric-card metric-ocean">
-                    <div class="dmrs-metric-card__label">Results</div>
+                    <div class="dmrs-metric-card__label">@Loc["portal.health.overview.results"]</div>
                     <div class="dmrs-metric-card__value">@records.Observations.Count</div>
                 </div>
                 <div class="dmrs-metric-card metric-sky">
-                    <div class="dmrs-metric-card__label">Appointments</div>
+                    <div class="dmrs-metric-card__label">@Loc["portal.health.tab.appointments"]</div>
                     <div class="dmrs-metric-card__value">@records.Appointments.Count</div>
                 </div>
                 <div class="dmrs-metric-card metric-ink">
-                    <div class="dmrs-metric-card__label">Visits</div>
+                    <div class="dmrs-metric-card__label">@Loc["portal.health.overview.visits"]</div>
                     <div class="dmrs-metric-card__value">@records.Encounters.Count</div>
                 </div>
             </div>
@@ -96,17 +96,17 @@ else
         {
             <div class="dmrs-panel__header">
                 <div>
-                    <div class="dmrs-panel__title">Documents</div>
-                    <div class="dmrs-panel__subtitle">Reports and files shared by your clinic.</div>
+                    <div class="dmrs-panel__title">@Loc["portal.health.documents.title"]</div>
+                    <div class="dmrs-panel__subtitle">@Loc["portal.health.documents.subtitle"]</div>
                 </div>
             </div>
             @if (isLoadingDocuments)
             {
-                <div class="text-muted small text-center py-2">Loading documents…</div>
+                <div class="text-muted small text-center py-2">@Loc["patients.docs.loading"]</div>
             }
             else if (documents.Count == 0)
             {
-                <div class="dmrs-empty-state">No documents have been shared with you yet.</div>
+                <div class="dmrs-empty-state">@Loc["portal.health.documents.empty"]</div>
             }
             else
             {
@@ -119,7 +119,7 @@ else
                                 <div class="small text-muted">@doc.SizeDisplay · @doc.UploadedAt.ToLocalTime().ToString("dd MMM yyyy")</div>
                             </div>
                             <a href="@DocumentService.GetDownloadUrl(records.Patient!.Id!, doc.Id)"
-                               target="_blank" class="btn btn-sm btn-outline-primary flex-shrink-0">Download</a>
+                               target="_blank" class="btn btn-sm btn-outline-primary flex-shrink-0">@Loc["common.download"]</a>
                         </div>
                     }
                 </div>
@@ -172,15 +172,15 @@ else
 
     private IEnumerable<TabDef> Tabs =>
     [
-        new("overview", "Overview", null),
-        new("conditions", "Conditions", records?.Conditions.Count),
-        new("medications", "Medications", records?.Medications.Count),
-        new("allergies", "Allergies", records?.Allergies.Count),
-        new("results", "Results", records?.Observations.Count),
-        new("appointments", "Appointments", records?.Appointments.Count),
-        new("encounters", "Visits", records?.Encounters.Count),
-        new("procedures", "Procedures", records?.Procedures.Count),
-        new("documents", "Documents", documents.Count)
+        new("overview", Loc["portal.health.tab.overview"], null),
+        new("conditions", Loc["portal.health.tab.conditions"], records?.Conditions.Count),
+        new("medications", Loc["portal.health.tab.medications"], records?.Medications.Count),
+        new("allergies", Loc["portal.health.tab.allergies"], records?.Allergies.Count),
+        new("results", Loc["portal.health.tab.results"], records?.Observations.Count),
+        new("appointments", Loc["portal.health.tab.appointments"], records?.Appointments.Count),
+        new("encounters", Loc["portal.health.tab.visits"], records?.Encounters.Count),
+        new("procedures", Loc["portal.health.tab.procedures"], records?.Procedures.Count),
+        new("documents", Loc["portal.health.tab.documents"], documents.Count)
     ];
 
     protected override async Task OnInitializedAsync()
@@ -200,7 +200,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Unable to load your records: {ex.Message}";
+            errorMessage = Loc["portal.health.loadFailed", ex.Message];
         }
         finally
         {
@@ -234,23 +234,23 @@ else
 
         return tab switch
         {
-            "conditions" => new ListView("Conditions", "No conditions recorded.",
+            "conditions" => new ListView(Loc["portal.health.list.conditionsTitle"], Loc["portal.health.list.conditionsEmpty"],
                 records.Conditions.Select(c => new Row(ConditionLabel(c),
                     c.ClinicalStatus?.Text ?? c.RecordedDate ?? "")).ToList()),
-            "medications" => new ListView("Medications", "No medications on file.",
+            "medications" => new ListView(Loc["portal.health.list.medicationsTitle"], Loc["portal.health.list.medicationsEmpty"],
                 records.Medications.Select(m => new Row(MedicationLabel(m),
                     $"{m.SafeStatus()} · {DosageText(m)}")).ToList()),
-            "allergies" => new ListView("Allergies & Intolerances", "No allergies recorded.",
+            "allergies" => new ListView(Loc["portal.health.list.allergiesTitle"], Loc["portal.health.list.allergiesEmpty"],
                 records.Allergies.Select(a => new Row(AllergyLabel(a), CriticalityText(a))).ToList()),
-            "results" => new ListView("Test Results & Measurements", "No results recorded.",
+            "results" => new ListView(Loc["portal.health.list.resultsTitle"], Loc["portal.health.list.resultsEmpty"],
                 records.Observations.Select(o => new Row(ObservationLabel(o), ObservationValue(o))).ToList()),
-            "appointments" => new ListView("Appointments", "No appointments found.",
+            "appointments" => new ListView(Loc["portal.health.list.appointmentsTitle"], Loc["portal.health.list.appointmentsEmpty"],
                 records.Appointments.Select(a => new Row(AppointmentLabel(a), AppointmentWhen(a))).ToList()),
-            "encounters" => new ListView("Visits", "No visits recorded.",
+            "encounters" => new ListView(Loc["portal.health.list.visitsTitle"], Loc["portal.health.list.visitsEmpty"],
                 records.Encounters.Select(e => new Row(EncounterLabel(e), e.SafeStatus())).ToList()),
-            "procedures" => new ListView("Procedures", "No procedures recorded.",
+            "procedures" => new ListView(Loc["portal.health.list.proceduresTitle"], Loc["portal.health.list.proceduresEmpty"],
                 records.Procedures.Select(p => new Row(ProcedureLabel(p), p.SafeStatus())).ToList()),
-            _ => new ListView("Records", "Nothing to show.", [])
+            _ => new ListView(Loc["portal.health.list.recordsTitle"], Loc["portal.health.list.recordsEmpty"], [])
         };
     }
 
@@ -267,10 +267,10 @@ else
     private static string AllergyLabel(AllergyIntolerance a)
         => a.Code?.Text ?? a.Code?.Coding.FirstOrDefault()?.Display ?? a.Code?.Coding.FirstOrDefault()?.Code ?? "Allergy";
 
-    private static string CriticalityText(AllergyIntolerance a)
+    private string CriticalityText(AllergyIntolerance a)
     {
         var crit = a.SafeCriticality();
-        return string.IsNullOrWhiteSpace(crit) ? "Recorded" : $"Criticality: {crit}";
+        return string.IsNullOrWhiteSpace(crit) ? Loc["portal.health.criticality.recorded"] : Loc["portal.health.criticality.value", crit];
     }
 
     private static string ObservationLabel(Observation o)

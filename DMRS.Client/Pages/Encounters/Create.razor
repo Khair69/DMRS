@@ -1,18 +1,19 @@
 @page "/encounters/new"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Encounters.Services.EncounterFeatureService EncounterService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Create Encounter</PageTitle>
+<PageTitle>@Loc["encounters.create.title"]</PageTitle>
 
-<h1>Create Encounter</h1>
+<h1>@Loc["encounters.create.title"]</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<EncounterForm Model="model" IsBusy="@isSaving" SubmitText="Create Encounter" OnSave="Save" />
+<EncounterForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["encounters.create.submit"]" OnSave="Save" />
 
 @code {
     private readonly DMRS.Client.Features.Encounters.Models.EncounterEditModel model = new();
@@ -28,7 +29,7 @@
             var created = await EncounterService.CreateAsync(model);
             if (created?.Id is null)
             {
-                errorMessage = "Encounter was created but no id was returned.";
+                errorMessage = Loc["encounters.noIdReturned"];
                 return;
             }
 
@@ -36,7 +37,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred while creating the encounter: {ex.Message}";
+            errorMessage = Loc["encounters.createError", ex.Message];
         }
         finally
         {

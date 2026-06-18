@@ -1,59 +1,60 @@
 @using DMRS.Client.Features.Organizations.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 <EditForm Model="Model" OnValidSubmit="OnSubmit">
     <DataAnnotationsValidator />
 
     <div class="row g-3">
         <div class="col-md-8">
-            <label class="form-label">Organization Name</label>
+            <label class="form-label">@Loc["common.field.organizationName"]</label>
             <InputText @bind-Value="Model.Name" class="form-control" />
             <ValidationMessage For="() => Model.Name" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Alias</label>
+            <label class="form-label">@Loc["common.field.alias"]</label>
             <InputText @bind-Value="Model.Alias" class="form-control" />
         </div>
         <div class="col-md-3 d-flex align-items-end">
             <div class="form-check">
                 <InputCheckbox @bind-Value="Model.Active" class="form-check-input" />
-                <label class="form-check-label">Active</label>
+                <label class="form-check-label">@Loc["common.field.active"]</label>
             </div>
         </div>
         <div class="col-md-5">
-            <label class="form-label">Identifier System</label>
+            <label class="form-label">@Loc["common.field.identifierSystem"]</label>
             <InputText @bind-Value="Model.IdentifierSystem" class="form-control" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Identifier Value</label>
+            <label class="form-label">@Loc["common.field.identifierValue"]</label>
             <InputText @bind-Value="Model.IdentifierValue" class="form-control" />
         </div>
         <div class="col-md-6">
-            <label class="form-label">Email</label>
+            <label class="form-label">@Loc["common.field.email"]</label>
             <InputText @bind-Value="Model.Email" class="form-control" />
             <ValidationMessage For="() => Model.Email" />
         </div>
         <div class="col-md-6">
-            <label class="form-label">Phone</label>
+            <label class="form-label">@Loc["common.field.phone"]</label>
             <InputText @bind-Value="Model.Phone" class="form-control" />
         </div>
         <div class="col-md-12">
-            <label class="form-label">Address Line</label>
+            <label class="form-label">@Loc["common.field.addressLine"]</label>
             <InputText @bind-Value="Model.AddressLine" class="form-control" />
         </div>
         <div class="col-md-3">
-            <label class="form-label">City</label>
+            <label class="form-label">@Loc["common.field.city"]</label>
             <InputText @bind-Value="Model.City" class="form-control" />
         </div>
         <div class="col-md-3">
-            <label class="form-label">State</label>
+            <label class="form-label">@Loc["common.field.state"]</label>
             <InputText @bind-Value="Model.State" class="form-control" />
         </div>
         <div class="col-md-3">
-            <label class="form-label">Postal Code</label>
+            <label class="form-label">@Loc["common.field.postalCode"]</label>
             <InputText @bind-Value="Model.PostalCode" class="form-control" />
         </div>
         <div class="col-md-3">
-            <label class="form-label">Country</label>
+            <label class="form-label">@Loc["common.field.country"]</label>
             <InputText @bind-Value="Model.Country" class="form-control" />
         </div>
     </div>

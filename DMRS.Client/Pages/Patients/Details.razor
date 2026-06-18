@@ -1,5 +1,6 @@
 @page "/patients/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
 @inject DMRS.Client.Features.Patients.Services.PatientChartFeatureService PatientChartService
 @inject DMRS.Client.Features.Documents.Services.PatientDocumentFeatureService DocumentService
@@ -11,7 +12,7 @@
 @using DMRS.Client.Features.Patients.Models
 @using Microsoft.AspNetCore.Components.Forms
 
-<PageTitle>Patient Details</PageTitle>
+<PageTitle>@Loc["patients.details.title"]</PageTitle>
 
 @if (isBusy)
 {
@@ -27,7 +28,7 @@ else
 {
     <div class="workspace-hero workspace-hero--patient">
         <div>
-            <span class="workspace-eyebrow">Patient Chart</span>
+            <span class="workspace-eyebrow">@Loc["patients.details.eyebrow"]</span>
             <h1>@DisplayPatientName</h1>
             <p>@DisplayPatientDemographics</p>
         </div>
@@ -35,11 +36,11 @@ else
             @if (riskAssessment is not null && riskAssessment.FeaturesComplete)
             {
                 <span class="dmrs-pill @RiskLevelPillClass(riskAssessment.RiskLevel)">
-                    Readmission Risk: @riskAssessment.RiskLevel
+                    @Loc["patients.details.readmissionPill", riskAssessment.RiskLevel]
                 </span>
             }
-            <a class="btn btn-light" href="@($"/patients/{Id}/edit")">Edit Patient</a>
-            <a class="btn btn-outline-light" href="@($"/patients/{Id}/history")">History</a>
+            <a class="btn btn-light" href="@($"/patients/{Id}/edit")">@Loc["patients.details.editPatient"]</a>
+            <a class="btn btn-outline-light" href="@($"/patients/{Id}/history")">@Loc["common.history"]</a>
         </div>
     </div>
 
@@ -47,38 +48,38 @@ else
         <div class="col-12 col-xl-8">
             <div class="dmrs-metrics-grid dmrs-metrics-grid--compact">
                 <div class="dmrs-metric-card metric-ocean">
-                    <div class="dmrs-metric-card__label">Allergies</div>
+                    <div class="dmrs-metric-card__label">@Loc["patients.metric.allergies"]</div>
                     <div class="dmrs-metric-card__value">@allergyCount</div>
-                    <div class="dmrs-metric-card__helper">Known allergy and intolerance records</div>
+                    <div class="dmrs-metric-card__helper">@Loc["patients.metric.allergiesHelper"]</div>
                 </div>
                 <div class="dmrs-metric-card metric-emerald">
-                    <div class="dmrs-metric-card__label">Conditions</div>
+                    <div class="dmrs-metric-card__label">@Loc["patients.metric.conditions"]</div>
                     <div class="dmrs-metric-card__value">@conditionCount</div>
-                    <div class="dmrs-metric-card__helper">Tracked problem list items</div>
+                    <div class="dmrs-metric-card__helper">@Loc["patients.metric.conditionsHelper"]</div>
                 </div>
                 <div class="dmrs-metric-card metric-gold">
-                    <div class="dmrs-metric-card__label">Medications</div>
+                    <div class="dmrs-metric-card__label">@Loc["patients.metric.medications"]</div>
                     <div class="dmrs-metric-card__value">@medicationCount</div>
-                    <div class="dmrs-metric-card__helper">Medication requests on file</div>
+                    <div class="dmrs-metric-card__helper">@Loc["patients.metric.medicationsHelper"]</div>
                 </div>
                 <div class="dmrs-metric-card metric-ink">
-                    <div class="dmrs-metric-card__label">Encounters</div>
+                    <div class="dmrs-metric-card__label">@Loc["patients.metric.encounters"]</div>
                     <div class="dmrs-metric-card__value">@encounterCount</div>
-                    <div class="dmrs-metric-card__helper">Documented visits and care moments</div>
+                    <div class="dmrs-metric-card__helper">@Loc["patients.metric.encountersHelper"]</div>
                 </div>
             </div>
 
             <div class="dmrs-panel mt-4">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Current Clinical Snapshot</div>
-                        <div class="dmrs-panel__subtitle">The most relevant data attached to this patient record.</div>
+                        <div class="dmrs-panel__title">@Loc["patients.snapshot.title"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["patients.snapshot.subtitle"]</div>
                     </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-12 col-lg-6">
                         <div class="dmrs-subpanel">
-                            <div class="dmrs-subpanel__title">Active Conditions</div>
+                            <div class="dmrs-subpanel__title">@Loc["patients.snapshot.activeConditions"]</div>
                             @if (chart?.Conditions.Count > 0)
                             {
                                 @foreach (var condition in chart.Conditions)
@@ -91,13 +92,13 @@ else
                             }
                             else
                             {
-                                <div class="dmrs-empty-state dmrs-empty-state--inline">No conditions recorded.</div>
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">@Loc["patients.snapshot.noConditions"]</div>
                             }
                         </div>
                     </div>
                     <div class="col-12 col-lg-6">
                         <div class="dmrs-subpanel">
-                            <div class="dmrs-subpanel__title">Allergies</div>
+                            <div class="dmrs-subpanel__title">@Loc["patients.snapshot.allergies"]</div>
                             @if (chart?.Allergies.Count > 0)
                             {
                                 @foreach (var allergy in chart.Allergies)
@@ -110,13 +111,13 @@ else
                             }
                             else
                             {
-                                <div class="dmrs-empty-state dmrs-empty-state--inline">No allergy records found.</div>
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">@Loc["patients.snapshot.noAllergies"]</div>
                             }
                         </div>
                     </div>
                     <div class="col-12 col-lg-6">
                         <div class="dmrs-subpanel">
-                            <div class="dmrs-subpanel__title">Observations</div>
+                            <div class="dmrs-subpanel__title">@Loc["patients.snapshot.observations"]</div>
                             @if (chart?.Observations.Count > 0)
                             {
                                 @foreach (var observation in chart.Observations)
@@ -129,13 +130,13 @@ else
                             }
                             else
                             {
-                                <div class="dmrs-empty-state dmrs-empty-state--inline">No observations recorded.</div>
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">@Loc["patients.snapshot.noObservations"]</div>
                             }
                         </div>
                     </div>
                     <div class="col-12 col-lg-6">
                         <div class="dmrs-subpanel">
-                            <div class="dmrs-subpanel__title">Medication Requests</div>
+                            <div class="dmrs-subpanel__title">@Loc["patients.snapshot.medicationRequests"]</div>
                             @if (chart?.MedicationRequests.Count > 0)
                             {
                                 @foreach (var medication in chart.MedicationRequests)
@@ -148,7 +149,7 @@ else
                             }
                             else
                             {
-                                <div class="dmrs-empty-state dmrs-empty-state--inline">No medication requests found.</div>
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">@Loc["patients.snapshot.noMedications"]</div>
                             }
                         </div>
                     </div>
@@ -158,14 +159,14 @@ else
             <div class="dmrs-panel mt-4">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Patient Activity</div>
-                        <div class="dmrs-panel__subtitle">Recent and upcoming care events linked to this chart.</div>
+                        <div class="dmrs-panel__title">@Loc["patients.activity.title"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["patients.activity.subtitle"]</div>
                     </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-12 col-lg-6">
                         <div class="dmrs-subpanel">
-                            <div class="dmrs-subpanel__title">Encounters</div>
+                            <div class="dmrs-subpanel__title">@Loc["patients.activity.encounters"]</div>
                             @if (chart?.Encounters.Count > 0)
                             {
                                 @foreach (var encounter in chart.Encounters)
@@ -178,13 +179,13 @@ else
                             }
                             else
                             {
-                                <div class="dmrs-empty-state dmrs-empty-state--inline">No encounters recorded.</div>
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">@Loc["patients.activity.noEncounters"]</div>
                             }
                         </div>
                     </div>
                     <div class="col-12 col-lg-6">
                         <div class="dmrs-subpanel">
-                            <div class="dmrs-subpanel__title">Appointments</div>
+                            <div class="dmrs-subpanel__title">@Loc["patients.activity.appointments"]</div>
                             @if (chart?.Appointments.Count > 0)
                             {
                                 @foreach (var appointment in chart.Appointments)
@@ -197,7 +198,7 @@ else
                             }
                             else
                             {
-                                <div class="dmrs-empty-state dmrs-empty-state--inline">No appointments found.</div>
+                                <div class="dmrs-empty-state dmrs-empty-state--inline">@Loc["patients.activity.noAppointments"]</div>
                             }
                         </div>
                     </div>
@@ -209,20 +210,20 @@ else
             <div class="dmrs-panel">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">AI and CDS Briefing</div>
-                        <div class="dmrs-panel__subtitle">The smart layer attached to this patient chart.</div>
+                        <div class="dmrs-panel__title">@Loc["patients.cds.title"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["patients.cds.subtitle"]</div>
                     </div>
                 </div>
                 <div class="dmrs-stack">
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Readmission Risk (30-day)</div>
+                        <div class="dmrs-note-card__title">@Loc["patients.cds.readmission"]</div>
                         @if (riskAssessment is null)
                         {
-                            <p>No readmission assessment available for this patient yet.</p>
+                            <p>@Loc["patients.cds.noReadmission"]</p>
                         }
                         else if (!riskAssessment.FeaturesComplete)
                         {
-                            <p>Could not fully assess risk — birth date or gender is missing.</p>
+                            <p>@Loc["patients.cds.incompleteRisk"]</p>
                         }
                         else
                         {
@@ -233,21 +234,21 @@ else
                                 </div>
                                 <strong>@((riskAssessment.CompositeScore * 100).ToString("0"))%</strong>
                                 <span class="badge @VerdictBadgeClass(riskAssessment.IsHighRisk)"
-                                      title="Does the model flag this patient as a likely 30-day readmission?">
+                                      title="@Loc["patients.cds.verdictReadmission"]">
                                     @VerdictText(riskAssessment.IsHighRisk)
                                 </span>
                             </div>
                             <p class="mb-1">
-                                Risk level: <strong>@riskAssessment.RiskLevel</strong>
+                                @Loc["patients.cds.riskLevel"] <strong>@riskAssessment.RiskLevel</strong>
                                 @if (riskAssessment.HasChronicConditions)
                                 {
-                                    <span class="badge text-bg-warning ms-1">Chronic</span>
+                                    <span class="badge text-bg-warning ms-1">@Loc["patients.cds.chronic"]</span>
                                 }
                             </p>
                             @if (riskAssessment.TopRiskFactors.Count > 0)
                             {
                                 <div class="small text-muted mb-0">
-                                    <div class="fw-semibold mb-1">Contributing factors:</div>
+                                    <div class="fw-semibold mb-1">@Loc["patients.cds.contributingFactors"]</div>
                                     <ul class="mb-0 ps-3">
                                         @foreach (var factor in riskAssessment.TopRiskFactors)
                                         {
@@ -259,10 +260,10 @@ else
                         }
                     </div>
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Diabetes Risk</div>
+                        <div class="dmrs-note-card__title">@Loc["patients.cds.diabetes"]</div>
                         @if (diabetesRisk is null)
                         {
-                            <p class="mb-0">Model not available yet.</p>
+                            <p class="mb-0">@Loc["patients.cds.modelUnavailable"]</p>
                         }
                         else
                         {
@@ -273,27 +274,27 @@ else
                                 </div>
                                 <strong>@(((diabetesRisk.Probability ?? 0) * 100).ToString("0"))%</strong>
                                 <span class="badge @VerdictBadgeClass(diabetesRisk.IsHighRisk)"
-                                      title="Does the model classify this patient as diabetic?">
+                                      title="@Loc["patients.cds.verdictDiabetes"]">
                                     @VerdictText(diabetesRisk.IsHighRisk)
                                 </span>
                             </div>
-                            <p class="mb-1">Risk level: <strong>@diabetesRisk.RiskLevel</strong></p>
+                            <p class="mb-1">@Loc["patients.cds.riskLevel"] <strong>@diabetesRisk.RiskLevel</strong></p>
                             <ul class="mb-1 small text-muted ps-3">
-                                <li>Glucose: @diabetesRisk.Glucose.ToString("0") mg/dL</li>
-                                <li>Diastolic BP: @diabetesRisk.BloodPressure.ToString("0") mm Hg</li>
-                                <li>BMI: @diabetesRisk.Bmi.ToString("0.0")</li>
+                                <li>@Loc["patients.cds.glucose"] @diabetesRisk.Glucose.ToString("0") mg/dL</li>
+                                <li>@Loc["patients.cds.diastolic"] @diabetesRisk.BloodPressure.ToString("0") mm Hg</li>
+                                <li>@Loc["patients.cds.bmi"] @diabetesRisk.Bmi.ToString("0.0")</li>
                             </ul>
                             @if (!diabetesRisk.FeaturesComplete)
                             {
-                                <div class="small text-warning mb-0">Demographic estimate — no clinical data on file (assumed healthy-normal: @string.Join(", ", diabetesRisk.ImputedFeatures))</div>
+                                <div class="small text-warning mb-0">@Loc["patients.cds.demographicEstimate", string.Join(", ", diabetesRisk.ImputedFeatures)]</div>
                             }
                         }
                     </div>
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Cardiovascular Risk</div>
+                        <div class="dmrs-note-card__title">@Loc["patients.cds.cardiovascular"]</div>
                         @if (cardiovascularRisk is null)
                         {
-                            <p class="mb-0">Model not available yet.</p>
+                            <p class="mb-0">@Loc["patients.cds.modelUnavailable"]</p>
                         }
                         else
                         {
@@ -304,44 +305,44 @@ else
                                 </div>
                                 <strong>@(((cardiovascularRisk.Probability ?? 0) * 100).ToString("0"))%</strong>
                                 <span class="badge @VerdictBadgeClass(cardiovascularRisk.IsHighRisk)"
-                                      title="Does the model classify this patient as having cardiovascular disease?">
+                                      title="@Loc["patients.cds.verdictCardio"]">
                                     @VerdictText(cardiovascularRisk.IsHighRisk)
                                 </span>
                             </div>
-                            <p class="mb-1">Risk level: <strong>@cardiovascularRisk.RiskLevel</strong></p>
+                            <p class="mb-1">@Loc["patients.cds.riskLevel"] <strong>@cardiovascularRisk.RiskLevel</strong></p>
                             <ul class="mb-1 small text-muted ps-3">
-                                <li>Resting BP: @cardiovascularRisk.RestingBloodPressure.ToString("0") mm Hg</li>
-                                <li>Cholesterol: @cardiovascularRisk.Cholesterol.ToString("0") mg/dL</li>
-                                <li>Max heart rate: @cardiovascularRisk.MaxHeartRate.ToString("0") bpm</li>
-                                <li>Fasting glucose &gt; 120: @(cardiovascularRisk.FastingBloodSugar >= 1 ? "Yes" : "No")</li>
+                                <li>@Loc["patients.cds.restingBp"] @cardiovascularRisk.RestingBloodPressure.ToString("0") mm Hg</li>
+                                <li>@Loc["patients.cds.cholesterol"] @cardiovascularRisk.Cholesterol.ToString("0") mg/dL</li>
+                                <li>@Loc["patients.cds.maxHeartRate"] @cardiovascularRisk.MaxHeartRate.ToString("0") bpm</li>
+                                <li>@Loc["patients.cds.fastingGlucose"] @(cardiovascularRisk.FastingBloodSugar >= 1 ? Loc["common.yes"] : Loc["common.no"])</li>
                             </ul>
                             @if (!cardiovascularRisk.FeaturesComplete)
                             {
-                                <div class="small text-warning mb-0">Demographic estimate — no clinical data on file (assumed healthy-normal: @string.Join(", ", cardiovascularRisk.ImputedFeatures))</div>
+                                <div class="small text-warning mb-0">@Loc["patients.cds.demographicEstimate", string.Join(", ", cardiovascularRisk.ImputedFeatures)]</div>
                             }
                         }
                     </div>
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Clinical Data Points</div>
+                        <div class="dmrs-note-card__title">@Loc["patients.cds.dataPoints"]</div>
                         @if (riskAssessment?.FeaturesComplete == true)
                         {
                             <ul class="mb-0 small">
-                                <li>@riskAssessment.ConditionCount condition(s) on record</li>
-                                <li>@riskAssessment.MedicationCount active medication(s)</li>
-                                <li>@riskAssessment.RecentEncounterCount recent visit(s)</li>
+                                <li>@Loc["patients.cds.conditionsOnRecord", riskAssessment.ConditionCount]</li>
+                                <li>@Loc["patients.cds.activeMedications", riskAssessment.MedicationCount]</li>
+                                <li>@Loc["patients.cds.recentVisits", riskAssessment.RecentEncounterCount]</li>
                             </ul>
                         }
                         else
                         {
-                            <p class="mb-0">Clinical data not yet evaluated.</p>
+                            <p class="mb-0">@Loc["patients.cds.notEvaluated"]</p>
                         }
                     </div>
                     <div class="dmrs-note-card">
-                        <div class="dmrs-note-card__title">Quick Links</div>
+                        <div class="dmrs-note-card__title">@Loc["patients.cds.quickLinks"]</div>
                         <div class="d-grid gap-2">
-                            <a class="btn btn-outline-primary" href="/medication-requests/new?patient=@Id">New Medication Request</a>
-                            <a class="btn btn-outline-primary" href="/conditions/new?patient=@Id">Add Condition</a>
-                            <a class="btn btn-outline-primary" href="/ai-insights">AI Insights</a>
+                            <a class="btn btn-outline-primary" href="/medication-requests/new?patient=@Id">@Loc["patients.cds.newMedicationRequest"]</a>
+                            <a class="btn btn-outline-primary" href="/conditions/new?patient=@Id">@Loc["patients.cds.addCondition"]</a>
+                            <a class="btn btn-outline-primary" href="/ai-insights">@Loc["patients.cds.aiInsights"]</a>
                         </div>
                     </div>
                 </div>
@@ -356,8 +357,8 @@ else
             <div class="dmrs-panel mt-4">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Patient Documents</div>
-                        <div class="dmrs-panel__subtitle">Upload reports, referrals, or any clinical file.</div>
+                        <div class="dmrs-panel__title">@Loc["patients.docs.title"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["patients.docs.subtitle"]</div>
                     </div>
                 </div>
 
@@ -372,16 +373,16 @@ else
 
                 <InputFile id="docUpload" OnChange="HandleFileUpload" accept="*/*" class="d-none" />
                 <label for="docUpload" class="btn btn-outline-primary btn-sm w-100 mb-3 @(isUploading ? "disabled" : "")">
-                    @(isUploading ? "Uploading…" : "Upload Document")
+                    @(isUploading ? Loc["patients.docs.uploading"] : Loc["patients.docs.upload"])
                 </label>
 
                 @if (isLoadingDocuments)
                 {
-                    <div class="text-muted small text-center py-2">Loading documents…</div>
+                    <div class="text-muted small text-center py-2">@Loc["patients.docs.loading"]</div>
                 }
                 else if (documents.Count == 0)
                 {
-                    <div class="dmrs-empty-state dmrs-empty-state--inline">No documents uploaded yet.</div>
+                    <div class="dmrs-empty-state dmrs-empty-state--inline">@Loc["patients.docs.empty"]</div>
                 }
                 else
                 {
@@ -410,11 +411,11 @@ else
             </div>
 
             <div class="card mt-4">
-                <div class="card-header">Patient Account</div>
+                <div class="card-header">@Loc["patients.account.title"]</div>
                 <div class="card-body">
                     @if (isLinkedToAccount)
                     {
-                        <div class="alert alert-success mb-0">This patient is already linked to a user account.</div>
+                        <div class="alert alert-success mb-0">@Loc["patients.account.linked"]</div>
                     }
                     else
                     {
@@ -425,12 +426,12 @@ else
 
                         if (inviteResult is not null)
                         {
-                            <div class="alert alert-success">Invitation generated for Patient/@inviteResult.PatientId.</div>
+                            <div class="alert alert-success">@Loc["patients.account.inviteGenerated", inviteResult.PatientId]</div>
                         }
 
                         if (!string.IsNullOrWhiteSpace(existingInviteCode))
                         {
-                            <p class="mb-2"><strong>Invite code</strong>: <code>@existingInviteCode</code></p>
+                            <p class="mb-2"><strong>@Loc["patients.invite.code"]</strong>: <code>@existingInviteCode</code></p>
                         }
 
                         var claimLink = inviteResult?.ClaimLink ?? BuildClaimLink(existingInviteCode);
@@ -438,16 +439,16 @@ else
 
                         if (!string.IsNullOrWhiteSpace(registrationLink))
                         {
-                            <p class="mb-2"><strong>Self-registration (auto-claim)</strong>: <a href="@registrationLink" target="_blank">@registrationLink</a></p>
+                            <p class="mb-2"><strong>@Loc["patients.invite.selfRegistration"]</strong>: <a href="@registrationLink" target="_blank">@registrationLink</a></p>
                         }
 
                         if (!string.IsNullOrWhiteSpace(claimLink))
                         {
-                            <p class="mb-0"><strong>Manual claim fallback</strong>: <a href="@claimLink" target="_blank">@claimLink</a></p>
+                            <p class="mb-0"><strong>@Loc["patients.invite.manualFallback"]</strong>: <a href="@claimLink" target="_blank">@claimLink</a></p>
                         }
 
                         <button class="btn btn-outline-primary mt-3" disabled="@isGeneratingInvite" @onclick="GenerateInvite">
-                            @(string.IsNullOrWhiteSpace(existingInviteCode) ? "Generate Invite Link" : "Regenerate Invite Link")
+                            @(string.IsNullOrWhiteSpace(existingInviteCode) ? Loc["patients.account.generateInvite"] : Loc["patients.account.regenerateInvite"])
                         </button>
                     }
                 </div>
@@ -512,9 +513,12 @@ else
             var managingOrganization = managingOrganizationName
                 ?? patient.ManagingOrganization?.Display
                 ?? patient.ManagingOrganization?.Reference
-                ?? "not set";
+                ?? Loc["patients.details.orgNotSet"];
 
-            return $"{patient.Gender} | Born {patient.BirthDate ?? "unknown"} | Managing Organization {managingOrganization}";
+            return Loc["patients.details.demographics",
+                patient.Gender?.ToString() ?? string.Empty,
+                patient.BirthDate ?? Loc["patients.details.bornUnknown"],
+                managingOrganization];
         }
     }
 
@@ -539,7 +543,7 @@ else
 
             if (patient is null)
             {
-                errorMessage = $"Patient {Id} not found.";
+                errorMessage = Loc["patients.notFound", Id];
             }
             else
             {
@@ -554,7 +558,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Unable to load patient: {ex.Message}";
+            errorMessage = Loc["patients.details.loadError", ex.Message];
         }
         finally
         {
@@ -616,12 +620,12 @@ else
             if (uploaded is not null)
             {
                 documents.Insert(0, uploaded);
-                uploadSuccess = $"'{file.Name}' uploaded successfully.";
+                uploadSuccess = Loc["patients.docs.uploadSuccess", file.Name];
             }
         }
         catch (Exception ex)
         {
-            uploadError = $"Upload failed: {ex.Message}";
+            uploadError = Loc["patients.docs.uploadFailed", ex.Message];
         }
         finally
         {
@@ -639,7 +643,7 @@ else
         }
         catch (Exception ex)
         {
-            uploadError = $"Delete failed: {ex.Message}";
+            uploadError = Loc["patients.docs.deleteFailed", ex.Message];
         }
         finally
         {
@@ -664,7 +668,7 @@ else
         }
         catch (Exception ex)
         {
-            inviteError = $"Unable to generate invite: {ex.Message}";
+            inviteError = Loc["patients.account.inviteFailed", ex.Message];
         }
         finally
         {
@@ -751,8 +755,8 @@ else
     private static string VerdictBadgeClass(bool isPositive)
         => isPositive ? "text-bg-danger" : "text-bg-success";
 
-    private static string VerdictText(bool isPositive)
-        => isPositive ? "Yes" : "No";
+    private string VerdictText(bool isPositive)
+        => isPositive ? Loc["common.yes"] : Loc["common.no"];
 
     private static string GetConditionLabel(Hl7.Fhir.Model.Condition condition)
         => condition.Code?.Text

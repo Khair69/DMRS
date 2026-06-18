@@ -1,18 +1,19 @@
 @page "/locations/new"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Locations.Services.LocationFeatureService LocationService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Create Location</PageTitle>
+<PageTitle>@Loc["locations.create.title"]</PageTitle>
 
-<h1>Create Location</h1>
+<h1>@Loc["locations.create.title"]</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<LocationForm Model="model" IsBusy="@isSaving" SubmitText="Create Location" OnSave="Save" />
+<LocationForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["locations.create.submit"]" OnSave="Save" />
 
 @code {
     private readonly DMRS.Client.Features.Locations.Models.LocationEditModel model = new();
@@ -28,7 +29,7 @@
             var created = await LocationService.CreateAsync(model);
             if (created?.Id is null)
             {
-                errorMessage = "Location was created but no id was returned.";
+                errorMessage = Loc["locations.noIdReturned"];
                 return;
             }
 
@@ -36,7 +37,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred while creating the location: {ex.Message}";
+            errorMessage = Loc["locations.createError", ex.Message];
         }
         finally
         {

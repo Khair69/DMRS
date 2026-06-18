@@ -1,10 +1,11 @@
 @using Hl7.Fhir.Model
 @using Hl7.Fhir.Serialization
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject FhirJsonSerializer Serializer
 
 @if (Resources.Count == 0)
 {
-    <div class="alert alert-secondary">No history versions found.</div>
+    <div class="alert alert-secondary">@Loc["common.json.noHistory"]</div>
 }
 else
 {
@@ -14,8 +15,8 @@ else
             <details class="border rounded p-2">
                 <summary>
                     <strong>@resource.TypeName</strong>
-                    <span class="ms-2">Version: @resource.Meta?.VersionId</span>
-                    <span class="ms-2">Updated: @resource.Meta?.LastUpdated?.ToString("u")</span>
+                    <span class="ms-2">@Loc["common.json.version"] @resource.Meta?.VersionId</span>
+                    <span class="ms-2">@Loc["common.json.updated"] @resource.Meta?.LastUpdated?.ToString("u")</span>
                 </summary>
                 <pre class="bg-light p-3 border rounded mt-2">@Serializer.SerializeToString(resource)</pre>
             </details>

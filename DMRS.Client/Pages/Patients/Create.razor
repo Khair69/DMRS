@@ -1,13 +1,14 @@
 ﻿@page "/patients/new"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
 @inject DMRS.Client.Services.OrganizationContextService OrgContextService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 
-<PageTitle>Create Patient</PageTitle>
+<PageTitle>@Loc["patients.create.title"]</PageTitle>
 
-<h1>Create Patient</h1>
+<h1>@Loc["patients.create.title"]</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
@@ -22,16 +23,16 @@
 @if (inviteResult is not null)
 {
     <div class="card mt-3 mb-3">
-        <div class="card-header">Invitation Generated</div>
+        <div class="card-header">@Loc["patients.invite.generatedTitle"]</div>
         <div class="card-body">
-            <p class="mb-2"><strong>Invite code</strong>: <code>@inviteResult.InviteCode</code></p>
-            <p class="mb-2"><strong>Self-registration (auto-claim)</strong>: <a href="@inviteResult.RegistrationLink" target="_blank">@inviteResult.RegistrationLink</a></p>
-            <p class="mb-0"><strong>Manual claim fallback</strong>: <a href="@inviteResult.ClaimLink" target="_blank">@inviteResult.ClaimLink</a></p>
+            <p class="mb-2"><strong>@Loc["patients.invite.code"]</strong>: <code>@inviteResult.InviteCode</code></p>
+            <p class="mb-2"><strong>@Loc["patients.invite.selfRegistration"]</strong>: <a href="@inviteResult.RegistrationLink" target="_blank">@inviteResult.RegistrationLink</a></p>
+            <p class="mb-0"><strong>@Loc["patients.invite.manualFallback"]</strong>: <a href="@inviteResult.ClaimLink" target="_blank">@inviteResult.ClaimLink</a></p>
         </div>
     </div>
 }
 
-<PatientForm Model="model" IsBusy="@isSaving" SubmitText="Create Patient & Invite" OnSave="Save" ShowOrganizationField="@showOrganizationField" OrganizationReadOnly="@organizationReadOnly" />
+<PatientForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["patients.create.submit"]" OnSave="Save" ShowOrganizationField="@showOrganizationField" OrganizationReadOnly="@organizationReadOnly" />
 
 @code {
     private readonly PatientEditModel model = new();
@@ -73,16 +74,16 @@
         {
             if (string.IsNullOrWhiteSpace(model.ManagingOrganizationId))
             {
-                errorMessage = "Managing organization is required.";
+                errorMessage = Loc["patients.orgRequired"];
                 return;
             }
 
             inviteResult = await PatientService.CreateInviteAsync(model, NavigationManager.BaseUri);
-            successMessage = $"Patient created. Invitation ready for Patient/{inviteResult.PatientId}.";
+            successMessage = Loc["patients.createdInvite", inviteResult.PatientId];
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred while creating the patient: {ex.Message}";
+            errorMessage = Loc["patients.createError", ex.Message];
         }
         finally
         {

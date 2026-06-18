@@ -1,12 +1,13 @@
 @using System.Text.Json
 @using DMRS.Client.Features.ExternalAi.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.ExternalAi.Services.ExternalAiFeatureService ExternalAiService
 
 <div class="dmrs-panel">
     <div class="dmrs-panel__header">
         <div>
-            <div class="dmrs-panel__title">External AI Models</div>
-            <div class="dmrs-panel__subtitle">Send this patient's record to a registered remote model and read back its decision.</div>
+            <div class="dmrs-panel__title">@Loc["externalAi.panel.title"]</div>
+            <div class="dmrs-panel__subtitle">@Loc["externalAi.panel.subtitle"]</div>
         </div>
     </div>
 
@@ -14,7 +15,7 @@
     {
         <div class="d-flex align-items-center gap-2 text-muted">
             <div class="spinner-border spinner-border-sm" role="status"></div>
-            <span>Loading models…</span>
+            <span>@Loc["externalAi.loadingModels"]</span>
         </div>
     }
     else if (!string.IsNullOrWhiteSpace(loadError))
@@ -24,9 +25,9 @@
     else if (models.Count == 0)
     {
         <div class="dmrs-empty-state mb-0">
-            No active external models are registered.
+            @Loc["externalAi.noActive"]
             <AuthorizeView Roles="ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN">
-                <a href="external-ai/admin">Register one</a> to enable remote inference.
+                <a href="external-ai/admin">@Loc["externalAi.registerOne"]</a> @Loc["externalAi.toEnable"]
             </AuthorizeView>
         </div>
     }
@@ -35,14 +36,13 @@
         <div class="alert alert-warning d-flex align-items-start gap-2 py-2">
             <span>⚠️</span>
             <span class="small mb-0">
-                Running a model sends this patient's FHIR data (demographics, observations, conditions,
-                medications, allergies) to the selected external service. Only run models you trust.
+                @Loc["externalAi.warning"]
             </span>
         </div>
 
         <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
             <div style="min-width:240px;">
-                <label class="form-label small mb-1">Model</label>
+                <label class="form-label small mb-1">@Loc["externalAi.model"]</label>
                 <select class="form-select" @bind="selectedModelId" disabled="@isRunning">
                     @foreach (var model in models)
                     {
@@ -51,7 +51,7 @@
                 </select>
             </div>
             <button class="btn btn-primary" @onclick="RunAsync" disabled="@(isRunning || selectedModelId == Guid.Empty || string.IsNullOrWhiteSpace(PatientId))">
-                @(isRunning ? "Running…" : "Run model")
+                @(isRunning ? Loc["externalAi.running"] : Loc["externalAi.run"])
             </button>
         </div>
 
@@ -66,7 +66,7 @@
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
                     <span class="fw-semibold">@result.ModelName</span>
                     <span class="small text-muted">
-                        @(result.Success ? "Succeeded" : "Failed")
+                        @(result.Success ? Loc["externalAi.succeeded"] : Loc["externalAi.failed"])
                         @if (result.StatusCode is not null) { <text> · HTTP @result.StatusCode</text> }
                         · @result.DurationMs ms
                     </span>
@@ -74,7 +74,7 @@
 
                 @if (result.Success)
                 {
-                    <div class="small text-muted mb-1">Decision</div>
+                    <div class="small text-muted mb-1">@Loc["externalAi.decision"]</div>
                     <pre class="bg-light border rounded p-2 mb-0" style="white-space:pre-wrap; max-height:320px; overflow:auto;">@FormatDecision(result.Decision)</pre>
                 }
                 else
@@ -108,7 +108,7 @@
         }
         catch (Exception ex)
         {
-            loadError = $"Unable to load external models: {ex.Message}";
+            loadError = Loc["externalAi.loadFailed", ex.Message];
         }
         finally
         {
@@ -144,11 +144,11 @@
         }
     }
 
-    private static string FormatDecision(JsonElement? decision)
+    private string FormatDecision(JsonElement? decision)
     {
         if (decision is null)
         {
-            return "(no content)";
+            return Loc["externalAi.noContent"];
         }
 
         try

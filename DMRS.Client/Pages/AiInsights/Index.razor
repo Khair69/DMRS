@@ -2,22 +2,18 @@
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
 @using DMRS.Client.Features.AiInsights.Models
 @using DMRS.Client.Features.Patients.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.AiInsights.Services.AiInsightsFeatureService AiInsightsService
 @inject DMRS.Client.Features.Patients.Services.PatientFeatureService PatientService
 
-<PageTitle>AI Insights</PageTitle>
+<PageTitle>@Loc["ai.title"]</PageTitle>
 
 <div class="workspace-hero workspace-hero--ai">
     <div>
-        <span class="workspace-eyebrow">Predictive Layer</span>
-        <h1>AI Insights</h1>
+        <span class="workspace-eyebrow">@Loc["ai.eyebrow"]</span>
+        <h1>@Loc["ai.title"]</h1>
         <p>
-            Three machine-learning models score every patient straight from their FHIR record —
-            <strong>type-2 diabetes</strong>, <strong>cardiovascular (heart disease)</strong>, and
-            <strong>30-day hospital readmission</strong> risk. Each ONNX classifier is trained on a public
-            clinical dataset and reads only the features DMRS can actually observe (age, vitals, labs,
-            conditions, medications and visits), imputing the training median when a value is missing.
-            Scores are decision support — illustrative, not clinically validated.
+            @Loc["ai.intro"]
         </p>
     </div>
 </div>
@@ -42,7 +38,7 @@ else
                 <div class="dmrs-metric-card__label">@model.Title</div>
                 <div class="dmrs-metric-card__value">@model.Total</div>
                 <div class="dmrs-metric-card__helper">
-                    patients scored · acc @model.Accuracy · AUC @model.Auc
+                    @Loc["ai.scoredHelper", model.Accuracy, model.Auc]
                 </div>
             </div>
         }
@@ -57,15 +53,15 @@ else
                     <div class="dmrs-panel__subtitle">@model.Predicts</div>
                 </div>
                 <div class="text-end small text-muted">
-                    <div>Trained on @model.Dataset</div>
-                    <div>Accuracy @model.Accuracy · ROC-AUC @model.Auc</div>
+                    <div>@Loc["ai.trainedOn", model.Dataset]</div>
+                    <div>@Loc["ai.accuracyAuc", model.Accuracy, model.Auc]</div>
                 </div>
             </div>
 
             @if (model.Total == 0)
             {
                 <div class="dmrs-empty-state">
-                    No assessable patients yet. Import patients with a birth date to activate this model.
+                    @Loc["ai.modelEmpty"]
                 </div>
             }
             else
@@ -79,32 +75,32 @@ else
                 <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
                     <button type="button" class="dmrs-risk-toggle @(levelFilter == "High" ? "is-active" : "")"
                             @onclick='() => ToggleLevelFilter(model.Key, "High")'
-                            title="Click to show only High risk patients">
-                        <span class="dmrs-pill dmrs-pill--danger">High</span>
+                            title="@Loc["ai.filterHigh"]">
+                        <span class="dmrs-pill dmrs-pill--danger">@Loc["ai.level.high"]</span>
                         <strong>@model.HighCount</strong>
                     </button>
                     <button type="button" class="dmrs-risk-toggle @(levelFilter == "Medium" ? "is-active" : "")"
                             @onclick='() => ToggleLevelFilter(model.Key, "Medium")'
-                            title="Click to show only Medium risk patients">
-                        <span class="dmrs-pill dmrs-pill--warning">Medium</span>
+                            title="@Loc["ai.filterMedium"]">
+                        <span class="dmrs-pill dmrs-pill--warning">@Loc["ai.level.medium"]</span>
                         <strong>@model.MediumCount</strong>
                     </button>
                     <button type="button" class="dmrs-risk-toggle @(levelFilter == "Low" ? "is-active" : "")"
                             @onclick='() => ToggleLevelFilter(model.Key, "Low")'
-                            title="Click to show only Low risk patients">
-                        <span class="dmrs-pill dmrs-pill--neutral">Low</span>
+                            title="@Loc["ai.filterLow"]">
+                        <span class="dmrs-pill dmrs-pill--neutral">@Loc["ai.level.low"]</span>
                         <strong>@model.LowCount</strong>
                     </button>
                     @if (levelFilter != "All")
                     {
                         <button type="button" class="btn btn-sm btn-link text-decoration-none p-0"
                                 @onclick='() => SetLevelFilter(model.Key, "All")'>
-                            Clear
+                            @Loc["common.clear"]
                         </button>
                     }
                     <div class="ms-auto" style="min-width:220px; max-width:320px;">
                         <input type="search" class="form-control form-control-sm"
-                               placeholder="Search patient by name…"
+                               placeholder="@Loc["ai.searchPatientPlaceholder"]"
                                value="@search"
                                @oninput="e => SetSearch(model.Key, e.Value?.ToString())" />
                     </div>
@@ -123,24 +119,24 @@ else
                     <span>
                         @if (isFiltering)
                         {
-                            <span>@rows.Count of @model.Total match</span>
+                            <span>@Loc["ai.matchCount", rows.Count, model.Total]</span>
                         }
                         else
                         {
-                            <span>Top @rows.Count by risk · @model.Total scored</span>
+                            <span>@Loc["ai.topByRisk", rows.Count, model.Total]</span>
                         }
                     </span>
                     @if (model.ImputedCount > 0)
                     {
                         <span class="ms-auto">
-                            @model.ImputedCount of @model.Total scored with one or more imputed (estimated) features
+                            @Loc["ai.imputedNote", model.ImputedCount, model.Total]
                         </span>
                     }
                 </div>
 
                 <!-- Feature inputs -->
                 <div class="mb-3">
-                    <span class="small text-muted me-2">Model inputs:</span>
+                    <span class="small text-muted me-2">@Loc["ai.modelInputs"]</span>
                     @foreach (var feature in model.Features)
                     {
                         <span class="dmrs-pill dmrs-pill--neutral me-1 mb-1">@feature</span>
@@ -152,10 +148,10 @@ else
                     <table class="table align-middle mb-0">
                         <thead>
                             <tr>
-                                <th>Patient</th>
-                                <th>Risk Level</th>
-                                <th style="min-width:160px;">Score</th>
-                                <th>Details</th>
+                                <th>@Loc["common.field.patient"]</th>
+                                <th>@Loc["ai.col.riskLevel"]</th>
+                                <th style="min-width:160px;">@Loc["ai.col.score"]</th>
+                                <th>@Loc["common.details"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -163,7 +159,7 @@ else
                             {
                                 <tr>
                                     <td colspan="4" class="text-center text-muted small py-3">
-                                        No patients match your search or filter.
+                                        @Loc["ai.noMatch"]
                                     </td>
                                 </tr>
                             }
@@ -174,7 +170,7 @@ else
                                         <a href="@row.Href" class="fw-semibold text-decoration-none">@row.DisplayName</a>
                                         @if (!row.FeaturesComplete)
                                         {
-                                            <span class="small text-warning ms-1" title="Some features were imputed">≈</span>
+                                            <span class="small text-warning ms-1" title="@Loc["ai.imputedTooltip"]">≈</span>
                                         }
                                     </td>
                                     <td>
@@ -203,34 +199,30 @@ else
     <div class="dmrs-panel mb-4">
         <div class="dmrs-panel__header">
             <div>
-                <div class="dmrs-panel__title">How Scoring Works</div>
-                <div class="dmrs-panel__subtitle">Shared design across all three models</div>
+                <div class="dmrs-panel__title">@Loc["ai.howTitle"]</div>
+                <div class="dmrs-panel__subtitle">@Loc["ai.howSubtitle"]</div>
             </div>
         </div>
         <div class="dmrs-stack">
             <div class="dmrs-note-card">
-                <div class="dmrs-note-card__title">Trained offline, served online</div>
-                <p>Each model is a scikit-learn RandomForest trained in Google Colab, exported to ONNX, and
-                   run inside the API. The model output is the score directly — there are no hand-tuned rules.</p>
+                <div class="dmrs-note-card__title">@Loc["ai.how.offlineTitle"]</div>
+                <p>@Loc["ai.how.offlineBody"]</p>
             </div>
             <div class="dmrs-note-card">
-                <div class="dmrs-note-card__title">Features the system can observe</div>
-                <p>Models are trained on only the columns DMRS can recover from a real FHIR record, so training
-                   matches inference. A missing value is filled with the training-set median and the patient is
-                   flagged as estimated (shown with ≈).</p>
+                <div class="dmrs-note-card__title">@Loc["ai.how.featuresTitle"]</div>
+                <p>@Loc["ai.how.featuresBody"]</p>
             </div>
             <div class="dmrs-note-card">
-                <div class="dmrs-note-card__title">Risk tiers</div>
+                <div class="dmrs-note-card__title">@Loc["ai.how.tiersTitle"]</div>
                 <ul class="mb-0 small">
-                    <li><strong>High</strong> — probability ≥ 65%</li>
-                    <li><strong>Medium</strong> — 35% to &lt;65%</li>
-                    <li><strong>Low</strong> — below 35%</li>
+                    <li><strong>@Loc["ai.level.high"]</strong> @Loc["ai.how.tierHigh"]</li>
+                    <li><strong>@Loc["ai.level.medium"]</strong> @Loc["ai.how.tierMedium"]</li>
+                    <li><strong>@Loc["ai.level.low"]</strong> @Loc["ai.how.tierLow"]</li>
                 </ul>
             </div>
             <div class="dmrs-note-card">
-                <div class="dmrs-note-card__title">Feeds clinical decision support</div>
-                <p>The readmission score is also exposed to the CDS rule engine (<code>ai.riskLevel</code>,
-                   <code>ai.compositeScore</code>, …), so authored rules can fire cards based on AI risk.</p>
+                <div class="dmrs-note-card__title">@Loc["ai.how.cdsTitle"]</div>
+                <p>@Loc["ai.how.cdsBody"]</p>
             </div>
         </div>
     </div>
@@ -239,14 +231,14 @@ else
     <div class="dmrs-panel">
         <div class="dmrs-panel__header">
             <div>
-                <div class="dmrs-panel__title">Population Health — Condition Prevalence</div>
-                <div class="dmrs-panel__subtitle">Top conditions recorded across all patients in this workspace.</div>
+                <div class="dmrs-panel__title">@Loc["ai.popTitle"]</div>
+                <div class="dmrs-panel__subtitle">@Loc["ai.popSubtitle"]</div>
             </div>
         </div>
 
         @if (snapshot.ConditionPrevalence.Count == 0)
         {
-            <div class="dmrs-empty-state">No condition data available yet. Add conditions to patient records to see prevalence.</div>
+            <div class="dmrs-empty-state">@Loc["ai.popEmpty"]</div>
         }
         else
         {
@@ -284,17 +276,17 @@ else
     <div class="dmrs-panel mt-4">
         <div class="dmrs-panel__header">
             <div>
-                <div class="dmrs-panel__title">External AI Models</div>
-                <div class="dmrs-panel__subtitle">Pick a patient, then send their record to a registered remote model.</div>
+                <div class="dmrs-panel__title">@Loc["ai.ext.title"]</div>
+                <div class="dmrs-panel__subtitle">@Loc["ai.ext.subtitle"]</div>
             </div>
         </div>
 
         @if (!string.IsNullOrWhiteSpace(selectedPatientId))
         {
             <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-                <span class="small text-muted">Patient:</span>
+                <span class="small text-muted">@Loc["ai.ext.patientLabel"]</span>
                 <span class="dmrs-pill dmrs-pill--neutral">@selectedPatientName (@selectedPatientId)</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="ClearPatient">Change</button>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="ClearPatient">@Loc["ai.ext.change"]</button>
             </div>
 
             <DMRS.Client.Features.ExternalAi.Components.ExternalAiRunPanel PatientId="@selectedPatientId" @key="selectedPatientId" />
@@ -303,23 +295,23 @@ else
         {
             <div class="row g-2 align-items-end mb-2" style="max-width:640px;">
                 <div class="col-md-4">
-                    <label class="form-label small mb-1">Search by</label>
+                    <label class="form-label small mb-1">@Loc["ai.ext.searchBy"]</label>
                     <select class="form-select" @bind="patientSearchField">
-                        <option value="family">Family name</option>
-                        <option value="given">Given name</option>
-                        <option value="identifier">Identifier</option>
+                        <option value="family">@Loc["ai.ext.searchByFamily"]</option>
+                        <option value="given">@Loc["ai.ext.searchByGiven"]</option>
+                        <option value="identifier">@Loc["ai.ext.searchByIdentifier"]</option>
                     </select>
                 </div>
                 <div class="col-md-8">
-                    <label class="form-label small mb-1">Find patient</label>
-                    <input class="form-control" placeholder="Start typing to search…" autocomplete="off"
+                    <label class="form-label small mb-1">@Loc["ai.ext.findPatient"]</label>
+                    <input class="form-control" placeholder="@Loc["ai.ext.findPlaceholder"]" autocomplete="off"
                            value="@patientSearchTerm" @oninput="OnPatientSearchInput" />
                 </div>
             </div>
 
             @if (isSearchingPatients)
             {
-                <div class="small text-muted">Searching…</div>
+                <div class="small text-muted">@Loc["common.searching"]</div>
             }
             else if (patientMatches.Count > 0)
             {
@@ -336,7 +328,7 @@ else
             }
             else if (!string.IsNullOrWhiteSpace(patientSearchTerm.Trim()))
             {
-                <div class="small text-muted">No matching patients.</div>
+                <div class="small text-muted">@Loc["ai.ext.noMatch"]</div>
             }
         }
     </div>
@@ -409,7 +401,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Unable to load AI insights: {ex.Message}";
+            errorMessage = Loc["ai.loadFailed", ex.Message];
         }
         finally
         {

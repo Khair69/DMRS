@@ -1,18 +1,19 @@
 @page "/observations/new"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Observations.Services.ObservationFeatureService ObservationService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Create Observation</PageTitle>
+<PageTitle>@Loc["observations.create.title"]</PageTitle>
 
-<h1>Create Observation</h1>
+<h1>@Loc["observations.create.title"]</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<ObservationForm Model="model" IsBusy="@isSaving" SubmitText="Create Observation" OnSave="Save" />
+<ObservationForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["observations.create.submit"]" OnSave="Save" />
 
 @code {
     private readonly DMRS.Client.Features.Observations.Models.ObservationEditModel model = new();
@@ -28,7 +29,7 @@
             var created = await ObservationService.CreateAsync(model);
             if (created?.Id is null)
             {
-                errorMessage = "Observation was created but no id was returned.";
+                errorMessage = Loc["observations.noIdReturned"];
                 return;
             }
 
@@ -36,7 +37,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred while creating the observation: {ex.Message}";
+            errorMessage = Loc["observations.createError", ex.Message];
         }
         finally
         {

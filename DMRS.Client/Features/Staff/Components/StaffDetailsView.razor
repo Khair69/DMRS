@@ -1,9 +1,10 @@
 @using Hl7.Fhir.Model
 @using DMRS.Client.Features.Staff.Services
+@inherits DMRS.Client.Components.LocalizedComponentBase
 
 @if (Practitioner is null)
 {
-    <div class="alert alert-warning">Practitioner not found.</div>
+    <div class="alert alert-warning">@Loc["staff.detailsView.notFound"]</div>
 }
 else
 {
@@ -13,47 +14,47 @@ else
 
     <div class="card">
         <div class="card-header">
-            Practitioner @Practitioner.Id
+            @Loc["staff.detailsView.practitioner"] @Practitioner.Id
         </div>
         <div class="card-body">
             <dl class="row mb-0">
-                <dt class="col-sm-3">Name</dt>
+                <dt class="col-sm-3">@Loc["common.field.name"]</dt>
                 <dd class="col-sm-9">@string.Join(" ", name?.Given ?? []) @name?.Family</dd>
 
-                <dt class="col-sm-3">Email</dt>
+                <dt class="col-sm-3">@Loc["common.field.email"]</dt>
                 <dd class="col-sm-9">@email</dd>
 
-                <dt class="col-sm-3">Phone</dt>
+                <dt class="col-sm-3">@Loc["common.field.phone"]</dt>
                 <dd class="col-sm-9">@phone</dd>
 
-                <dt class="col-sm-3">Active</dt>
+                <dt class="col-sm-3">@Loc["common.field.active"]</dt>
                 <dd class="col-sm-9">@Practitioner.Active</dd>
             </dl>
         </div>
     </div>
 
     <div class="card mt-3">
-        <div class="card-header">Roles</div>
+        <div class="card-header">@Loc["staff.detailsView.roles"]</div>
         <div class="card-body">
             @if (Roles.Count == 0)
             {
-                <div class="alert alert-secondary mb-0">No practitioner roles found.</div>
+                <div class="alert alert-secondary mb-0">@Loc["staff.detailsView.noRoles"]</div>
             }
             else
             {
                 <table class="table table-sm mb-0">
                     <thead>
                         <tr>
-                            <th>Role</th>
-                            <th>Organization</th>
-                            <th>Active</th>
+                            <th>@Loc["common.field.role"]</th>
+                            <th>@Loc["common.field.organization"]</th>
+                            <th>@Loc["common.field.active"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var role in Roles)
                         {
                             var coding = role.Code.SelectMany(c => c.Coding).FirstOrDefault();
-                            var roleName = coding?.Display ?? role.Code.FirstOrDefault()?.Text ?? coding?.Code ?? "(unknown)";
+                            var roleName = coding?.Display ?? role.Code.FirstOrDefault()?.Text ?? coding?.Code ?? Loc["staff.detailsView.roleUnknown"];
                             <tr>
                                 <td>@roleName</td>
                                 <td>@role.Organization?.Reference</td>
@@ -70,30 +71,30 @@ else
     var hasAccount = HasLinkedAccount();
 
     <div class="card mt-3">
-        <div class="card-header">Login Account</div>
+        <div class="card-header">@Loc["staff.detailsView.loginAccount"]</div>
         <div class="card-body">
             @if (ProvisionedCredentials is not null)
             {
                 <div class="alert alert-success mb-0">
-                    <div class="fw-semibold mb-1">Login account created.</div>
-                    <div>Username: <code>@ProvisionedCredentials.Username</code></div>
-                    <div>Password: <code>@ProvisionedCredentials.Password</code></div>
-                    <div class="small text-muted mt-1">Role: @ProvisionedCredentials.AssignedRealmRole</div>
+                    <div class="fw-semibold mb-1">@Loc["staff.detailsView.accountCreated"]</div>
+                    <div>@Loc["staff.detailsView.username"] <code>@ProvisionedCredentials.Username</code></div>
+                    <div>@Loc["staff.detailsView.password"] <code>@ProvisionedCredentials.Password</code></div>
+                    <div class="small text-muted mt-1">@Loc["staff.detailsView.roleLabel"] @ProvisionedCredentials.AssignedRealmRole</div>
                 </div>
             }
             else if (hasAccount)
             {
                 <div class="alert alert-success mb-0">
-                    <span class="fw-semibold">Account linked.</span>
+                    <span class="fw-semibold">@Loc["staff.detailsView.accountLinked"]</span>
                     @if (!string.IsNullOrWhiteSpace(linkedUsername))
                     {
-                        <span> Username: <code>@linkedUsername</code></span>
+                        <span> @Loc["staff.detailsView.usernameInline"] <code>@linkedUsername</code></span>
                     }
                 </div>
             }
             else
             {
-                <p class="text-muted">This person has no login account yet. Create one to demonstrate logging in as them.</p>
+                <p class="text-muted">@Loc["staff.detailsView.noAccountYet"]</p>
 
                 @if (!string.IsNullOrWhiteSpace(ProvisionError))
                 {
@@ -105,11 +106,11 @@ else
                         @if (IsProvisioning)
                         {
                             <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                            <span>Creating account…</span>
+                            <span>@Loc["staff.detailsView.creatingAccount"]</span>
                         }
                         else
                         {
-                            <span>Create login account</span>
+                            <span>@Loc["staff.detailsView.createAccount"]</span>
                         }
                     </button>
                 </AuthorizeView>

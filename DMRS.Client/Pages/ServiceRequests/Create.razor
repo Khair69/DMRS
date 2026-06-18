@@ -1,18 +1,19 @@
 @page "/service-requests/new"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.ServiceRequests.Services.ServiceRequestFeatureService ServiceRequestService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Create Service Request</PageTitle>
+<PageTitle>@Loc["serviceRequests.create.title"]</PageTitle>
 
-<h1>Create Service Request</h1>
+<h1>@Loc["serviceRequests.create.title"]</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
     <div class="alert alert-danger">@errorMessage</div>
 }
 
-<ServiceRequestForm Model="model" IsBusy="@isSaving" SubmitText="Create Service Request" OnSave="Save" />
+<ServiceRequestForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["serviceRequests.create.submit"]" OnSave="Save" />
 
 @code {
     private readonly DMRS.Client.Features.ServiceRequests.Models.ServiceRequestEditModel model = new();
@@ -28,7 +29,7 @@
             var created = await ServiceRequestService.CreateAsync(model);
             if (created?.Id is null)
             {
-                errorMessage = "Service request was created but no id was returned.";
+                errorMessage = Loc["serviceRequests.noIdReturned"];
                 return;
             }
 
@@ -36,7 +37,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred while creating the service request: {ex.Message}";
+            errorMessage = Loc["serviceRequests.createError", ex.Message];
         }
         finally
         {

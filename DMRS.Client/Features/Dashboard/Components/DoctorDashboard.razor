@@ -1,32 +1,33 @@
 @using DMRS.Client.Features.Dashboard.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Dashboard.Services.DashboardFeatureService DashboardService
 @inject DMRS.Client.Services.OrganizationContextService OrgContext
 @inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
 
 <div class="workspace-hero">
     <div>
-        <span class="workspace-eyebrow">Clinician Workspace</span>
-        <h1>My Workspace</h1>
-        <p>Your patient panel, predictive risk, and decision-support activity.</p>
+        <span class="workspace-eyebrow">@Loc["dashboard.doctor.eyebrow"]</span>
+        <h1>@Loc["dashboard.doctor.title"]</h1>
+        <p>@Loc["dashboard.doctor.subtitle"]</p>
         @if (!string.IsNullOrWhiteSpace(organizationName))
         {
             <p style="margin:0.35rem 0 0; font-weight:600; opacity:0.95;">
-                <span style="opacity:0.75;">Organization:</span> @organizationName
+                <span style="opacity:0.75;">@Loc["dashboard.orgLabel"]</span> @organizationName
             </p>
         }
     </div>
     <div class="workspace-hero__actions">
-        <a class="btn btn-light" href="/patients">All Patients</a>
-        <a class="btn btn-outline-light" href="/appointments">Appointments</a>
+        <a class="btn btn-light" href="/patients">@Loc["dashboard.doctor.allPatients"]</a>
+        <a class="btn btn-outline-light" href="/appointments">@Loc["nav.appointments"]</a>
     </div>
 </div>
 
 <div style="display:flex; align-items:center; gap:0.75rem; margin:1.5rem 0 1.25rem;">
-    <span style="color:var(--dmrs-muted); font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;">Showing</span>
+    <span style="color:var(--dmrs-muted); font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;">@Loc["dashboard.doctor.showing"]</span>
     <div role="group" aria-label="Patient scope"
          style="display:inline-flex; gap:4px; padding:4px; background:var(--dmrs-panel); border:1px solid var(--dmrs-border); border-radius:999px; box-shadow:var(--dmrs-shadow);">
-        <button type="button" style="@SegStyle(mine)" disabled="@isLoading" @onclick="@(() => SetScope(true))">My Patients</button>
-        <button type="button" style="@SegStyle(!mine)" disabled="@isLoading" @onclick="@(() => SetScope(false))">All in My Organization</button>
+        <button type="button" style="@SegStyle(mine)" disabled="@isLoading" @onclick="@(() => SetScope(true))">@Loc["dashboard.doctor.scopeMine"]</button>
+        <button type="button" style="@SegStyle(!mine)" disabled="@isLoading" @onclick="@(() => SetScope(false))">@Loc["dashboard.doctor.scopeAllOrg"]</button>
     </div>
 </div>
 
@@ -44,29 +45,29 @@ else
 {
     <section class="dmrs-metrics-grid">
         <a class="dmrs-metric-card metric-ocean" href="/patients">
-            <div class="dmrs-metric-card__label">@(mine ? "My Patients" : "Patients")</div>
+            <div class="dmrs-metric-card__label">@(mine ? Loc["dashboard.doctor.scopeMine"] : Loc["dashboard.doctor.patients"])</div>
             <div class="dmrs-metric-card__value">@snapshot.PatientCount</div>
-            <div class="dmrs-metric-card__helper">@(mine ? "Patients on your panel" : "Patients in your organization")</div>
+            <div class="dmrs-metric-card__helper">@(mine ? Loc["dashboard.doctor.myPatientsHelper"] : Loc["dashboard.doctor.patientsHelper"])</div>
         </a>
         <a class="dmrs-metric-card metric-gold" href="/medication-requests">
-            <div class="dmrs-metric-card__label">Active Meds</div>
+            <div class="dmrs-metric-card__label">@Loc["dashboard.metric.activeMeds"]</div>
             <div class="dmrs-metric-card__value">@snapshot.ActiveMedications</div>
-            <div class="dmrs-metric-card__helper">Medication requests on file</div>
+            <div class="dmrs-metric-card__helper">@Loc["dashboard.metric.activeMedsHelper"]</div>
         </a>
         <a class="dmrs-metric-card metric-rose" href="/conditions">
-            <div class="dmrs-metric-card__label">Conditions</div>
+            <div class="dmrs-metric-card__label">@Loc["nav.conditions"]</div>
             <div class="dmrs-metric-card__value">@snapshot.Conditions</div>
-            <div class="dmrs-metric-card__helper">Tracked problem list items</div>
+            <div class="dmrs-metric-card__helper">@Loc["dashboard.metric.conditionsHelper"]</div>
         </a>
         <a class="dmrs-metric-card metric-emerald" href="/encounters">
-            <div class="dmrs-metric-card__label">Encounters</div>
+            <div class="dmrs-metric-card__label">@Loc["nav.encounters"]</div>
             <div class="dmrs-metric-card__value">@snapshot.Encounters</div>
-            <div class="dmrs-metric-card__helper">Documented clinical visits</div>
+            <div class="dmrs-metric-card__helper">@Loc["dashboard.metric.encountersHelper"]</div>
         </a>
         <a class="dmrs-metric-card metric-ink" href="/service-requests">
-            <div class="dmrs-metric-card__label">Service Requests</div>
+            <div class="dmrs-metric-card__label">@Loc["nav.serviceRequests"]</div>
             <div class="dmrs-metric-card__value">@snapshot.ServiceRequests</div>
-            <div class="dmrs-metric-card__helper">Orders and follow-up requests</div>
+            <div class="dmrs-metric-card__helper">@Loc["dashboard.metric.serviceRequestsHelper"]</div>
         </a>
     </section>
 
@@ -75,19 +76,19 @@ else
             <div class="dmrs-panel h-100">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Predictive Watchlist</div>
-                        <div class="dmrs-panel__subtitle">@(mine ? "Your patients" : "Organization patients") by AI readmission risk.</div>
+                        <div class="dmrs-panel__title">@Loc["dashboard.watchlist.title"]</div>
+                        <div class="dmrs-panel__subtitle">@(mine ? Loc["dashboard.doctor.watchlistMine"] : Loc["dashboard.doctor.watchlistOrg"])</div>
                     </div>
                     <div class="d-flex gap-2" style="font-size:0.8rem;">
-                        <span class="dmrs-pill dmrs-pill--danger">@snapshot.HighRiskCount High</span>
-                        <span class="dmrs-pill dmrs-pill--warning">@snapshot.MediumRiskCount Medium</span>
-                        <span class="dmrs-pill dmrs-pill--neutral">@snapshot.LowRiskCount Low</span>
+                        <span class="dmrs-pill dmrs-pill--danger">@snapshot.HighRiskCount @Loc["dashboard.level.high"]</span>
+                        <span class="dmrs-pill dmrs-pill--warning">@snapshot.MediumRiskCount @Loc["dashboard.level.medium"]</span>
+                        <span class="dmrs-pill dmrs-pill--neutral">@snapshot.LowRiskCount @Loc["dashboard.level.low"]</span>
                     </div>
                 </div>
 
                 @if (snapshot.Watchlist.Count == 0)
                 {
-                    <div class="dmrs-empty-state">No assessable patients yet.</div>
+                    <div class="dmrs-empty-state">@Loc["dashboard.noAssessable"]</div>
                 }
                 else
                 {
@@ -111,13 +112,13 @@ else
             <div class="dmrs-panel h-100">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">Recent CDS Alerts</div>
-                        <div class="dmrs-panel__subtitle">Decision-support cards for @(mine ? "your patients" : "the organization").</div>
+                        <div class="dmrs-panel__title">@Loc["dashboard.recentAlerts.title"]</div>
+                        <div class="dmrs-panel__subtitle">@(mine ? Loc["dashboard.doctor.alertsMine"] : Loc["dashboard.doctor.alertsOrg"])</div>
                     </div>
                 </div>
                 @if (snapshot.RecentAlerts.Count == 0)
                 {
-                    <div class="dmrs-empty-state">No CDS alerts have fired yet.</div>
+                    <div class="dmrs-empty-state">@Loc["dashboard.alerts.empty"]</div>
                 }
                 else
                 {
@@ -168,7 +169,7 @@ else
             {
                 0 => null,
                 1 => names[0],
-                _ => $"{names[0]} (+{names.Count - 1} more)"
+                _ => Loc["dashboard.orgHeadingMore", names[0], names.Count - 1]
             };
         }
         catch
@@ -198,7 +199,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Unable to load your workspace: {ex.Message}";
+            errorMessage = Loc["dashboard.doctor.loadFailed", ex.Message];
         }
         finally
         {
@@ -229,12 +230,12 @@ else
         _ => "dmrs-pill--neutral"
     };
 
-    private static string TimeAgo(DateTimeOffset firedAt)
+    private string TimeAgo(DateTimeOffset firedAt)
     {
         var elapsed = DateTimeOffset.UtcNow - firedAt;
-        if (elapsed.TotalSeconds < 60) return "just now";
-        if (elapsed.TotalMinutes < 60) return $"{(int)elapsed.TotalMinutes}m ago";
-        if (elapsed.TotalHours < 24) return $"{(int)elapsed.TotalHours}h ago";
-        return $"{(int)elapsed.TotalDays}d ago";
+        if (elapsed.TotalSeconds < 60) return Loc["common.time.justNow"];
+        if (elapsed.TotalMinutes < 60) return Loc["common.time.minutesAgo", (int)elapsed.TotalMinutes];
+        if (elapsed.TotalHours < 24) return Loc["common.time.hoursAgo", (int)elapsed.TotalHours];
+        return Loc["common.time.daysAgo", (int)elapsed.TotalDays];
     }
 }
