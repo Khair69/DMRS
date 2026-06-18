@@ -1,9 +1,10 @@
-﻿@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
-@inject NavigationManager Navigation
+﻿@inject NavigationManager Navigation
 
 @code {
+    // Guests are sent to the public welcome screen instead of bouncing straight to the
+    // identity provider; from there they can read what DMRS does and choose to log in.
     protected override void OnInitialized()
     {
-        Navigation.NavigateToLogin("authentication/login");
+        Navigation.NavigateTo("welcome");
     }
 }

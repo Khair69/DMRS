@@ -1,0 +1,99 @@
+@page "/welcome"
+@layout LandingLayout
+@attribute [AllowAnonymous]
+@inherits DMRS.Client.Components.LocalizedComponentBase
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>@Loc["welcome.title"] · DMRS</PageTitle>
+
+<div class="welcome">
+    <header class="welcome__bar">
+        <span class="welcome__brand">@Loc["app.brand"]</span>
+        <div class="welcome__bar-actions">
+            <LanguageSwitcher />
+            <button class="btn btn-primary" @onclick="BeginLogin">@Loc["auth.login"]</button>
+        </div>
+    </header>
+
+    <section class="welcome__hero">
+        <span class="welcome__eyebrow">@Loc["app.title"]</span>
+        <h1 class="welcome__headline">@Loc["welcome.title"]</h1>
+        <p class="welcome__lede">@Loc["welcome.subtitle"]</p>
+        <div class="welcome__hero-actions">
+            <button class="btn btn-primary btn-lg" @onclick="BeginLogin">@Loc["welcome.cta"]</button>
+            <a class="btn btn-outline-primary btn-lg" href="#features">@Loc["welcome.explore"]</a>
+        </div>
+    </section>
+
+    <section id="features" class="welcome__features">
+        <article class="welcome__feature">
+            <div class="welcome__feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2" />
+                    <rect x="8" y="2" width="8" height="4" rx="1" />
+                    <path d="M9 12h6M9 16h4" />
+                </svg>
+            </div>
+            <h2>@Loc["welcome.feature.records.title"]</h2>
+            <p>@Loc["welcome.feature.records.desc"]</p>
+        </article>
+
+        <article class="welcome__feature">
+            <div class="welcome__feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2 3 7v6c0 5 3.8 8.3 9 9 5.2-.7 9-4 9-9V7l-9-5Z" />
+                    <path d="m9 12 2 2 4-4" />
+                </svg>
+            </div>
+            <h2>@Loc["welcome.feature.cds.title"]</h2>
+            <p>@Loc["welcome.feature.cds.desc"]</p>
+        </article>
+
+        <article class="welcome__feature">
+            <div class="welcome__feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 17l5-5 4 4 8-8" />
+                    <path d="M16 8h5v5" />
+                </svg>
+            </div>
+            <h2>@Loc["welcome.feature.ai.title"]</h2>
+            <p>@Loc["welcome.feature.ai.desc"]</p>
+        </article>
+
+        <article class="welcome__feature">
+            <div class="welcome__feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 21c0-3.9 3.6-7 8-7s8 3.1 8 7" />
+                </svg>
+            </div>
+            <h2>@Loc["welcome.feature.portal.title"]</h2>
+            <p>@Loc["welcome.feature.portal.desc"]</p>
+        </article>
+    </section>
+
+    <footer class="welcome__footer">
+        <span>@Loc["welcome.footer"]</span>
+        <button class="btn btn-link" @onclick="BeginLogin">@Loc["auth.login"]</button>
+    </footer>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Signed-in users have no reason to see the marketing page — send them to their workspace.
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo("", replace: true);
+        }
+    }
+
+    private void BeginLogin() => Navigation.NavigateToLogin("authentication/login", new InteractiveRequestOptions
+    {
+        Interaction = InteractionType.SignIn,
+        ReturnUrl = Navigation.BaseUri
+    });
+}
