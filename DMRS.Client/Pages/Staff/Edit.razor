@@ -1,0 +1,88 @@
+@page "/organizations/{OrganizationId}/staff/{PractitionerId}/edit"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
+@inject DMRS.Client.Features.Staff.Services.StaffFeatureService StaffService
+@inject NavigationManager Navigation
+
+<PageTitle>@Loc["staff.edit.title"]</PageTitle>
+
+<h1>@Loc["staff.edit.title"]</h1>
+
+@if (isLoading)
+{
+    <div class="spinner-border" role="status"></div>
+}
+else if (!string.IsNullOrWhiteSpace(loadError))
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <StaffForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["staff.edit.submit"]" OnSave="Save" />
+}
+
+@code {
+    [Parameter]
+    public string OrganizationId { get; set; } = string.Empty;
+
+    [Parameter]
+    public string PractitionerId { get; set; } = string.Empty;
+
+    private DMRS.Client.Features.Staff.Models.StaffEditModel model = new();
+    private bool isLoading;
+    private bool isSaving;
+    private string? loadError;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        loadError = null;
+        errorMessage = null;
+
+        try
+        {
+            var practitioner = await StaffService.GetPractitionerAsync(PractitionerId);
+            if (practitioner is null)
+            {
+                loadError = Loc["staff.details.notFound", PractitionerId];
+                return;
+            }
+
+            model = DMRS.Client.Features.Staff.Models.StaffEditModel.FromPractitioner(practitioner);
+        }
+        catch (Exception ex)
+        {
+            loadError = Loc["staff.details.loadFailed", ex.Message];
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        errorMessage = null;
+        isSaving = true;
+
+        try
+        {
+            await StaffService.UpdatePractitionerAsync(PractitionerId, model);
+            Navigation.NavigateTo($"/organizations/{OrganizationId}/staff/{PractitionerId}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = Loc["staff.edit.updateFailed", ex.Message];
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

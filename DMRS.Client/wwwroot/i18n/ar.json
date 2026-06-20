@@ -587,6 +587,10 @@
   "staff.detailsView.noAccountYet": "لا يملك هذا الشخص حساب دخول بعد. أنشئ حسابًا لعرض تسجيل الدخول باسمه.",
   "staff.detailsView.creatingAccount": "جارٍ إنشاء الحساب…",
   "staff.detailsView.createAccount": "إنشاء حساب دخول",
+  "staff.edit.title": "تعديل عضو الطاقم",
+  "staff.edit.submit": "حفظ التغييرات",
+  "staff.edit.updateFailed": "تعذّر تحديث الطبيب: {0}",
+  "staff.history.title": "سجل الطاقم",
   "staff.claim.title": "المطالبة بدعوة الطاقم",
   "staff.claim.success": "تمت المطالبة بالدعوة بنجاح. تم الربط بالطبيب/{0}.",
 

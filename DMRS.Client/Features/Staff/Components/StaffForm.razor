@@ -1,0 +1,57 @@
+@using DMRS.Client.Features.Staff.Models
+@inherits DMRS.Client.Components.LocalizedComponentBase
+
+<EditForm Model="Model" OnValidSubmit="OnSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">@Loc["common.field.givenName"]</label>
+            <InputText @bind-Value="Model.GivenName" class="form-control" />
+            <ValidationMessage For="() => Model.GivenName" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">@Loc["common.field.familyName"]</label>
+            <InputText @bind-Value="Model.FamilyName" class="form-control" />
+            <ValidationMessage For="() => Model.FamilyName" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">@Loc["common.field.email"]</label>
+            <InputText @bind-Value="Model.Email" class="form-control" />
+            <ValidationMessage For="() => Model.Email" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">@Loc["common.field.phone"]</label>
+            <InputText @bind-Value="Model.Phone" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <div class="form-check">
+                <InputCheckbox @bind-Value="Model.Active" class="form-check-input" id="staffActive" />
+                <label class="form-check-label" for="staffActive">@Loc["common.field.active"]</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary" disabled="@IsBusy">@SubmitText</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public StaffEditModel Model { get; set; } = new();
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Save Changes";
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    private async Task OnSubmit()
+    {
+        await OnSave.InvokeAsync();
+    }
+}

@@ -587,6 +587,10 @@
   "staff.detailsView.noAccountYet": "This person has no login account yet. Create one to demonstrate logging in as them.",
   "staff.detailsView.creatingAccount": "Creating account…",
   "staff.detailsView.createAccount": "Create login account",
+  "staff.edit.title": "Edit Staff Member",
+  "staff.edit.submit": "Save Changes",
+  "staff.edit.updateFailed": "Failed to update practitioner: {0}",
+  "staff.history.title": "Staff History",
   "staff.claim.title": "Claim Staff Invitation",
   "staff.claim.success": "Invitation claimed successfully. Linked to Practitioner/{0}.",
 

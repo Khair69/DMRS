@@ -50,6 +50,24 @@ public sealed class StaffFeatureService
         return _fhirApiService.SearchAsync<PractitionerRole>("practitioner", $"Practitioner/{practitionerId}");
     }
 
+    public async Task<Practitioner?> UpdatePractitionerAsync(string practitionerId, StaffEditModel model)
+    {
+        // Load the current resource and edit it in place so identifiers (the Keycloak account link) and
+        // any unmanaged elements survive the update.
+        var existing = await _fhirApiService.GetResourceAsync<Practitioner>(practitionerId)
+            ?? throw new InvalidOperationException($"Practitioner {practitionerId} not found.");
+
+        model.ApplyTo(existing);
+        existing.Id = practitionerId;
+
+        return await _fhirApiService.UpdateResourceAsync(practitionerId, existing);
+    }
+
+    public Task<IReadOnlyList<Practitioner>> GetPractitionerHistoryAsync(string practitionerId)
+    {
+        return _fhirApiService.GetHistoryAsync<Practitioner>(practitionerId);
+    }
+
     public async Task<StaffInviteResult> CreateInviteAsync(string organizationId, StaffInviteEditModel model, string appBaseUri)
     {
         var response = await _fhirApiService.PostApiJsonAsync<CreateStaffInviteRequest, CreateStaffInviteResponse>(

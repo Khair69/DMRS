@@ -1,0 +1,42 @@
+@page "/organizations/{OrganizationId}/staff/{PractitionerId}/history"
+@attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN")]
+@inherits DMRS.Client.Components.LocalizedComponentBase
+@inject DMRS.Client.Features.Staff.Services.StaffFeatureService StaffService
+
+<PageTitle>@Loc["staff.history.title"]</PageTitle>
+
+<h1>@Loc["staff.history.title"]</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<FhirJsonListView Resources="historyResources" />
+
+@code {
+    [Parameter]
+    public string OrganizationId { get; set; } = string.Empty;
+
+    [Parameter]
+    public string PractitionerId { get; set; } = string.Empty;
+
+    private IReadOnlyList<Hl7.Fhir.Model.Resource> historyResources = [];
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorMessage = null;
+
+        try
+        {
+            var history = await StaffService.GetPractitionerHistoryAsync(PractitionerId);
+            historyResources = history.Cast<Hl7.Fhir.Model.Resource>().ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = Loc["common.historyLoadFailed", ex.Message];
+            historyResources = [];
+        }
+    }
+}

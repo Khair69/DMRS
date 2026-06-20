@@ -17,6 +17,11 @@ else if (!string.IsNullOrWhiteSpace(errorMessage))
 }
 else
 {
+    <div class="mb-3">
+        <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/organizations/{OrganizationId}/staff/{PractitionerId}/edit")">@Loc["common.edit"]</NavLink>
+        <NavLink class="btn btn-sm btn-outline-info" href="@($"/organizations/{OrganizationId}/staff/{PractitionerId}/history")">@Loc["common.history"]</NavLink>
+    </div>
+
     <StaffDetailsView Practitioner="@practitioner"
                       Roles="@roles"
                       OnProvisionAccount="ProvisionAccountAsync"
