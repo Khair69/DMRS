@@ -12,7 +12,8 @@ The full setup — databases, Keycloak, the three services, and seeding — is i
 1. PostgreSQL up; `DMRS` database created and migrated (`dotnet ef database update`).
 2. Keycloak up (`docker/keycloak`), realm `DMRS`, client `dmrs-api`.
 3. Run `DMRS.MedicineInfo.Api` (:5041) → `DMRS.Api` (:7029) → `DMRS.Client` (:7099).
-4. Seed sample FHIR data via the in-app dev seeding flow.
+4. Seed sample FHIR data via the development-only `dev/seed` API endpoints (see
+   [`development.md`](development.md#seeding-sample-data)).
 
 Trained AI models (`*.onnx`) ship in `DMRS.Api/Ai/` and are copied to the output on build.
 
