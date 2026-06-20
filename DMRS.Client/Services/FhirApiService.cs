@@ -202,12 +202,6 @@ public class FhirApiService
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task<HttpResponseMessage> TestApi()
-    {
-        var response = await _httpClient.GetAsync("api/test/test-api");
-        return response;
-    }
-
     public async Task<TResponse?> PostApiJsonAsync<TRequest, TResponse>(string path, TRequest payload)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, path);
