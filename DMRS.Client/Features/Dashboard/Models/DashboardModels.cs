@@ -1,11 +1,15 @@
 namespace DMRS.Client.Features.Dashboard.Models;
 
+// Label/Helper stay in English so they can serve as stable lookup keys (see
+// OrgAdminDashboard.CountMetric). LabelKey/HelperKey carry the i18n keys the UI renders through Loc.
 public sealed record DashboardMetricModel(
     string Label,
     string Value,
     string Helper,
     string AccentClass,
-    string Href);
+    string Href,
+    string LabelKey = "",
+    string HelperKey = "");
 
 public sealed record DashboardWatchlistItemModel(
     string PatientId,
@@ -20,7 +24,9 @@ public sealed record DashboardWatchlistItemModel(
     int MedicationCount = 0,
     int RecentEncounterCount = 0,
     bool HasChronicConditions = false,
-    List<string>? TopRiskFactors = null);
+    List<string>? TopRiskFactors = null,
+    float Age = 0f,
+    bool FeaturesComplete = true);
 
 public sealed record DashboardActivityItemModel(
     string Title,

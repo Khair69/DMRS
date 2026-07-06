@@ -15,11 +15,13 @@ namespace DMRS.Client.Features.AiInsights.Services;
 public sealed class AiInsightsFeatureService
 {
     private readonly FhirApiService _fhirApiService;
+    private readonly LocalizationService _loc;
     private const int WatchlistSize = 8;
 
-    public AiInsightsFeatureService(FhirApiService fhirApiService)
+    public AiInsightsFeatureService(FhirApiService fhirApiService, LocalizationService loc)
     {
         _fhirApiService = fhirApiService;
+        _loc = loc;
     }
 
     public async Task<AiInsightsSnapshot> GetSnapshotAsync()
@@ -46,12 +48,16 @@ public sealed class AiInsightsFeatureService
                 new AiModelCohort
                 {
                     Key = "readmission",
-                    Title = "30-Day Readmission Risk",
-                    Predicts = "Chance of an unplanned hospital readmission within 30 days",
+                    Title = _loc["ai.model.readmission.title"],
+                    Predicts = _loc["ai.model.readmission.predicts"],
                     Dataset = "UCI \"130-US hospitals\"",
                     Accuracy = "0.65",
                     Auc = "0.63",
-                    Features = ["Age", "Gender", "# conditions", "# active meds", "# recent visits", "# procedures"],
+                    Features =
+                    [
+                        _loc["ai.feature.age"], _loc["ai.feature.gender"], _loc["ai.feature.conditions"],
+                        _loc["ai.feature.activeMeds"], _loc["ai.feature.recentVisits"], _loc["ai.feature.procedures"],
+                    ],
                     AccentClass = "metric-rose",
                 },
                 readmission.Select(a => new AiPatientRiskRow(
@@ -67,12 +73,15 @@ public sealed class AiInsightsFeatureService
                 new AiModelCohort
                 {
                     Key = "diabetes",
-                    Title = "Type-2 Diabetes Risk",
-                    Predicts = "Likelihood of type-2 diabetes",
+                    Title = _loc["ai.model.diabetes.title"],
+                    Predicts = _loc["ai.model.diabetes.predicts"],
                     Dataset = "Pima Indians Diabetes",
                     Accuracy = "0.73",
                     Auc = "0.82",
-                    Features = ["Glucose", "Diastolic BP", "BMI", "Age"],
+                    Features =
+                    [
+                        _loc["ai.feature.glucose"], _loc["ai.feature.diastolicBp"], _loc["ai.feature.bmi"], _loc["ai.feature.age"],
+                    ],
                     AccentClass = "metric-gold",
                 },
                 diabetes.Select(a => new AiPatientRiskRow(
@@ -82,18 +91,22 @@ public sealed class AiInsightsFeatureService
                     a.RiskLevel,
                     a.Probability ?? 0f,
                     a.FeaturesComplete,
-                    $"Glucose {a.Glucose:0} mg/dL · BMI {a.Bmi:0.0}"))),
+                    _loc["ai.detail.diabetes", a.Glucose, a.Bmi]))),
 
             BuildCohort(
                 new AiModelCohort
                 {
                     Key = "cardiovascular",
-                    Title = "Cardiovascular Risk",
-                    Predicts = "Likelihood of coronary heart disease",
+                    Title = _loc["ai.model.cardiovascular.title"],
+                    Predicts = _loc["ai.model.cardiovascular.predicts"],
                     Dataset = "UCI Heart Disease",
                     Accuracy = "0.81",
                     Auc = "0.93",
-                    Features = ["Age", "Sex", "Resting BP", "Cholesterol", "Max heart rate", "Fasting blood sugar"],
+                    Features =
+                    [
+                        _loc["ai.feature.age"], _loc["ai.feature.sex"], _loc["ai.feature.restingBp"],
+                        _loc["ai.feature.cholesterol"], _loc["ai.feature.maxHeartRate"], _loc["ai.feature.fastingBloodSugar"],
+                    ],
                     AccentClass = "metric-ocean",
                 },
                 cardiovascular.Select(a => new AiPatientRiskRow(
@@ -103,7 +116,7 @@ public sealed class AiInsightsFeatureService
                     a.RiskLevel,
                     a.Probability ?? 0f,
                     a.FeaturesComplete,
-                    $"BP {a.RestingBloodPressure:0} · Chol {a.Cholesterol:0} mg/dL"))),
+                    _loc["ai.detail.cardio", a.RestingBloodPressure, a.Cholesterol]))),
         };
 
         return new AiInsightsSnapshot
@@ -125,13 +138,13 @@ public sealed class AiInsightsFeatureService
         return cohort;
     }
 
-    private static string ReadmissionDetail(HighUtilizationRiskAssessmentModel a)
+    private string ReadmissionDetail(HighUtilizationRiskAssessmentModel a)
     {
         var parts = new List<string>();
-        if (a.ConditionCount > 0) parts.Add($"{a.ConditionCount} condition{(a.ConditionCount == 1 ? "" : "s")}");
-        if (a.MedicationCount > 0) parts.Add($"{a.MedicationCount} med{(a.MedicationCount == 1 ? "" : "s")}");
-        if (a.RecentEncounterCount > 0) parts.Add($"{a.RecentEncounterCount} visit{(a.RecentEncounterCount == 1 ? "" : "s")}");
-        return parts.Count > 0 ? string.Join(" · ", parts) : $"Age {a.Age:0}";
+        if (a.ConditionCount > 0) parts.Add(_loc["ai.detail.conditions", a.ConditionCount]);
+        if (a.MedicationCount > 0) parts.Add(_loc["ai.detail.meds", a.MedicationCount]);
+        if (a.RecentEncounterCount > 0) parts.Add(_loc["ai.detail.visits", a.RecentEncounterCount]);
+        return parts.Count > 0 ? string.Join(" · ", parts) : _loc["ai.detail.age", (int)a.Age];
     }
 
     private static string FormatPatientName(Patient patient)

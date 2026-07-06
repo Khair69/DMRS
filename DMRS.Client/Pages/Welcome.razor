@@ -10,7 +10,11 @@
 
 <div class="welcome">
     <header class="welcome__bar">
-        <span class="welcome__brand">@Loc["app.brand"]</span>
+        <span class="welcome__brand welcome__brand--logo" aria-label="@Loc["app.brand"]" title="@Loc["app.brand"]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 12h4l2-6 4 12 2-6h6" />
+            </svg>
+        </span>
         <div class="welcome__bar-actions">
             <LanguageSwitcher />
             <button class="btn btn-primary" @onclick="BeginLogin">@Loc["auth.login"]</button>

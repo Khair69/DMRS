@@ -4,7 +4,11 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">@Loc["app.brand"]</a>
+        <a class="navbar-brand navbar-brand--logo" href="" aria-label="@Loc["app.brand"]" title="@Loc["app.brand"]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 12h4l2-6 4 12 2-6h6" />
+            </svg>
+        </a>
         <button title="@Loc["nav.toggle"]" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>

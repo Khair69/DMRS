@@ -1,3 +1,4 @@
+@using DMRS.Client.Features.Dashboard
 @using DMRS.Client.Features.Dashboard.Models
 @using DMRS.Client.Features.Staff.Models
 @inherits DMRS.Client.Components.LocalizedComponentBase
@@ -145,9 +146,9 @@ else
                             <a class="dmrs-list-item" href="@patient.Href">
                                 <div style="min-width:0;">
                                     <div class="dmrs-list-item__title text-truncate">@patient.DisplayName</div>
-                                    <div class="dmrs-list-item__subtitle">@patient.Summary</div>
+                                    <div class="dmrs-list-item__subtitle">@DashboardText.WatchlistSummary(Loc, patient)</div>
                                 </div>
-                                <span class="dmrs-pill @RiskLevelPillClass(patient.RiskLevel)" style="flex-shrink:0;">@patient.RiskLevel</span>
+                                <span class="dmrs-pill @RiskLevelPillClass(patient.RiskLevel)" style="flex-shrink:0;">@DashboardText.RiskLevel(Loc, patient.RiskLevel)</span>
                             </a>
                         }
                     </div>

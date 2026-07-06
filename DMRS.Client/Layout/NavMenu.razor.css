@@ -15,6 +15,30 @@
     letter-spacing: 0.04em;
 }
 
+/* Gradient "pulse" badge — matches the logo on the Keycloak login page. */
+.navbar-brand--logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    padding: 0;
+    border-radius: 0.8rem;
+    background: linear-gradient(135deg, #0f6d93, #0b8f86);
+    box-shadow: 0 8px 18px rgba(15, 109, 147, 0.42);
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.navbar-brand--logo:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(15, 109, 147, 0.5);
+}
+
+.navbar-brand--logo svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
 .nav-scrollable {
     padding: 0.25rem 0 1.25rem;
 }

@@ -76,9 +76,9 @@ public sealed class DashboardFeatureService
             .Select(a => new DashboardWatchlistItemModel(
                 a.PatientId,
                 patientNameById.GetValueOrDefault(a.PatientId, $"Patient {a.PatientId}"),
-                a.FeaturesComplete
-                    ? BuildWatchlistSummary(a)
-                    : "Missing age or gender for prediction",
+                // Summary is composed at render time (DashboardText.WatchlistSummary) so it follows
+                // live language switches; the structured counts below drive it.
+                string.Empty,
                 $"/patients/{a.PatientId}",
                 a.IsHighRisk,
                 a.Probability,
@@ -88,19 +88,21 @@ public sealed class DashboardFeatureService
                 a.MedicationCount,
                 a.RecentEncounterCount,
                 a.HasChronicConditions,
-                a.TopRiskFactors))
+                a.TopRiskFactors,
+                a.Age,
+                a.FeaturesComplete))
             .ToList();
 
         return new DashboardSnapshotModel
         {
             Metrics =
             [
-                new("Patients", summary.Patients.ToString(), "Registered people in the workspace", "metric-ocean", "/patients"),
-                new("Appointments", upcomingCount.ToString(), "Upcoming scheduled visits", "metric-sky", "/appointments"),
-                new("Active Meds", summary.ActiveMedications.ToString(), "Medication requests on file", "metric-gold", "/medication-requests"),
-                new("Encounters", summary.Encounters.ToString(), "Documented clinical visits", "metric-emerald", "/encounters"),
-                new("Service Requests", summary.ServiceRequests.ToString(), "Orders and follow-up requests", "metric-ink", "/service-requests"),
-                new("Conditions", summary.Conditions.ToString(), "Tracked problem list items", "metric-rose", "/conditions")
+                new("Patients", summary.Patients.ToString(), "Registered people in the workspace", "metric-ocean", "/patients", "nav.patients", "dashboard.metric.patientsRegisteredHelper"),
+                new("Appointments", upcomingCount.ToString(), "Upcoming scheduled visits", "metric-sky", "/appointments", "nav.appointments", "dashboard.orgAdmin.appointmentsHelper"),
+                new("Active Meds", summary.ActiveMedications.ToString(), "Medication requests on file", "metric-gold", "/medication-requests", "dashboard.metric.activeMeds", "dashboard.metric.activeMedsHelper"),
+                new("Encounters", summary.Encounters.ToString(), "Documented clinical visits", "metric-emerald", "/encounters", "nav.encounters", "dashboard.metric.encountersHelper"),
+                new("Service Requests", summary.ServiceRequests.ToString(), "Orders and follow-up requests", "metric-ink", "/service-requests", "nav.serviceRequests", "dashboard.metric.serviceRequestsHelper"),
+                new("Conditions", summary.Conditions.ToString(), "Tracked problem list items", "metric-rose", "/conditions", "nav.conditions", "dashboard.metric.conditionsHelper")
             ],
             HighRiskPatients = watchlist,
             UpcomingAppointments = upcomingAppointments.Select(MapAppointment).ToList(),
@@ -141,7 +143,8 @@ public sealed class DashboardFeatureService
             .Select(a => new DashboardWatchlistItemModel(
                 a.PatientId,
                 string.IsNullOrWhiteSpace(a.DisplayName) ? $"Patient {a.PatientId}" : a.DisplayName,
-                a.FeaturesComplete ? BuildWatchlistSummary(a) : "Missing age or gender for prediction",
+                // Composed at render time — see DashboardText.WatchlistSummary.
+                string.Empty,
                 $"/patients/{a.PatientId}",
                 a.IsHighRisk,
                 a.Probability,
@@ -151,7 +154,9 @@ public sealed class DashboardFeatureService
                 a.MedicationCount,
                 a.RecentEncounterCount,
                 a.HasChronicConditions,
-                a.TopRiskFactors))
+                a.TopRiskFactors,
+                a.Age,
+                a.FeaturesComplete))
             .ToList();
 
         return new DoctorSnapshotModel
@@ -197,16 +202,6 @@ public sealed class DashboardFeatureService
             $"Patient {patientId}",
             $"{request.SafeStatus()} | {request.SafeIntent()}",
             $"/medication-requests/{request.Id}");
-    }
-
-    private static string BuildWatchlistSummary(HighUtilizationRiskAssessmentModel risk)
-    {
-        var parts = new List<string>();
-        if (risk.ConditionCount > 0) parts.Add($"{risk.ConditionCount} condition{(risk.ConditionCount == 1 ? "" : "s")}");
-        if (risk.MedicationCount > 0) parts.Add($"{risk.MedicationCount} med{(risk.MedicationCount == 1 ? "" : "s")}");
-        if (risk.RecentEncounterCount > 0) parts.Add($"{risk.RecentEncounterCount} recent visit{(risk.RecentEncounterCount == 1 ? "" : "s")}");
-        var detail = parts.Count > 0 ? string.Join(" · ", parts) : $"Age {risk.Age:0}";
-        return $"{risk.RiskLevel} risk · {detail}";
     }
 
     private static string FormatPatientName(Patient patient)

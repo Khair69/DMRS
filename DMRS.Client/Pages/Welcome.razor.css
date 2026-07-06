@@ -24,6 +24,23 @@
     color: var(--dmrs-text, #0f172a);
 }
 
+/* Gradient "pulse" badge — matches the sidebar logo and the Keycloak login page. */
+.welcome__brand--logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.85rem;
+    background: linear-gradient(135deg, #0f6d93, #0b8f86);
+    box-shadow: 0 10px 22px rgba(15, 109, 147, 0.42);
+}
+
+.welcome__brand--logo svg {
+    width: 1.6rem;
+    height: 1.6rem;
+}
+
 .welcome__bar-actions {
     display: flex;
     align-items: center;

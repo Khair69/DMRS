@@ -1,5 +1,6 @@
 @page "/"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER,ROLE_PATIENT")]
+@using DMRS.Client.Features.Dashboard
 @using DMRS.Client.Features.Dashboard.Models
 @using DMRS.Client.Features.Dashboard.Components
 @inherits DMRS.Client.Components.LocalizedComponentBase
@@ -51,9 +52,9 @@ else
         @foreach (var metric in snapshot.Metrics)
         {
             <a class="dmrs-metric-card @metric.AccentClass" href="@metric.Href">
-                <div class="dmrs-metric-card__label">@metric.Label</div>
+                <div class="dmrs-metric-card__label">@Loc[metric.LabelKey]</div>
                 <div class="dmrs-metric-card__value">@metric.Value</div>
-                <div class="dmrs-metric-card__helper">@metric.Helper</div>
+                <div class="dmrs-metric-card__helper">@Loc[metric.HelperKey]</div>
             </a>
         }
     </section>
@@ -130,10 +131,10 @@ else
                             <a class="dmrs-list-item" href="@patient.Href">
                                 <div>
                                     <div class="dmrs-list-item__title">@patient.DisplayName</div>
-                                    <div class="dmrs-list-item__subtitle">@patient.Summary</div>
+                                    <div class="dmrs-list-item__subtitle">@DashboardText.WatchlistSummary(Loc, patient)</div>
                                 </div>
                                 <span class="dmrs-pill @RiskLevelPillClass(patient.RiskLevel)">
-                                    @patient.RiskLevel
+                                    @DashboardText.RiskLevel(Loc, patient.RiskLevel)
                                 </span>
                             </a>
                         }
