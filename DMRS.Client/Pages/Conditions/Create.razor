@@ -20,6 +20,18 @@
     private bool isSaving;
     private string? errorMessage;
 
+    // Prefill the patient when arriving from a patient's Quick Links (e.g. /conditions/new?patient={id}).
+    [SupplyParameterFromQuery(Name = "patient")]
+    private string? PatientId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(PatientId))
+        {
+            model.PatientId = PatientId;
+        }
+    }
+
     private async Task Save()
     {
         isSaving = true;
