@@ -21,8 +21,9 @@ DMRS gates access at two levels, and a request must pass both:
    resource*, based on SMART scopes plus patient/organization ownership ("compartment") checks.
 
 > **Why both?** Roles say "a practitioner may use the clinical workspace." Compartment checks say
-> "*this* practitioner may only write to patients in *their* organization." Least privilege requires
-> the second layer; roles alone are too coarse for clinical data.
+> "*this* practitioner may edit demographics and administrative data only for *their* organization"
+> (clinical data is contributable cross-org — see below). Least privilege requires the second layer;
+> roles alone are too coarse for patient data.
 
 ## Roles
 
@@ -30,7 +31,7 @@ DMRS gates access at two levels, and a request must pass both:
 |---|---|---|
 | `ROLE_SYSTEM_ADMIN` | Platform operator | Full cross-organization access; manage organizations, CDS rules, AI model registry. |
 | `ROLE_ORG_ADMIN` | Organization administrator | Manage their own organization: staff, CDS admin, external-AI admin. |
-| `ROLE_PRACTITIONER` | Clinician (doctor/nurse) | Clinical workspace — read any patient record, create/update clinical data within their org. |
+| `ROLE_PRACTITIONER` | Clinician (doctor/nurse) | Clinical workspace — read any patient record and create/update clinical data for any patient (cross-org); administrative edits stay within their org. |
 | `ROLE_PATIENT` | Patient | Read-only self-service portal scoped to their own record (`/my-health`, `/my-profile`). |
 
 Roles are issued by Keycloak as realm roles and surface on the token under the `roles` claim
@@ -41,8 +42,10 @@ Roles are issued by Keycloak as realm roles and surface on the token under the `
 Each role is granted only what its job requires:
 
 - A **patient** can read their own record but cannot see other patients or write clinical data.
-- A **practitioner** can read across organizations (a patient may be treated anywhere) but may only
-  **write** within their own organization's compartment.
+- A **practitioner** can read across organizations *and* contribute clinical data (conditions,
+  observations, medications, …) to any patient, because a patient may be treated anywhere. Only
+  **administrative** writes (the Patient record itself, organizations, locations, staff) and **deletes**
+  stay within their own organization's compartment.
 - An **org admin** manages people and configuration for one organization, not clinical content at large.
 - A **system admin** is the only role with unrestricted, cross-organization reach.
 
@@ -57,7 +60,7 @@ resolves the caller to one of four levels by combining their **scopes** with the
 | Level | Granted when | Effective reach |
 |---|---|---|
 | `System` | Has a `system/<type>.<action>` scope **and** the `ROLE_SYSTEM_ADMIN` role | All resources, all organizations. |
-| `User` | Has a `user/<type>.<action>` scope **and** a staff role (`IsStaff`) | Org-scoped writes; cross-org reads for patient-facing types. |
+| `User` | Has a `user/<type>.<action>` scope **and** a staff role (`IsStaff`) | Cross-org reads and cross-org clinical writes for patient-facing types; administrative writes and all deletes stay org-scoped. |
 | `Patient` | Has a `patient/<type>.<action>` scope | Only resources in the caller's own patient compartment. |
 | `None` | No matching scope | Denied. |
 
@@ -99,21 +102,38 @@ runs on every `FhirScope`-protected request:
    - **Patient level:** the resource must be owned by the caller's patient compartment
      (`IsResourceOwnedByPatientAsync`), or it's denied.
    - **User level:** the resource must be owned by one of the caller's organizations
-     (`IsResourceOwnedByOrganizationsAsync`) — **except** cross-organization reads (below).
+     (`IsResourceOwnedByOrganizationsAsync`) — **except** cross-organization reads and cross-organization
+     clinical writes (below), which skip this gate and defer to the controller's finer-grained check.
 4. Otherwise (collection/search/create, or a passing instance check) → **succeed**.
 
 Version/history reads (`/_history`, `vid`) skip the instance ownership gate so audit trails remain
 viewable; the access-level gate still applies.
 
-### Cross-organization read relaxation
+### Cross-organization read & write relaxation
 
 A patient may be treated at multiple organizations, so a practitioner needs to read a patient's full
-record regardless of which org owns each row. `IsCrossOrganizationReadableType` whitelists the
-patient-facing types — `Patient`, `Encounter`, `Condition`, `Observation`, `Procedure`,
-`MedicationRequest`, `ServiceRequest`, `AllergyIntolerance`, `Appointment` — for which **User-level
-reads bypass the org-ownership gate**. Writes and deletes on those types remain strictly org-scoped, and
-administrative types (`Organization`, `Location`, `Practitioner`, `PractitionerRole`) stay org-scoped
-even for reads.
+record — and contribute to it — regardless of which org owns each row. Two whitelists express this:
+
+- **`IsCrossOrganizationReadableType`** — the patient-facing types `Patient`, `Encounter`, `Condition`,
+  `Observation`, `Procedure`, `MedicationRequest`, `ServiceRequest`, `AllergyIntolerance`, `Appointment`.
+  **User-level reads** of these bypass the org-ownership gate.
+- **`IsCrossOrganizationWritableType`** — the patient-owned *clinical* types (the same set **minus
+  `Patient`**): `Encounter`, `Condition`, `Observation`, `Procedure`, `MedicationRequest`,
+  `ServiceRequest`, `AllergyIntolerance`, `Appointment`. **User-level creates and updates** of these
+  bypass the org-ownership gate, so a treating clinician at any facility can add to (and correct) a
+  patient's longitudinal record. This is enforced in both `FhirScopeHandler` (the policy gate, for
+  instance PUT/PATCH) and `CanCreateResource`/`CanUpdateResource` in `FhirBaseController<T>`.
+
+Deliberately **still org-scoped**: editing the **`Patient`** record itself (demographics), **deletes**
+of any type, and all **administrative** types (`Organization`, `Location`, `Practitioner`,
+`PractitionerRole` — which stay org-scoped even for reads).
+
+> **Why writes, not just reads?** In a national record model, cross-org read without cross-org write is
+> a dead end: a doctor could open a referred patient's chart but not prescribe. Allowing clinical writes
+> everywhere — while keeping demographics, deletes, and administrative data org-scoped — matches how a
+> shared longitudinal record is actually used. The trade-off is that any authenticated clinician can add
+> clinical data to any patient; attributing *who* wrote what is a Provenance/audit concern, not an
+> access-gate one.
 
 ## Aggregate views (dashboards & analytics)
 
@@ -145,6 +165,7 @@ stamping `patient_id`/`practitioner_id` attributes onto the Keycloak user.
 - Four access levels (`System` / `User` / `Patient` / `None`), with role gates that stop default
   wildcard scopes from over-granting.
 - Two policies: `FhirScope` (resource pipeline) and `CdsAdmin` (role check).
-- Cross-org reads are deliberately relaxed for patient-facing types; writes stay org-scoped.
+- Cross-org reads are relaxed for patient-facing types, and cross-org **clinical writes** for the
+  patient-owned clinical types; Patient demographics, deletes, and administrative writes stay org-scoped.
 
 See also: [`authentication.md`](authentication.md) · [`security.md`](security.md) · [`fhir.md`](fhir.md)
