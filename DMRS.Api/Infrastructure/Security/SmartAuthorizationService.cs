@@ -27,6 +27,15 @@ namespace DMRS.Api.Infrastructure.Security
         bool IsCrossOrganizationReadableType(string resourceType);
 
         /// <summary>
+        /// True for the patient-owned clinical resource types that any staff (User-level) caller may
+        /// CREATE and UPDATE across organizations, mirroring <see cref="IsCrossOrganizationReadableType"/>:
+        /// a treating clinician at any facility can contribute to a patient's longitudinal record.
+        /// The Patient record itself and all administrative types (Organization, Location, Practitioner,
+        /// PractitionerRole) remain org-scoped, as does DELETE for every type.
+        /// </summary>
+        bool IsCrossOrganizationWritableType(string resourceType);
+
+        /// <summary>
         /// Resolves the set of Patient ids the caller may aggregate over (dashboards, analytics,
         /// batch risk scoring). Returns <c>null</c> for an unrestricted (system) caller — callers
         /// should treat null as "all patients" and keep their existing global behavior. A non-null
@@ -97,6 +106,23 @@ namespace DMRS.Api.Infrastructure.Security
             "Appointment",
         };
 
+        // Patient-owned clinical resources that any staff (User-level) caller may CREATE/UPDATE across
+        // organizations, mirroring the cross-organization READ relaxation above. A treating clinician at
+        // any facility can contribute to a patient's longitudinal record. The Patient record itself is
+        // intentionally excluded (demographic edits stay with the managing org), as are all administrative
+        // types and DELETE for every type.
+        private static readonly HashSet<string> CrossOrganizationWritableTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Encounter",
+            "Condition",
+            "Observation",
+            "Procedure",
+            "MedicationRequest",
+            "ServiceRequest",
+            "AllergyIntolerance",
+            "Appointment",
+        };
+
         private readonly AppDbContext _dbContext;
         private readonly IResourceOwnershipResolver _ownershipResolver;
 
@@ -143,6 +169,10 @@ namespace DMRS.Api.Infrastructure.Security
         public bool IsCrossOrganizationReadableType(string resourceType)
             => !string.IsNullOrWhiteSpace(resourceType)
                 && CrossOrganizationReadableTypes.Contains(resourceType);
+
+        public bool IsCrossOrganizationWritableType(string resourceType)
+            => !string.IsNullOrWhiteSpace(resourceType)
+                && CrossOrganizationWritableTypes.Contains(resourceType);
 
         public async Task<IReadOnlyCollection<string>?> ResolveAccessiblePatientIdsAsync(ClaimsPrincipal user)
         {

@@ -386,6 +386,15 @@ namespace DMRS.Api.Controllers
                     return true;
                 }
 
+                // Patient-owned clinical resources are writable by any staff caller across organizations,
+                // mirroring the cross-organization read model: a treating clinician at any facility can
+                // add to a patient's longitudinal record. Administrative types and the Patient record
+                // itself remain org-scoped below.
+                if (_authorizationService.IsCrossOrganizationWritableType(typeof(T).Name))
+                {
+                    return true;
+                }
+
                 var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
                 return await _authorizationService.IsResourceOwnedByOrganizationsAsync(resource, organizationIds);
             }
@@ -423,6 +432,14 @@ namespace DMRS.Api.Controllers
                 if (string.IsNullOrWhiteSpace(existingResource.Id))
                 {
                     return false;
+                }
+
+                // Patient-owned clinical resources are writable across organizations (see
+                // CanCreateResource): a treating clinician may also correct or update the clinical
+                // records they contribute to any patient's longitudinal record.
+                if (_authorizationService.IsCrossOrganizationWritableType(typeof(T).Name))
+                {
+                    return true;
                 }
 
                 var organizationIds = await _authorizationService.ResolveOrganizationIdsAsync(User);
