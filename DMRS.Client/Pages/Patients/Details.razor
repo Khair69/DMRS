@@ -10,6 +10,7 @@
 @using DMRS.Client.Features.Dashboard.Models
 @using DMRS.Client.Features.Documents.Models
 @using DMRS.Client.Features.Patients.Models
+@using DMRS.Shared.Constants
 @using Microsoft.AspNetCore.Components.Forms
 
 <PageTitle>@Loc["patients.details.title"]</PageTitle>
@@ -30,6 +31,10 @@ else
         <div>
             <span class="workspace-eyebrow">@Loc["patients.details.eyebrow"]</span>
             <h1>@DisplayPatientName</h1>
+            @if (!string.IsNullOrWhiteSpace(PatientNumber))
+            {
+                <p class="mb-1"><strong>@Loc["patients.field.patientNumber"]:</strong> @PatientNumber</p>
+            }
             <p>@DisplayPatientDemographics</p>
         </div>
         <div class="workspace-hero__actions">
@@ -486,6 +491,10 @@ else
     private bool isDeletingDocument;
     private string? uploadError;
     private string? uploadSuccess;
+
+    // Readable patient number (XX12345) shown in the hero; null for legacy rows not yet backfilled.
+    private string? PatientNumber =>
+        patient?.Identifier.FirstOrDefault(i => i.System == PatientIdentifierSystems.PatientNumber)?.Value;
 
     private string DisplayPatientName
     {
