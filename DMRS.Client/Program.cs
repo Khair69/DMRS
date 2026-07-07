@@ -53,6 +53,7 @@ builder.Services.AddSingleton<FhirJsonDeserializer>(new FhirJsonDeserializer(new
 }));
 
 builder.Services.AddScoped<PatientFeatureService>();
+builder.Services.AddScoped<PatientLookupService>();
 builder.Services.AddScoped<PatientChartFeatureService>();
 builder.Services.AddScoped<PatientPortalFeatureService>();
 builder.Services.AddScoped<DashboardFeatureService>();

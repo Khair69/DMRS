@@ -1,0 +1,117 @@
+@using DMRS.Client.Features.Patients.Services
+@inherits DMRS.Client.Components.LocalizedComponentBase
+@inject PatientLookupService PatientLookup
+
+@* Lets staff enter the readable patient number (e.g. HM12345); resolves it to the patient's logical
+   id, which is what Value (bound to the model's PatientId) actually carries for the FHIR reference. *@
+<label class="form-label">@Loc["common.patientLookup.label"]</label>
+<input type="text"
+       class="form-control @(_status == LookupStatus.NotFound ? "is-invalid" : string.Empty)"
+       value="@_input"
+       @onchange="OnInputChangedAsync"
+       placeholder="@Loc["common.patientLookup.placeholder"]"
+       disabled="@Disabled" />
+
+@if (_status == LookupStatus.Resolving)
+{
+    <div class="form-text">@Loc["common.patientLookup.resolving"]</div>
+}
+else if (_status == LookupStatus.Found)
+{
+    <div class="form-text text-success">@Loc["common.patientLookup.matched", _displayName]</div>
+}
+else if (_status == LookupStatus.NotFound)
+{
+    <div class="invalid-feedback d-block">@Loc["common.patientLookup.notFound", _input]</div>
+}
+else
+{
+    <div class="form-text">@Loc["common.patientLookup.hint"]</div>
+}
+
+@code {
+    // Value is the patient's logical id (GUID) — bound to the model's PatientId. The text field edits
+    // the patient NUMBER, which we resolve to this id.
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private string _input = string.Empty;
+    private string _displayName = string.Empty;
+    private LookupStatus _status = LookupStatus.None;
+
+    // The last id we produced or consumed, so an incoming Value we already reflected (including the one
+    // we just set ourselves) doesn't re-trigger a reverse lookup and clobber the user's typed number.
+    private string? _syncedValue;
+
+    private enum LookupStatus { None, Resolving, Found, NotFound }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.Equals(Value, _syncedValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _syncedValue = Value;
+
+        // External set (edit form loaded an existing record): show the readable number for the GUID.
+        if (!string.IsNullOrWhiteSpace(Value))
+        {
+            var result = await PatientLookup.GetByIdAsync(Value);
+            if (result is not null && !string.IsNullOrWhiteSpace(result.PatientNumber))
+            {
+                _input = result.PatientNumber!;
+                _displayName = result.DisplayName;
+                _status = LookupStatus.Found;
+            }
+            else
+            {
+                // Patient not found or not backfilled with a number — fall back to the raw id so the
+                // field is not empty and the reference is preserved on save.
+                _input = Value;
+                _status = LookupStatus.None;
+            }
+        }
+    }
+
+    private async Task OnInputChangedAsync(ChangeEventArgs e)
+    {
+        _input = e.Value?.ToString()?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(_input))
+        {
+            _status = LookupStatus.None;
+            _displayName = string.Empty;
+            await SetValueAsync(null);
+            return;
+        }
+
+        _status = LookupStatus.Resolving;
+        var result = await PatientLookup.ResolveByNumberAsync(_input);
+
+        if (result is null)
+        {
+            _status = LookupStatus.NotFound;
+            _displayName = string.Empty;
+            await SetValueAsync(null);
+            return;
+        }
+
+        _status = LookupStatus.Found;
+        _displayName = result.DisplayName;
+        // Normalize the field to the canonical number when we have one.
+        _input = result.PatientNumber ?? _input;
+        await SetValueAsync(result.PatientId);
+    }
+
+    private async Task SetValueAsync(string? id)
+    {
+        _syncedValue = id;
+        if (!string.Equals(Value, id, StringComparison.Ordinal))
+        {
+            Value = id;
+            await ValueChanged.InvokeAsync(id);
+        }
+    }
+}

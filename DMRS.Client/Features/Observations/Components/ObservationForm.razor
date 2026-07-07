@@ -6,8 +6,7 @@
 
     <div class="row g-3">
         <div class="col-md-4">
-            <label class="form-label">@Loc["common.field.patientId"]</label>
-            <InputText @bind-Value="Model.PatientId" class="form-control" />
+            <PatientNumberInput @bind-Value="Model.PatientId" />
             <ValidationMessage For="() => Model.PatientId" />
         </div>
         <div class="col-md-8">
