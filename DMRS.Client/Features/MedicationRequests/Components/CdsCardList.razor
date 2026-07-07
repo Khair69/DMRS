@@ -1,0 +1,60 @@
+@inherits DMRS.Client.Components.LocalizedComponentBase
+
+@if (Cards is { Count: > 0 })
+{
+    <div class="dmrs-cds-alerts">
+        @foreach (var card in Cards)
+        {
+            var severity = ResolveSeverity(card.Indicator);
+            <div class="dmrs-cds-alert dmrs-cds-alert--@severity" role="alert">
+                <div class="dmrs-cds-alert__icon" aria-hidden="true">@IconFor(severity)</div>
+                <div class="dmrs-cds-alert__body">
+                    <div class="dmrs-cds-alert__head">
+                        <span class="dmrs-cds-alert__summary">@card.Summary</span>
+                        <span class="dmrs-cds-alert__badge">@Loc[$"cds.severity.{severity}"]</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(card.Detail))
+                    {
+                        <p class="dmrs-cds-alert__detail">@card.Detail</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(card.Source?.Label))
+                    {
+                        <div class="dmrs-cds-alert__source">
+                            <span>@Loc["cds.card.source"]</span>
+                            @if (!string.IsNullOrWhiteSpace(card.Source.Url))
+                            {
+                                <a href="@card.Source.Url" target="_blank" rel="noopener noreferrer">@card.Source.Label</a>
+                            }
+                            else
+                            {
+                                <span>@card.Source.Label</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>CDS cards returned by a hook evaluation, rendered as severity-styled alerts.</summary>
+    [Parameter]
+    public IReadOnlyList<CdsCardModel>? Cards { get; set; }
+
+    private static string ResolveSeverity(string? indicator)
+        => indicator?.Trim().ToLowerInvariant() switch
+        {
+            "critical" => "critical",
+            "warning" => "warning",
+            _ => "info"
+        };
+
+    private static string IconFor(string severity)
+        => severity switch
+        {
+            "critical" => "⛔", // ⛔
+            "warning" => "⚠",  // ⚠
+            _ => "ℹ"           // ℹ
+        };
+}

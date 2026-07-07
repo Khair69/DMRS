@@ -60,13 +60,35 @@ public sealed class MedicationDecisionSupportService
             }
         }
 
+        var hookResponse = await EvaluateHookAsync(request, patientId);
+
+        return new MedicationDecisionSupportSnapshotModel
+        {
+            Medicine = medicine,
+            HookResponse = hookResponse
+        };
+    }
+
+    /// <summary>
+    /// Runs only the medication-prescribe CDS hook and returns its cards — no medicine-knowledge
+    /// lookup. Used to surface live rule violations for a patient's existing medications without the
+    /// extra knowledge round-trips that <see cref="GetSnapshotAsync"/> makes for its display panel.
+    /// </summary>
+    public async Task<IReadOnlyList<CdsCardModel>> EvaluateCardsAsync(MedicationRequest request, string patientId)
+    {
+        var response = await EvaluateHookAsync(request, patientId);
+        return response?.Cards ?? [];
+    }
+
+    private async Task<CdsHookResponseModel?> EvaluateHookAsync(MedicationRequest request, string patientId)
+    {
         // Serialize the FHIR resource with the FHIR-aware serializer before embedding it in the
         // hook payload. JsonContent.Create uses System.Text.Json which cannot handle Firely SDK
         // polymorphic types (e.g. Dosage.DoseAndRateComponent.Dose declared as DataType) and
         // would silently strip dose/unit data, causing dose-threshold CDS rules to never fire.
         using var requestDoc = JsonDocument.Parse(_serializer.SerializeToString(request));
 
-        var hookResponse = await _fhirApiService.PostApiJsonAsync<object, CdsHookResponseModel>(
+        return await _fhirApiService.PostApiJsonAsync<object, CdsHookResponseModel>(
             "cds-services/medication-prescribe",
             new
             {
@@ -77,11 +99,5 @@ public sealed class MedicationDecisionSupportService
                     medicationRequest = requestDoc.RootElement
                 }
             });
-
-        return new MedicationDecisionSupportSnapshotModel
-        {
-            Medicine = medicine,
-            HookResponse = hookResponse
-        };
     }
 }

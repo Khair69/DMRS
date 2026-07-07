@@ -5,6 +5,7 @@
 @inject DMRS.Client.Features.Patients.Services.PatientChartFeatureService PatientChartService
 @inject DMRS.Client.Features.Documents.Services.PatientDocumentFeatureService DocumentService
 @inject DMRS.Client.Features.Organizations.Services.OrganizationFeatureService OrganizationService
+@inject DMRS.Client.Features.MedicationRequests.Services.MedicationDecisionSupportService DecisionSupportService
 @inject IConfiguration Configuration
 @inject NavigationManager NavigationManager
 @using DMRS.Client.Features.Dashboard.Models
@@ -213,6 +214,29 @@ else
 
         <div class="col-12 col-xl-4">
             <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">@Loc["patients.cds.alertsTitle"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["patients.cds.alertsSubtitle"]</div>
+                    </div>
+                </div>
+                @if (isEvaluatingCds)
+                {
+                    <div class="dmrs-loading-shell">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                }
+                else if (patientCdsCards.Count > 0)
+                {
+                    <CdsCardList Cards="patientCdsCards" />
+                }
+                else
+                {
+                    <div class="dmrs-empty-state dmrs-empty-state--inline">@Loc["patients.cds.noAlerts"]</div>
+                }
+            </div>
+
+            <div class="dmrs-panel mt-4">
                 <div class="dmrs-panel__header">
                     <div>
                         <div class="dmrs-panel__title">@Loc["patients.cds.title"]</div>
@@ -484,6 +508,13 @@ else
     private int medicationCount;
     private int encounterCount;
 
+    // Live CDS cards for this patient's active medications (e.g. max-dose warnings).
+    private List<CdsCardModel> patientCdsCards = [];
+    private bool isEvaluatingCds;
+
+    private static readonly HashSet<string> ActiveMedicationStatuses =
+        new(StringComparer.OrdinalIgnoreCase) { "active", "on-hold" };
+
     // Documents
     private List<PatientDocumentModel> documents = [];
     private bool isLoadingDocuments;
@@ -572,6 +603,51 @@ else
         finally
         {
             isBusy = false;
+        }
+
+        // Evaluate CDS after the chart is on screen so the page doesn't block on the extra hook calls.
+        if (patient is not null && chart is not null)
+        {
+            await EvaluatePatientCdsAsync();
+        }
+    }
+
+    // Runs the medication-prescribe CDS hook for each of the patient's active medications and
+    // aggregates the resulting warning cards, so the patient page proactively surfaces live rule
+    // violations (e.g. a max-dose breach) instead of relying on the volatile dashboard alert feed.
+    private async Task EvaluatePatientCdsAsync()
+    {
+        var activeMeds = chart?.MedicationRequests
+            .Where(m => ActiveMedicationStatuses.Contains(m.SafeStatus()))
+            .ToList() ?? [];
+
+        if (activeMeds.Count == 0)
+        {
+            patientCdsCards = [];
+            return;
+        }
+
+        isEvaluatingCds = true;
+        StateHasChanged();
+
+        try
+        {
+            var results = await System.Threading.Tasks.Task.WhenAll(
+                activeMeds.Select(m => DecisionSupportService.EvaluateCardsAsync(m, Id)));
+
+            patientCdsCards = results
+                .SelectMany(cards => cards)
+                .GroupBy(c => (c.Summary, c.Detail))
+                .Select(g => g.First())
+                .ToList();
+        }
+        catch
+        {
+            // Non-fatal: the alerts panel simply stays empty.
+        }
+        finally
+        {
+            isEvaluatingCds = false;
         }
     }
 

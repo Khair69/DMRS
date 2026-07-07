@@ -434,6 +434,147 @@ code {
     padding: 0.8rem 0.9rem;
 }
 
+/* CDS decision-support alert cards (severity-aware) */
+.dmrs-cds-alerts {
+    display: grid;
+    gap: 0.7rem;
+}
+
+.dmrs-cds-alert {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.85rem 0.95rem;
+    border-radius: 0.95rem;
+    border: 1px solid transparent;
+    border-inline-start-width: 4px;
+}
+
+.dmrs-cds-alert__icon {
+    font-size: 1.15rem;
+    line-height: 1.4;
+}
+
+.dmrs-cds-alert__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.dmrs-cds-alert__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+}
+
+.dmrs-cds-alert__summary {
+    font-weight: 700;
+}
+
+.dmrs-cds-alert__badge {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.12rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.08);
+}
+
+.dmrs-cds-alert__detail {
+    margin: 0.3rem 0 0;
+    font-size: 0.92rem;
+}
+
+.dmrs-cds-alert__source {
+    margin-top: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--dmrs-muted);
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.dmrs-cds-alert--critical {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.5);
+    color: #7f1d1d;
+}
+
+.dmrs-cds-alert--warning {
+    background: rgba(217, 119, 6, 0.12);
+    border-color: rgba(217, 119, 6, 0.5);
+    color: #7c3a03;
+}
+
+.dmrs-cds-alert--info {
+    background: rgba(37, 99, 235, 0.1);
+    border-color: rgba(37, 99, 235, 0.45);
+    color: #1e3a8a;
+}
+
+/* Readable key/value detail list (e.g. medication request summary) */
+.dmrs-detail-list {
+    margin: 0;
+    display: grid;
+    gap: 0.1rem;
+}
+
+.dmrs-detail-list__row {
+    display: grid;
+    grid-template-columns: minmax(9rem, 34%) 1fr;
+    gap: 0.75rem;
+    padding: 0.6rem 0.1rem;
+    border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.dmrs-detail-list__row:first-child {
+    border-top: 0;
+}
+
+.dmrs-detail-list__row dt {
+    font-weight: 600;
+    color: var(--dmrs-muted);
+    margin: 0;
+}
+
+.dmrs-detail-list__row dd {
+    margin: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+/* Collapsible raw FHIR JSON — scrolls inside its own box so a long line never widens the page */
+.dmrs-raw-json {
+    margin-top: 1rem;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    padding-top: 0.75rem;
+}
+
+.dmrs-raw-json > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--dmrs-muted);
+}
+
+.dmrs-raw-json__scroll {
+    margin-top: 0.6rem;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.dmrs-raw-json__scroll pre {
+    margin: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 540px) {
+    .dmrs-detail-list__row {
+        grid-template-columns: 1fr;
+        gap: 0.15rem;
+    }
+}
+
 /* Patient-portal tabbed navigation */
 .dmrs-tabbar {
     display: flex;

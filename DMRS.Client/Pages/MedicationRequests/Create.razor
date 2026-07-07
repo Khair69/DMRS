@@ -88,13 +88,7 @@
                         <div class="dmrs-note-card__title">@Loc["medications.preview.cdsResult"]</div>
                         @if (snapshot.HookResponse?.Cards.Count > 0)
                         {
-                            @foreach (var card in snapshot.HookResponse.Cards)
-                            {
-                                <div class="dmrs-mini-row">
-                                    <div class="dmrs-mini-row__title">@card.Summary</div>
-                                    <div class="dmrs-mini-row__meta">@card.Detail</div>
-                                </div>
-                            }
+                            <CdsCardList Cards="snapshot.HookResponse.Cards" />
                         }
                         else
                         {

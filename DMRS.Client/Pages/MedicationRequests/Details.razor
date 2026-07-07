@@ -36,11 +36,77 @@ else if (request is not null)
             <div class="dmrs-panel">
                 <div class="dmrs-panel__header">
                     <div>
-                        <div class="dmrs-panel__title">@Loc["medications.payload.title"]</div>
-                        <div class="dmrs-panel__subtitle">@Loc["medications.payload.subtitle"]</div>
+                        <div class="dmrs-panel__title">@Loc["medications.summary.title"]</div>
+                        <div class="dmrs-panel__subtitle">@Loc["medications.summary.subtitle"]</div>
                     </div>
                 </div>
-                <FhirJsonView Resource="request" />
+
+                @{
+                    var summary = MedicationRequestEditModel.FromMedicationRequest(request);
+                }
+                <dl class="dmrs-detail-list">
+                    <div class="dmrs-detail-list__row">
+                        <dt>@Loc["medications.field.medication"]</dt>
+                        <dd>@DisplayMedicationName</dd>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(summary.MedicationRxCui))
+                    {
+                        <div class="dmrs-detail-list__row">
+                            <dt>@Loc["medications.field.rxcui"]</dt>
+                            <dd>@summary.MedicationRxCui</dd>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(summary.PatientId))
+                    {
+                        <div class="dmrs-detail-list__row">
+                            <dt>@Loc["medications.field.patient"]</dt>
+                            <dd><a href="@($"/patients/{summary.PatientId}")">@summary.PatientId</a></dd>
+                        </div>
+                    }
+                    <div class="dmrs-detail-list__row">
+                        <dt>@Loc["medications.field.status"]</dt>
+                        <dd><span class="dmrs-pill @StatusPillClass(summary.Status)">@summary.Status</span></dd>
+                    </div>
+                    <div class="dmrs-detail-list__row">
+                        <dt>@Loc["medications.field.intent"]</dt>
+                        <dd>@summary.Intent</dd>
+                    </div>
+                    @if (summary.DoseMg.HasValue)
+                    {
+                        <div class="dmrs-detail-list__row">
+                            <dt>@Loc["medications.field.dose"]</dt>
+                            <dd>@summary.DoseMg.Value.ToString("0.##") mg</dd>
+                        </div>
+                    }
+                    @if (summary.FrequencyPerDay.HasValue)
+                    {
+                        <div class="dmrs-detail-list__row">
+                            <dt>@Loc["medications.field.frequency"]</dt>
+                            <dd>@Loc["medications.field.frequencyValue", summary.FrequencyPerDay.Value]</dd>
+                        </div>
+                    }
+                    @if (summary.DoseMg.HasValue && summary.FrequencyPerDay.HasValue)
+                    {
+                        <div class="dmrs-detail-list__row">
+                            <dt>@Loc["medications.field.dailyDose"]</dt>
+                            <dd>@((summary.DoseMg.Value * summary.FrequencyPerDay.Value).ToString("0.##")) mg/day</dd>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(AuthoredOnDisplay))
+                    {
+                        <div class="dmrs-detail-list__row">
+                            <dt>@Loc["medications.field.authoredOn"]</dt>
+                            <dd>@AuthoredOnDisplay</dd>
+                        </div>
+                    }
+                </dl>
+
+                <details class="dmrs-raw-json">
+                    <summary>@Loc["medications.payload.rawToggle"]</summary>
+                    <div class="dmrs-raw-json__scroll">
+                        <FhirJsonView Resource="request" />
+                    </div>
+                </details>
             </div>
         </div>
 
@@ -87,13 +153,7 @@ else if (request is not null)
                             <div class="dmrs-note-card__title">@Loc["medications.cds.triggeredCards"]</div>
                             @if (snapshot.HookResponse?.Cards.Count > 0)
                             {
-                                @foreach (var card in snapshot.HookResponse.Cards)
-                                {
-                                    <div class="dmrs-mini-row">
-                                        <div class="dmrs-mini-row__title">@card.Summary</div>
-                                        <div class="dmrs-mini-row__meta">@card.Detail</div>
-                                    </div>
-                                }
+                                <CdsCardList Cards="snapshot.HookResponse.Cards" />
                             }
                             else
                             {
@@ -126,6 +186,19 @@ else if (request is not null)
             ?? request?.Medication?.Concept?.Coding.FirstOrDefault()?.Display
             ?? request?.Medication?.Concept?.Coding.FirstOrDefault()?.Code
             ?? "Medication Request";
+
+    private string? AuthoredOnDisplay
+        => DateTimeOffset.TryParse(request?.AuthoredOn, out var authored)
+            ? authored.ToLocalTime().ToString("dd MMM yyyy HH:mm")
+            : request?.AuthoredOn;
+
+    private static string StatusPillClass(string? status) => status?.Trim().ToLowerInvariant() switch
+    {
+        "active" => "dmrs-pill--success",
+        "on-hold" or "draft" => "dmrs-pill--warning",
+        "stopped" or "cancelled" or "entered-in-error" => "dmrs-pill--danger",
+        _ => "dmrs-pill--neutral"
+    };
 
     protected override async Task OnParametersSetAsync()
     {
