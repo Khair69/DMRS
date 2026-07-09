@@ -7,7 +7,13 @@ It combines standards-based clinical data management (HL7 FHIR R5) with a Clinic
 نظام شامل لإدارة السجلات الطبية الرقمية تم بناؤه باستخدام ASP.NET Core وBlazor، ويطبّق معايير
 HL7 FHIR R5 لضمان قابلية التشغيل البيني، مع محرّك دعم القرار السريري (CDS) ونماذج ذكاء اصطناعي
 للتنبؤ بالمخاطر.
+<div align="center">
+  
+![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet&logoColor=white)
+![Blazor](https://img.shields.io/badge/Blazor-WebAssembly-512BD4?logo=blazor&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
+</div>
 ## Overview
 
 DMRS is a modern, standards-based healthcare information system designed to manage patient medical
