@@ -6,19 +6,46 @@
 
 <PageTitle>@Loc["procedures.create.title"]</PageTitle>
 
-<h1>@Loc["procedures.create.title"]</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<ProcedureForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["procedures.create.submit"]" OnSave="Save" />
+<ResourceCreatePage Eyebrow="@Loc["procedures.workflow.eyebrow"]"
+                    Title="@Loc["procedures.create.title"]"
+                    Subtitle="@Loc["procedures.create.heroSubtitle"]"
+                    FormPanelTitle="@Loc["procedures.create.draftTitle"]"
+                    FormPanelSubtitle="@Loc["procedures.create.draftSubtitle"]"
+                    GuidePanelTitle="@Loc["procedures.guide.title"]"
+                    ErrorMessage="@errorMessage">
+    <ChildContent>
+        <ProcedureForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["procedures.create.submit"]" OnSave="Save" />
+    </ChildContent>
+    <Guide>
+        <div class="d-grid gap-3">
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">@Loc["procedures.guide.whatTitle"]</div>
+                <p class="mb-0">@Loc["procedures.guide.whatBody"]</p>
+            </div>
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">@Loc["procedures.guide.statusTitle"]</div>
+                <p class="mb-0">@Loc["procedures.guide.statusBody"]</p>
+            </div>
+        </div>
+    </Guide>
+</ResourceCreatePage>
 
 @code {
     private readonly DMRS.Client.Features.Procedures.Models.ProcedureEditModel model = new();
     private bool isSaving;
     private string? errorMessage;
+
+    // Prefill the patient when arriving from a patient's Quick Links (e.g. /procedures/new?patient={id}).
+    [SupplyParameterFromQuery(Name = "patient")]
+    private string? PatientId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(PatientId))
+        {
+            model.PatientId = PatientId;
+        }
+    }
 
     private async Task Save()
     {

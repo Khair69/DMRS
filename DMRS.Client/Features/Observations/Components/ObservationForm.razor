@@ -12,6 +12,7 @@
         <div class="col-md-8">
             <label class="form-label">@Loc["common.field.code"]</label>
             <InputText @bind-Value="Model.CodeText" class="form-control" />
+            <div class="form-text">@Loc["observations.form.codeHint"]</div>
             <ValidationMessage For="() => Model.CodeText" />
         </div>
         <div class="col-md-4">
@@ -32,6 +33,7 @@
         <div class="col-md-8">
             <label class="form-label">@Loc["common.field.value"]</label>
             <InputText @bind-Value="Model.ValueText" class="form-control" />
+            <div class="form-text">@Loc["observations.form.valueHint"]</div>
         </div>
     </div>
 

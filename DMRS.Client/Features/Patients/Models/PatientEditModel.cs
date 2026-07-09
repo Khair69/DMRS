@@ -26,7 +26,7 @@ public sealed class PatientEditModel
     public string? City { get; set; }
 
     [MaxLength(100)]
-    public string? IdentifierSystem { get; set; }
+    public string? IdentifierSystem { get; set; } = PatientIdentifierSystems.NationalId;
 
     [MaxLength(100)]
     public string? IdentifierValue { get; set; }

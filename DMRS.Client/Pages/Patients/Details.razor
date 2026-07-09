@@ -368,11 +368,17 @@ else
                     </div>
                     <div class="dmrs-note-card">
                         <div class="dmrs-note-card__title">@Loc["patients.cds.quickLinks"]</div>
-                        <div class="d-grid gap-2">
-                            <a class="btn btn-outline-primary" href="/medication-requests/new?patient=@Id">@Loc["patients.cds.newMedicationRequest"]</a>
-                            <a class="btn btn-outline-primary" href="/conditions/new?patient=@Id">@Loc["patients.cds.addCondition"]</a>
-                            <a class="btn btn-outline-primary" href="/ai-insights">@Loc["patients.cds.aiInsights"]</a>
+                        <div class="dmrs-quick-links">
+                            <a class="btn btn-sm btn-outline-primary" href="/encounters/new?patient=@Id">🏥 @Loc["patients.quickLinks.encounter"]</a>
+                            <a class="btn btn-sm btn-outline-primary" href="/medication-requests/new?patient=@Id">💊 @Loc["patients.quickLinks.medication"]</a>
+                            <a class="btn btn-sm btn-outline-primary" href="/conditions/new?patient=@Id">🩺 @Loc["patients.quickLinks.condition"]</a>
+                            <a class="btn btn-sm btn-outline-primary" href="/observations/new?patient=@Id">🧪 @Loc["patients.quickLinks.observation"]</a>
+                            <a class="btn btn-sm btn-outline-primary" href="/procedures/new?patient=@Id">🔬 @Loc["patients.quickLinks.procedure"]</a>
+                            <a class="btn btn-sm btn-outline-primary" href="/service-requests/new?patient=@Id">📋 @Loc["patients.quickLinks.serviceRequest"]</a>
+                            <a class="btn btn-sm btn-outline-primary" href="/appointments/new?patient=@Id">📅 @Loc["patients.quickLinks.appointment"]</a>
+                            <a class="btn btn-sm btn-outline-primary" href="/allergy-intolerances/new?patient=@Id">⚠️ @Loc["patients.quickLinks.allergy"]</a>
                         </div>
+                        <a class="btn btn-sm btn-primary w-100 mt-2 dmrs-quick-links__feature" href="/ai-insights">🧠 @Loc["patients.quickLinks.aiInsights"]</a>
                     </div>
                 </div>
             </div>

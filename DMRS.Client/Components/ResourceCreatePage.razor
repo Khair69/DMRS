@@ -1,0 +1,76 @@
+@inherits DMRS.Client.Components.LocalizedComponentBase
+
+@* Shared scaffold for every resource "new" page: a workspace hero, an optional error alert, and a
+   two-column body — the feature's form in a panel on the left and a contextual guidance panel on the
+   right. Pages supply only what differs: the localized hero/panel text, the form (ChildContent), and
+   the guidance note cards (Guide). Mirrors the design of the Medication Request create page. *@
+
+<div class="workspace-hero workspace-hero--patient">
+    <div>
+        <span class="workspace-eyebrow">@Eyebrow</span>
+        <h1>@Title</h1>
+        <p>@Subtitle</p>
+    </div>
+    @if (HeroActions is not null)
+    {
+        <div class="workspace-hero__actions">
+            @HeroActions
+        </div>
+    }
+</div>
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+<div class="row g-4">
+    <div class="col-12 col-xl-7">
+        <div class="dmrs-panel">
+            <div class="dmrs-panel__header">
+                <div>
+                    <div class="dmrs-panel__title">@FormPanelTitle</div>
+                    @if (!string.IsNullOrWhiteSpace(FormPanelSubtitle))
+                    {
+                        <div class="dmrs-panel__subtitle">@FormPanelSubtitle</div>
+                    }
+                </div>
+            </div>
+
+            @ChildContent
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-5">
+        <div class="dmrs-panel">
+            <div class="dmrs-panel__header">
+                <div>
+                    <div class="dmrs-panel__title">@GuidePanelTitle</div>
+                </div>
+            </div>
+
+            @Guide
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Eyebrow { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+
+    [Parameter, EditorRequired] public string FormPanelTitle { get; set; } = string.Empty;
+    [Parameter] public string? FormPanelSubtitle { get; set; }
+    [Parameter, EditorRequired] public string GuidePanelTitle { get; set; } = string.Empty;
+
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    // The feature's form (e.g. <EncounterForm ... />).
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = default!;
+
+    // The contextual guidance note cards shown in the right panel.
+    [Parameter, EditorRequired] public RenderFragment Guide { get; set; } = default!;
+
+    // Optional hero buttons (e.g. a preview action).
+    [Parameter] public RenderFragment? HeroActions { get; set; }
+}

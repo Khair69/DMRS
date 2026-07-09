@@ -43,7 +43,10 @@
         </div>
         <div class="col-md-4">
             <label class="form-label">@Loc["common.field.identifierSystem"]</label>
-            <InputText @bind-Value="Model.IdentifierSystem" class="form-control" />
+            <InputSelect @bind-Value="Model.IdentifierSystem" class="form-select">
+                <option value="@PatientIdentifierSystems.NationalId">@Loc["patients.form.identifierSystem.nationalId"]</option>
+                <option value="@PatientIdentifierSystems.Passport">@Loc["patients.form.identifierSystem.passport"]</option>
+            </InputSelect>
         </div>
         <div class="col-md-6">
             <label class="form-label">@Loc["common.field.identifierValue"]</label>

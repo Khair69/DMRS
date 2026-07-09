@@ -25,6 +25,7 @@
         <div class="col-md-4">
             <label class="form-label">@Loc["common.field.classCode"]</label>
             <InputText @bind-Value="Model.ClassCode" class="form-control" />
+            <div class="form-text">@Loc["encounters.form.classCodeHint"]</div>
             <ValidationMessage For="() => Model.ClassCode" />
         </div>
         <div class="col-md-4">

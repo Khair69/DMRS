@@ -6,19 +6,46 @@
 
 <PageTitle>@Loc["serviceRequests.create.title"]</PageTitle>
 
-<h1>@Loc["serviceRequests.create.title"]</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<ServiceRequestForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["serviceRequests.create.submit"]" OnSave="Save" />
+<ResourceCreatePage Eyebrow="@Loc["serviceRequests.workflow.eyebrow"]"
+                    Title="@Loc["serviceRequests.create.title"]"
+                    Subtitle="@Loc["serviceRequests.create.heroSubtitle"]"
+                    FormPanelTitle="@Loc["serviceRequests.create.draftTitle"]"
+                    FormPanelSubtitle="@Loc["serviceRequests.create.draftSubtitle"]"
+                    GuidePanelTitle="@Loc["serviceRequests.guide.title"]"
+                    ErrorMessage="@errorMessage">
+    <ChildContent>
+        <ServiceRequestForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["serviceRequests.create.submit"]" OnSave="Save" />
+    </ChildContent>
+    <Guide>
+        <div class="d-grid gap-3">
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">@Loc["serviceRequests.guide.whatTitle"]</div>
+                <p class="mb-0">@Loc["serviceRequests.guide.whatBody"]</p>
+            </div>
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">@Loc["serviceRequests.guide.statusTitle"]</div>
+                <p class="mb-0">@Loc["serviceRequests.guide.statusBody"]</p>
+            </div>
+        </div>
+    </Guide>
+</ResourceCreatePage>
 
 @code {
     private readonly DMRS.Client.Features.ServiceRequests.Models.ServiceRequestEditModel model = new();
     private bool isSaving;
     private string? errorMessage;
+
+    // Prefill the patient when arriving from a patient's Quick Links (e.g. /service-requests/new?patient={id}).
+    [SupplyParameterFromQuery(Name = "patient")]
+    private string? PatientId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(PatientId))
+        {
+            model.PatientId = PatientId;
+        }
+    }
 
     private async Task Save()
     {

@@ -14,4 +14,7 @@ public static class PatientIdentifierSystems
 
     /// <summary>Syrian national number (11 digits). Seeded by <c>seed-patient-identifiers.sql</c>.</summary>
     public const string NationalId = "https://dmrs.health.sy/fhir/national-id";
+
+    /// <summary>Passport number, for patients identified by passport rather than national number.</summary>
+    public const string Passport = "https://dmrs.health.sy/fhir/passport";
 }

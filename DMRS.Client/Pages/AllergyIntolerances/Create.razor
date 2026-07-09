@@ -6,19 +6,46 @@
 
 <PageTitle>@Loc["allergies.create.title"]</PageTitle>
 
-<h1>@Loc["allergies.create.title"]</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<AllergyIntoleranceForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["allergies.create.submit"]" OnSave="Save" />
+<ResourceCreatePage Eyebrow="@Loc["allergies.workflow.eyebrow"]"
+                    Title="@Loc["allergies.create.title"]"
+                    Subtitle="@Loc["allergies.create.heroSubtitle"]"
+                    FormPanelTitle="@Loc["allergies.create.draftTitle"]"
+                    FormPanelSubtitle="@Loc["allergies.create.draftSubtitle"]"
+                    GuidePanelTitle="@Loc["allergies.guide.title"]"
+                    ErrorMessage="@errorMessage">
+    <ChildContent>
+        <AllergyIntoleranceForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["allergies.create.submit"]" OnSave="Save" />
+    </ChildContent>
+    <Guide>
+        <div class="d-grid gap-3">
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">@Loc["allergies.guide.whatTitle"]</div>
+                <p class="mb-0">@Loc["allergies.guide.whatBody"]</p>
+            </div>
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">@Loc["allergies.guide.statusTitle"]</div>
+                <p class="mb-0">@Loc["allergies.guide.statusBody"]</p>
+            </div>
+        </div>
+    </Guide>
+</ResourceCreatePage>
 
 @code {
     private readonly DMRS.Client.Features.AllergyIntolerances.Models.AllergyIntoleranceEditModel model = new();
     private bool isSaving;
     private string? errorMessage;
+
+    // Prefill the patient when arriving from a patient's Quick Links (e.g. /allergy-intolerances/new?patient={id}).
+    [SupplyParameterFromQuery(Name = "patient")]
+    private string? PatientId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(PatientId))
+        {
+            model.PatientId = PatientId;
+        }
+    }
 
     private async Task Save()
     {

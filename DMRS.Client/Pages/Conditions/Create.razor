@@ -6,14 +6,29 @@
 
 <PageTitle>@Loc["conditions.create.title"]</PageTitle>
 
-<h1>@Loc["conditions.create.title"]</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<ConditionForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["conditions.create.submit"]" OnSave="Save" />
+<ResourceCreatePage Eyebrow="@Loc["conditions.workflow.eyebrow"]"
+                    Title="@Loc["conditions.create.title"]"
+                    Subtitle="@Loc["conditions.create.heroSubtitle"]"
+                    FormPanelTitle="@Loc["conditions.create.draftTitle"]"
+                    FormPanelSubtitle="@Loc["conditions.create.draftSubtitle"]"
+                    GuidePanelTitle="@Loc["conditions.guide.title"]"
+                    ErrorMessage="@errorMessage">
+    <ChildContent>
+        <ConditionForm Model="model" IsBusy="@isSaving" SubmitText="@Loc["conditions.create.submit"]" OnSave="Save" />
+    </ChildContent>
+    <Guide>
+        <div class="d-grid gap-3">
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">@Loc["conditions.guide.whatTitle"]</div>
+                <p class="mb-0">@Loc["conditions.guide.whatBody"]</p>
+            </div>
+            <div class="dmrs-note-card">
+                <div class="dmrs-note-card__title">@Loc["conditions.guide.statusTitle"]</div>
+                <p class="mb-0">@Loc["conditions.guide.statusBody"]</p>
+            </div>
+        </div>
+    </Guide>
+</ResourceCreatePage>
 
 @code {
     private readonly DMRS.Client.Features.Conditions.Models.ConditionEditModel model = new();

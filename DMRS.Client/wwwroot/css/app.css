@@ -392,6 +392,36 @@ code {
     margin-bottom: 0.45rem;
 }
 
+/* Compact two-column grid of patient quick-action buttons (Patient details sidebar). */
+.dmrs-quick-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.dmrs-quick-links .btn,
+.dmrs-quick-links__feature {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    text-align: start;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.42rem 0.6rem;
+    border-radius: 0.75rem;
+}
+
+.dmrs-quick-links__feature {
+    justify-content: center;
+}
+
+.dmrs-quick-links .btn:hover,
+.dmrs-quick-links__feature:hover {
+    transform: translateY(-1px);
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
 .dmrs-mini-row {
     display: block;
     padding: 0.72rem 0;
