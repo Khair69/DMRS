@@ -30,6 +30,15 @@ namespace DMRS.Api.Application.ExternalAi.Services
             return models.Select(ExternalAiModelDto.FromEntity).ToList();
         }
 
+        public async Task<IReadOnlyList<ExternalAiModelSummaryDto>> ListActiveSummariesAsync(CancellationToken cancellationToken)
+        {
+            var models = await _repository.ListAsync(cancellationToken);
+            return models
+                .Where(m => m.IsActive)
+                .Select(ExternalAiModelSummaryDto.FromEntity)
+                .ToList();
+        }
+
         public async Task<ExternalAiModelDto?> GetAsync(Guid id, CancellationToken cancellationToken)
         {
             var model = await _repository.GetByIdAsync(id, cancellationToken);

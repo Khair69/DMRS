@@ -6,6 +6,12 @@ namespace DMRS.Api.Application.ExternalAi.Interfaces
     {
         Task<IReadOnlyList<ExternalAiModelDto>> ListAsync(CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Active models only, reduced to the fields a clinician needs to pick one to run. Safe to
+        /// expose to any authorized clinical caller (no endpoint/auth/audit details).
+        /// </summary>
+        Task<IReadOnlyList<ExternalAiModelSummaryDto>> ListActiveSummariesAsync(CancellationToken cancellationToken);
+
         Task<ExternalAiModelDto?> GetAsync(Guid id, CancellationToken cancellationToken);
 
         Task<ExternalAiModelDto> CreateAsync(ExternalAiModelInput input, string? userName, CancellationToken cancellationToken);

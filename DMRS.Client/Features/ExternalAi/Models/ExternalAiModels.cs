@@ -29,6 +29,17 @@ public sealed class ExternalAiModelDto
     public DateTimeOffset UpdatedAt { get; set; }
 }
 
+/// <summary>
+/// Picker-safe view of an active model, returned by the clinician-facing list endpoint. Only the
+/// fields the "run against this patient" selector needs — no endpoint URL or auth details.
+/// </summary>
+public sealed class ExternalAiModelSummary
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+}
+
 /// <summary>Create/update payload. A null/blank <see cref="Secret"/> on update keeps the stored one.</summary>
 public sealed class ExternalAiModelInput
 {

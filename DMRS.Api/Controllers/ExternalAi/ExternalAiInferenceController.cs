@@ -16,17 +16,32 @@ namespace DMRS.Api.Controllers.ExternalAi
     public sealed class ExternalAiInferenceController : ControllerBase
     {
         private readonly IExternalAiInferenceService _inferenceService;
+        private readonly IExternalAiModelManagementService _management;
         private readonly ISmartAuthorizationService _authorizationService;
         private readonly ILogger<ExternalAiInferenceController> _logger;
 
         public ExternalAiInferenceController(
             IExternalAiInferenceService inferenceService,
+            IExternalAiModelManagementService management,
             ISmartAuthorizationService authorizationService,
             ILogger<ExternalAiInferenceController> logger)
         {
             _inferenceService = inferenceService;
+            _management = management;
             _authorizationService = authorizationService;
             _logger = logger;
+        }
+
+        /// <summary>
+        /// Lists the active models a clinician may run, with only picker-safe fields. Unlike the admin
+        /// registry endpoint, this is open to any authorized clinical caller so the patient page can
+        /// populate its "run a model" selector.
+        /// </summary>
+        [HttpGet("models")]
+        public async Task<IActionResult> ListActive(CancellationToken cancellationToken)
+        {
+            var models = await _management.ListActiveSummariesAsync(cancellationToken);
+            return Ok(models);
         }
 
         [HttpPost("{modelId:guid}/{patientId}")]

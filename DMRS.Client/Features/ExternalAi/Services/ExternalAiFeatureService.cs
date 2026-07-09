@@ -33,9 +33,12 @@ public sealed class ExternalAiFeatureService
     public Task DeleteModelAsync(Guid id)
         => _api.DeleteApiAsync($"{ModelsPath}/{id}");
 
-    /// <summary>Returns only the active models — used to populate the "run" picker.</summary>
-    public async Task<IReadOnlyList<ExternalAiModelDto>> ListActiveModelsAsync()
-        => (await ListModelsAsync()).Where(m => m.IsActive).ToList();
+    /// <summary>
+    /// Returns picker-safe summaries of the active models. Hits the clinician-accessible inference
+    /// endpoint (not the admin-only registry), so doctors can populate the "run" picker.
+    /// </summary>
+    public async Task<IReadOnlyList<ExternalAiModelSummary>> ListActiveModelsAsync()
+        => await _api.GetApiJsonAsync<List<ExternalAiModelSummary>>("external-ai/infer/models") ?? [];
 
     public Task<ExternalAiInferenceResult?> RunAsync(Guid modelId, string patientId)
         => _api.PostApiJsonAsync<object?, ExternalAiInferenceResult>($"external-ai/infer/{modelId}/{patientId}", null);
