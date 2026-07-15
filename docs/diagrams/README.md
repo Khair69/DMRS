@@ -27,6 +27,9 @@ for f in *.dot; do dot -Tpng "$f" -o "${f%.dot}.png"; dot -Tsvg "$f" -o "${f%.do
 | `usecase-patient.dot` | Use cases — المريض / Patient | الشكل 3-4 |
 | `usecase-visitor.dot` | Use cases — الزائر / Visitor | الشكل 3-5 |
 | `usecase-overview.dot` | System-wide overview (all actors + capability groups) | (bonus) |
+| `seq-cds-hook.dot` | Sequence — CDS Hook decision-support evaluation / تقييم دعم القرار | مخطّطات التسلسل |
+| `seq-risk-inference.dot` | Sequence — AI risk-model (ONNX) inference / استدلال نماذج المخاطر | مخطّطات التسلسل |
+| `seq-invite-claim.dot` | Sequence — patient invite & claim onboarding / الدعوة والربط | مخطّطات التسلسل |
 
 ## Verification basis (so the info is exact)
 
@@ -51,3 +54,17 @@ Blazor page in `DMRS.Client/Pages/**`. Key points that the diagrams reflect exac
 - External-AI Admin is `ROLE_SYSTEM_ADMIN, ROLE_ORG_ADMIN`.
 - Organizations Index/Create/Edit/History are System-Admin only; `Organizations/Details` adds Org Admin.
 - Actor generalization: **System Admin ▷ Org Admin ▷ Practitioner** (clinical pages permit the admins).
+
+**Sequence diagrams** — each step is taken from the runtime call path in the code:
+- `seq-cds-hook` — `DMRS.Client/Features/MedicationRequests/Services/MedicationDecisionSupportService.cs`
+  → `Controllers/ClinicalDecisionSupport/CdsHooksController.cs` → `CdsHookService` (rule repo +
+  `CdsContextBuilder` over FHIR/MedicineInfo/AI risk) → `IRuleEngine` (JSON-Logic) → cards +
+  `CdsAlertFeed.Enqueue`.
+- `seq-risk-inference` — `Controllers/ClinicalDecisionSupport/CdsRiskInsightsController.cs`
+  → `SmartAuthorizationService.ResolveViewPatientIdsAsync` (batch scope) → a `*RiskService`
+  (`HighUtilization`/`Diabetes`/`Cardiovascular`) → `OnnxModelPool.GetOrLoad` (session cached once)
+  → FHIR feature fetch → `InferenceSession.Run` → threshold → `RiskAssessment`.
+- `seq-invite-claim` — `Controllers/Security/PatientInviteController.cs` (writes the invite-code
+  `Identifier` + builds the Keycloak registration URL) then, after Keycloak registration + redirect to
+  `Pages/Patients/Claim.razor`, `Controllers/Security/PatientClaimController.cs` links the account and
+  assigns `ROLE_PATIENT`.

@@ -1,0 +1,73 @@
+// AUTO-GENERATED sequence diagram — verified against source (see README).
+// CdsHooksController -> CdsHookService -> RuleEngine (JSON-Logic) over a FHIR/Medicine/AI context.
+// Render: dot -Tpng seq-cds-hook.dot -o seq-cds-hook.png  &&  dot -Tsvg seq-cds-hook.dot -o seq-cds-hook.svg
+digraph SEQ {
+  rankdir=TB;
+  graph [fontname="Arial", fontsize=14, labelloc="t", label="تسلسل تقييم دعم القرار (CDS Hook) — CDS Hook Evaluation",
+         pad=0.35, nodesep=1.5, ranksep=0.62, splines=line, forcelabels=true];
+  edge [fontname="Arial", fontsize=9];
+  node [fontname="Arial", fontsize=10];
+
+  // participants
+  { rank=same;
+    H_cli [shape=box, style="rounded,filled", fillcolor="#E8F1F8", color="#1F6FB2",
+          fontcolor="black", margin="0.14,0.08", label="العميل (Blazor)\nMedicationDecisionSupport"];
+    H_ctl [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#1F6FB2",
+          fontcolor="black", margin="0.14,0.08", label="CdsHooksController\n/cds-services/{id}"];
+    H_svc [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#1F6FB2",
+          fontcolor="black", margin="0.14,0.08", label="CdsHookService"];
+    H_rul [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#1F6FB2",
+          fontcolor="black", margin="0.14,0.08", label="IRuleDefinitionRepository\n(القواعد المنشورة)"];
+    H_ctx [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#1F6FB2",
+          fontcolor="black", margin="0.14,0.08", label="CdsContextBuilder"];
+    H_dat [shape=box, style="rounded,filled", fillcolor="#E3F2E9", color="#2E8B57",
+          fontcolor="black", margin="0.14,0.08", label="FHIR + معرفة الأدوية\n+ مخاطر AI"];
+    H_eng [shape=box, style="rounded,filled", fillcolor="#EFE8F8", color="#8E44AD",
+          fontcolor="black", margin="0.14,0.08", label="RuleEngine\n(JSON-Logic)"];
+  }
+  H_cli -> H_ctl -> H_svc -> H_rul -> H_ctx -> H_dat -> H_eng [style=invis, weight=50];
+
+  // lifeline nodes (invisible points)
+  node [shape=point, width=0.012, color="#B9C4CC"];
+  { rank=same; cli_1 ctl_1 svc_1 rul_1 ctx_1 dat_1 eng_1 }
+  { rank=same; cli_2 ctl_2 svc_2 rul_2 ctx_2 dat_2 eng_2 }
+  { rank=same; cli_3 ctl_3 svc_3 rul_3 ctx_3 dat_3 eng_3 }
+  { rank=same; cli_4 ctl_4 svc_4 rul_4 ctx_4 dat_4 eng_4 }
+  { rank=same; cli_5 ctl_5 svc_5 rul_5 ctx_5 dat_5 eng_5 }
+  { rank=same; cli_6 ctl_6 svc_6 rul_6 ctx_6 dat_6 eng_6 }
+  { rank=same; cli_7 ctl_7 svc_7 rul_7 ctx_7 dat_7 eng_7 }
+  { rank=same; cli_8 ctl_8 svc_8 rul_8 ctx_8 dat_8 eng_8 }
+  { rank=same; cli_9 ctl_9 svc_9 rul_9 ctx_9 dat_9 eng_9 }
+  { rank=same; cli_10 ctl_10 svc_10 rul_10 ctx_10 dat_10 eng_10 }
+  { rank=same; cli_11 ctl_11 svc_11 rul_11 ctx_11 dat_11 eng_11 }
+  { rank=same; cli_12 ctl_12 svc_12 rul_12 ctx_12 dat_12 eng_12 }
+  { rank=same; cli_13 ctl_13 svc_13 rul_13 ctx_13 dat_13 eng_13 }
+  { rank=same; cli_14 ctl_14 svc_14 rul_14 ctx_14 dat_14 eng_14 }
+  { rank=same; cli_15 ctl_15 svc_15 rul_15 ctx_15 dat_15 eng_15 }
+
+  // lifelines
+  H_cli -> cli_1 -> cli_2 -> cli_3 -> cli_4 -> cli_5 -> cli_6 -> cli_7 -> cli_8 -> cli_9 -> cli_10 -> cli_11 -> cli_12 -> cli_13 -> cli_14 -> cli_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_ctl -> ctl_1 -> ctl_2 -> ctl_3 -> ctl_4 -> ctl_5 -> ctl_6 -> ctl_7 -> ctl_8 -> ctl_9 -> ctl_10 -> ctl_11 -> ctl_12 -> ctl_13 -> ctl_14 -> ctl_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_svc -> svc_1 -> svc_2 -> svc_3 -> svc_4 -> svc_5 -> svc_6 -> svc_7 -> svc_8 -> svc_9 -> svc_10 -> svc_11 -> svc_12 -> svc_13 -> svc_14 -> svc_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_rul -> rul_1 -> rul_2 -> rul_3 -> rul_4 -> rul_5 -> rul_6 -> rul_7 -> rul_8 -> rul_9 -> rul_10 -> rul_11 -> rul_12 -> rul_13 -> rul_14 -> rul_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_ctx -> ctx_1 -> ctx_2 -> ctx_3 -> ctx_4 -> ctx_5 -> ctx_6 -> ctx_7 -> ctx_8 -> ctx_9 -> ctx_10 -> ctx_11 -> ctx_12 -> ctx_13 -> ctx_14 -> ctx_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_dat -> dat_1 -> dat_2 -> dat_3 -> dat_4 -> dat_5 -> dat_6 -> dat_7 -> dat_8 -> dat_9 -> dat_10 -> dat_11 -> dat_12 -> dat_13 -> dat_14 -> dat_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_eng -> eng_1 -> eng_2 -> eng_3 -> eng_4 -> eng_5 -> eng_6 -> eng_7 -> eng_8 -> eng_9 -> eng_10 -> eng_11 -> eng_12 -> eng_13 -> eng_14 -> eng_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+
+  // messages
+  cli_1 -> ctl_1 [xlabel="1) POST medication-prescribe\n{patientId, medicationRequest}", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
+  ctl_2 -> svc_2 [xlabel="2) EvaluateAsync(hook, request)", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
+  svc_3 -> rul_3 [xlabel="3) GetActiveByHookAsync(hookId)", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
+  rul_4 -> svc_4 [xlabel="4) القواعد النشطة المنشورة", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
+  svc_5 -> ctx_5 [xlabel="5) BuildAsync(request)", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
+  ctx_6 -> dat_6 [xlabel="6) المريض/الحالات/الحساسية/الأدوية", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
+  ctx_7 -> dat_7 [xlabel="7) معرفة الدواء + تقييم مخاطر AI", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
+  dat_8 -> ctx_8 [xlabel="8) بيانات السياق", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
+  ctx_9 -> svc_9 [xlabel="9) CdsContext", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
+  svc_10 -> eng_10 [xlabel="10) EvaluateAsync(context, rules)", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
+  eng_11 -> svc_11 [xlabel="11) البطاقات (Cards)", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
+  svc_12 -> ctl_12 [xlabel="12) CdsHookResponse(cards)", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
+  ctl_13 -> ctl_13 [label="13) إن وُجدت بطاقات: AlertFeed.Enqueue", constraint=false, color="#7A6BAA", fontcolor="#5B4C8A"];
+  ctl_14 -> cli_14 [xlabel="14) 200 OK { cards }", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
+  cli_15 -> cli_15 [label="15) عرض بطاقات التحذير للطبيب", constraint=false, color="#7A6BAA", fontcolor="#5B4C8A"];
+}
