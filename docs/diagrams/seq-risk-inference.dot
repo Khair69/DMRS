@@ -1,73 +1,73 @@
 // AUTO-GENERATED sequence diagram — verified against source (see README).
 // CdsRiskInsightsController -> RiskService -> OnnxModelPool/InferenceSession; features are FHIR-derived.
-// Render: dot -Tpng seq-risk-inference.dot -o seq-risk-inference.png  &&  dot -Tsvg seq-risk-inference.dot -o seq-risk-inference.svg
+// SIZED FOR PRINT: placed ~6.27in wide in كتاب المشروع (A4 portrait).
+// Natural width ~9in => ~9-10pt message text on the page. If you edit this file,
+// keep the header labels SHORT and the column count at 5 — the header boxes set
+// the width, and every extra inch of width shrinks the text on the page.
+// Render: dot -Tsvg seq-risk-inference.dot -o seq-risk-inference.svg  &&  dot -Gdpi=200 -Tpng seq-risk-inference.dot -o seq-risk-inference.png
 digraph SEQ {
   rankdir=TB;
-  graph [fontname="Arial", fontsize=14, labelloc="t", label="تسلسل استدلال نماذج المخاطر — AI Risk-Model Inference",
-         pad=0.35, nodesep=1.5, ranksep=0.62, splines=line, forcelabels=true];
-  edge [fontname="Arial", fontsize=9];
+  graph [fontname="Arial", fontsize=16, labelloc="t", label="تسلسل استدلال نماذج المخاطر\nAI Risk-Model Inference",
+         pad=0.3, nodesep=0.40, ranksep=0.58, splines=line, forcelabels=false];
+  edge [fontname="Arial", fontsize=14];
   node [fontname="Arial", fontsize=10];
 
-  // participants
+  // participants — short labels keep the diagram narrow (see header note)
   { rank=same;
     H_cli [shape=box, style="rounded,filled", fillcolor="#E8F1F8", color="#1F6FB2",
-          fontcolor="black", margin="0.14,0.08", label="العميل\nمخطّط المريض / لوحة المخاطر"];
+          fontcolor="black", margin="0.09,0.06", label="العميل\nمخطّط المريض\nلوحة المخاطر"];
     H_ctl [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#1F6FB2",
-          fontcolor="black", margin="0.14,0.08", label="CdsRiskInsightsController\n/cds/risk/..."];
-    H_auth [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#1F6FB2",
-          fontcolor="black", margin="0.14,0.08", label="SmartAuthorizationService\n(نطاق المرضى)"];
+          fontcolor="black", margin="0.09,0.06", label="CdsRisk\nInsights\nController"];
     H_svc [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#1F6FB2",
-          fontcolor="black", margin="0.14,0.08", label="RiskService\n(Readmission/Diabetes/CV)"];
+          fontcolor="black", margin="0.09,0.06", label="RiskService\nReadmission\nDiabetes / CV"];
     H_fhir [shape=box, style="rounded,filled", fillcolor="#E3F2E9", color="#2E8B57",
-          fontcolor="black", margin="0.14,0.08", label="FhirRepository\n(بيانات FHIR)"];
-    H_pool [shape=box, style="rounded,filled", fillcolor="#EFE8F8", color="#8E44AD",
-          fontcolor="black", margin="0.14,0.08", label="OnnxModelPool"];
+          fontcolor="black", margin="0.09,0.06", label="Fhir\nRepository\n(بيانات FHIR)"];
     H_onnx [shape=box, style="rounded,filled", fillcolor="#EFE8F8", color="#8E44AD",
-          fontcolor="black", margin="0.14,0.08", label="InferenceSession\n(نموذج ONNX)"];
+          fontcolor="black", margin="0.09,0.06", label="نموذج ONNX\nModelPool\n+ Session"];
   }
-  H_cli -> H_ctl -> H_auth -> H_svc -> H_fhir -> H_pool -> H_onnx [style=invis, weight=50];
+  H_cli -> H_ctl -> H_svc -> H_fhir -> H_onnx [style=invis, weight=50];
 
   // lifeline nodes (invisible points)
   node [shape=point, width=0.012, color="#B9C4CC"];
-  { rank=same; cli_1 ctl_1 auth_1 svc_1 fhir_1 pool_1 onnx_1 }
-  { rank=same; cli_2 ctl_2 auth_2 svc_2 fhir_2 pool_2 onnx_2 }
-  { rank=same; cli_3 ctl_3 auth_3 svc_3 fhir_3 pool_3 onnx_3 }
-  { rank=same; cli_4 ctl_4 auth_4 svc_4 fhir_4 pool_4 onnx_4 }
-  { rank=same; cli_5 ctl_5 auth_5 svc_5 fhir_5 pool_5 onnx_5 }
-  { rank=same; cli_6 ctl_6 auth_6 svc_6 fhir_6 pool_6 onnx_6 }
-  { rank=same; cli_7 ctl_7 auth_7 svc_7 fhir_7 pool_7 onnx_7 }
-  { rank=same; cli_8 ctl_8 auth_8 svc_8 fhir_8 pool_8 onnx_8 }
-  { rank=same; cli_9 ctl_9 auth_9 svc_9 fhir_9 pool_9 onnx_9 }
-  { rank=same; cli_10 ctl_10 auth_10 svc_10 fhir_10 pool_10 onnx_10 }
-  { rank=same; cli_11 ctl_11 auth_11 svc_11 fhir_11 pool_11 onnx_11 }
-  { rank=same; cli_12 ctl_12 auth_12 svc_12 fhir_12 pool_12 onnx_12 }
-  { rank=same; cli_13 ctl_13 auth_13 svc_13 fhir_13 pool_13 onnx_13 }
-  { rank=same; cli_14 ctl_14 auth_14 svc_14 fhir_14 pool_14 onnx_14 }
-  { rank=same; cli_15 ctl_15 auth_15 svc_15 fhir_15 pool_15 onnx_15 }
+  { rank=same; cli_1 ctl_1 svc_1 fhir_1 onnx_1 }
+  { rank=same; cli_2 ctl_2 svc_2 fhir_2 onnx_2 }
+  { rank=same; cli_3 ctl_3 svc_3 fhir_3 onnx_3 }
+  { rank=same; cli_4 ctl_4 svc_4 fhir_4 onnx_4 }
+  { rank=same; cli_5 ctl_5 svc_5 fhir_5 onnx_5 }
+  { rank=same; cli_6 ctl_6 svc_6 fhir_6 onnx_6 }
+  { rank=same; cli_7 ctl_7 svc_7 fhir_7 onnx_7 }
+  { rank=same; cli_8 ctl_8 svc_8 fhir_8 onnx_8 }
+  { rank=same; cli_9 ctl_9 svc_9 fhir_9 onnx_9 }
+  { rank=same; cli_10 ctl_10 svc_10 fhir_10 onnx_10 }
+  { rank=same; cli_11 ctl_11 svc_11 fhir_11 onnx_11 }
+  { rank=same; cli_12 ctl_12 svc_12 fhir_12 onnx_12 }
+  { rank=same; cli_13 ctl_13 svc_13 fhir_13 onnx_13 }
+  { rank=same; cli_14 ctl_14 svc_14 fhir_14 onnx_14 }
+  { rank=same; cli_15 ctl_15 svc_15 fhir_15 onnx_15 }
+  { rank=same; cli_16 ctl_16 svc_16 fhir_16 onnx_16 }
 
   // lifelines
-  H_cli -> cli_1 -> cli_2 -> cli_3 -> cli_4 -> cli_5 -> cli_6 -> cli_7 -> cli_8 -> cli_9 -> cli_10 -> cli_11 -> cli_12 -> cli_13 -> cli_14 -> cli_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
-  H_ctl -> ctl_1 -> ctl_2 -> ctl_3 -> ctl_4 -> ctl_5 -> ctl_6 -> ctl_7 -> ctl_8 -> ctl_9 -> ctl_10 -> ctl_11 -> ctl_12 -> ctl_13 -> ctl_14 -> ctl_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
-  H_auth -> auth_1 -> auth_2 -> auth_3 -> auth_4 -> auth_5 -> auth_6 -> auth_7 -> auth_8 -> auth_9 -> auth_10 -> auth_11 -> auth_12 -> auth_13 -> auth_14 -> auth_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
-  H_svc -> svc_1 -> svc_2 -> svc_3 -> svc_4 -> svc_5 -> svc_6 -> svc_7 -> svc_8 -> svc_9 -> svc_10 -> svc_11 -> svc_12 -> svc_13 -> svc_14 -> svc_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
-  H_fhir -> fhir_1 -> fhir_2 -> fhir_3 -> fhir_4 -> fhir_5 -> fhir_6 -> fhir_7 -> fhir_8 -> fhir_9 -> fhir_10 -> fhir_11 -> fhir_12 -> fhir_13 -> fhir_14 -> fhir_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
-  H_pool -> pool_1 -> pool_2 -> pool_3 -> pool_4 -> pool_5 -> pool_6 -> pool_7 -> pool_8 -> pool_9 -> pool_10 -> pool_11 -> pool_12 -> pool_13 -> pool_14 -> pool_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
-  H_onnx -> onnx_1 -> onnx_2 -> onnx_3 -> onnx_4 -> onnx_5 -> onnx_6 -> onnx_7 -> onnx_8 -> onnx_9 -> onnx_10 -> onnx_11 -> onnx_12 -> onnx_13 -> onnx_14 -> onnx_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_cli -> cli_1 -> cli_2 -> cli_3 -> cli_4 -> cli_5 -> cli_6 -> cli_7 -> cli_8 -> cli_9 -> cli_10 -> cli_11 -> cli_12 -> cli_13 -> cli_14 -> cli_15 -> cli_16 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_ctl -> ctl_1 -> ctl_2 -> ctl_3 -> ctl_4 -> ctl_5 -> ctl_6 -> ctl_7 -> ctl_8 -> ctl_9 -> ctl_10 -> ctl_11 -> ctl_12 -> ctl_13 -> ctl_14 -> ctl_15 -> ctl_16 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_svc -> svc_1 -> svc_2 -> svc_3 -> svc_4 -> svc_5 -> svc_6 -> svc_7 -> svc_8 -> svc_9 -> svc_10 -> svc_11 -> svc_12 -> svc_13 -> svc_14 -> svc_15 -> svc_16 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_fhir -> fhir_1 -> fhir_2 -> fhir_3 -> fhir_4 -> fhir_5 -> fhir_6 -> fhir_7 -> fhir_8 -> fhir_9 -> fhir_10 -> fhir_11 -> fhir_12 -> fhir_13 -> fhir_14 -> fhir_15 -> fhir_16 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_onnx -> onnx_1 -> onnx_2 -> onnx_3 -> onnx_4 -> onnx_5 -> onnx_6 -> onnx_7 -> onnx_8 -> onnx_9 -> onnx_10 -> onnx_11 -> onnx_12 -> onnx_13 -> onnx_14 -> onnx_15 -> onnx_16 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
 
   // messages
-  cli_1 -> ctl_1 [xlabel="1) GET risk score\n(patientId | batch?mine)", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  ctl_2 -> auth_2 [xlabel="2) ResolveViewPatientIds (نطاق الدفعة)", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  auth_3 -> ctl_3 [xlabel="3) قائمة المرضى المسموح بهم", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
-  ctl_4 -> svc_4 [xlabel="4) AssessPatientAsync / AssessAllAsync", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  svc_5 -> pool_5 [xlabel="5) GetOrLoad(modelPath)", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  pool_6 -> pool_6 [label="6) تحميل مرة واحدة ثم التخزين", constraint=false, color="#7A6BAA", fontcolor="#5B4C8A"];
-  pool_7 -> svc_7 [xlabel="7) InferenceSession (مُخزّنة)", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
-  svc_8 -> fhir_8 [xlabel="8) Patient + Conditions/Meds\n+ عدّ Encounters/Procedures", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  fhir_9 -> svc_9 [xlabel="9) الموارد + الأعداد", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
-  svc_10 -> svc_10 [label="10) بناء متجه الميزات [age, gender, …]", constraint=false, color="#7A6BAA", fontcolor="#5B4C8A"];
-  svc_11 -> onnx_11 [xlabel="11) Run(inputTensor)", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  onnx_12 -> svc_12 [xlabel="12) (label, probability)", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
-  svc_13 -> svc_13 [label="13) score -> High/Medium/Low (عتبات)", constraint=false, color="#7A6BAA", fontcolor="#5B4C8A"];
-  svc_14 -> ctl_14 [xlabel="14) RiskAssessment", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
-  ctl_15 -> cli_15 [xlabel="15) 200 OK — عرض الدرجة والمستوى", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
+  cli_1 -> ctl_1 [xlabel="1) GET /cds/risk/{model}/{patientId}\nأو /batch?mine", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  ctl_2 -> ctl_2 [xlabel="2) ResolveViewPatientIds\n(نطاق المرضى المسموح بهم)", constraint=false, color="#7A6BAA", fontcolor="#4A3C78"];
+  ctl_3 -> svc_3 [xlabel="3) AssessPatientAsync / AssessAllAsync", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  svc_4 -> onnx_4 [xlabel="4) GetOrLoad(modelPath)", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  onnx_5 -> onnx_5 [xlabel="5) تحميل النموذج مرّة واحدة\nثم تخزينه (singleton)", constraint=false, color="#7A6BAA", fontcolor="#4A3C78"];
+  onnx_6 -> svc_6 [xlabel="6) InferenceSession (مُخزّنة)", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
+  svc_7 -> fhir_7 [xlabel="7) Patient + Conditions\n+ MedicationRequests", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  fhir_8 -> svc_8 [xlabel="8) الموارد المطلوبة", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
+  svc_9 -> fhir_9 [xlabel="9) SearchCount: Encounters,\nProcedures (عدّ فقط)", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  fhir_10 -> svc_10 [xlabel="10) الأعداد", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
+  svc_11 -> svc_11 [xlabel="11) بناء متجه الميزات\n[age, gender, counts…]", constraint=false, color="#7A6BAA", fontcolor="#4A3C78"];
+  svc_12 -> onnx_12 [xlabel="12) Run(inputTensor)", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  onnx_13 -> svc_13 [xlabel="13) (label, probability)", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
+  svc_14 -> svc_14 [xlabel="14) تطبيق العتبات:\nHigh / Medium / Low", constraint=false, color="#7A6BAA", fontcolor="#4A3C78"];
+  svc_15 -> ctl_15 [xlabel="15) RiskAssessment", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
+  ctl_16 -> cli_16 [xlabel="16) 200 OK — عرض الدرجة والمستوى", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
 }

@@ -1,70 +1,71 @@
 // AUTO-GENERATED sequence diagram — verified against source (see README).
 // Invite: PatientInviteController writes an invite-code Identifier. Claim: Keycloak register -> PatientClaimController links account + assigns ROLE_PATIENT.
-// Render: dot -Tpng seq-invite-claim.dot -o seq-invite-claim.png  &&  dot -Tsvg seq-invite-claim.dot -o seq-invite-claim.svg
+// SIZED FOR PRINT: placed ~6.27in wide in كتاب المشروع (A4 portrait).
+// Natural width ~9in => ~9-10pt message text on the page. If you edit this file,
+// keep the header labels SHORT and the column count at 5 — the header boxes set
+// the width, and every extra inch of width shrinks the text on the page.
+// Render: dot -Tsvg seq-invite-claim.dot -o seq-invite-claim.svg  &&  dot -Gdpi=200 -Tpng seq-invite-claim.dot -o seq-invite-claim.png
 digraph SEQ {
   rankdir=TB;
-  graph [fontname="Arial", fontsize=14, labelloc="t", label="تسلسل الدعوة والربط (Invite/Claim) — Patient Onboarding",
-         pad=0.35, nodesep=1.5, ranksep=0.62, splines=line, forcelabels=true];
-  edge [fontname="Arial", fontsize=9];
+  graph [fontname="Arial", fontsize=16, labelloc="t", label="تسلسل الدعوة والربط (Invite/Claim)\nPatient Invite & Claim",
+         pad=0.3, nodesep=0.40, ranksep=0.58, splines=line, forcelabels=false];
+  edge [fontname="Arial", fontsize=14];
   node [fontname="Arial", fontsize=10];
 
-  // participants
+  // participants — short labels keep the diagram narrow (see header note)
   { rank=same;
     H_staff [shape=box, style="rounded,filled", fillcolor="#EEF0F2", color="#777777",
-          fontcolor="black", margin="0.14,0.08", label="المُنشئ\n(مدير مؤسسة/طبيب)"];
-    H_inv [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#1F6FB2",
-          fontcolor="black", margin="0.14,0.08", label="PatientInviteController\n/api/patients/create-invite"];
+          fontcolor="black", margin="0.09,0.06", label="المُنشئ\nمدير مؤسسة\nأو طبيب"];
+    H_api [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#1F6FB2",
+          fontcolor="black", margin="0.09,0.06", label="DMRS API\nInvite /\nClaim"];
     H_repo [shape=box, style="rounded,filled", fillcolor="#E3F2E9", color="#2E8B57",
-          fontcolor="black", margin="0.14,0.08", label="FhirRepository\n(مورد Patient + رمز الدعوة)"];
+          fontcolor="black", margin="0.09,0.06", label="Fhir\nRepository\n(مورد Patient)"];
     H_pat [shape=box, style="rounded,filled", fillcolor="#E8F1F8", color="#1F6FB2",
-          fontcolor="black", margin="0.14,0.08", label="المريض\nPatient (المتصفّح)"];
+          fontcolor="black", margin="0.09,0.06", label="المريض\nPatient\n(المتصفّح)"];
     H_kc [shape=box, style="rounded,filled", fillcolor="#FDF3E3", color="#C8902A",
-          fontcolor="black", margin="0.14,0.08", label="Keycloak\n(تسجيل + أدوار)"];
-    H_clm [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#1F6FB2",
-          fontcolor="black", margin="0.14,0.08", label="PatientClaimController\n/api/patients/claim-invite"];
+          fontcolor="black", margin="0.09,0.06", label="Keycloak\nتسجيل\n+ أدوار"];
   }
-  H_staff -> H_inv -> H_repo -> H_pat -> H_kc -> H_clm [style=invis, weight=50];
+  H_staff -> H_api -> H_repo -> H_pat -> H_kc [style=invis, weight=50];
 
   // lifeline nodes (invisible points)
   node [shape=point, width=0.012, color="#B9C4CC"];
-  { rank=same; staff_1 inv_1 repo_1 pat_1 kc_1 clm_1 }
-  { rank=same; staff_2 inv_2 repo_2 pat_2 kc_2 clm_2 }
-  { rank=same; staff_3 inv_3 repo_3 pat_3 kc_3 clm_3 }
-  { rank=same; staff_4 inv_4 repo_4 pat_4 kc_4 clm_4 }
-  { rank=same; staff_5 inv_5 repo_5 pat_5 kc_5 clm_5 }
-  { rank=same; staff_6 inv_6 repo_6 pat_6 kc_6 clm_6 }
-  { rank=same; staff_7 inv_7 repo_7 pat_7 kc_7 clm_7 }
-  { rank=same; staff_8 inv_8 repo_8 pat_8 kc_8 clm_8 }
-  { rank=same; staff_9 inv_9 repo_9 pat_9 kc_9 clm_9 }
-  { rank=same; staff_10 inv_10 repo_10 pat_10 kc_10 clm_10 }
-  { rank=same; staff_11 inv_11 repo_11 pat_11 kc_11 clm_11 }
-  { rank=same; staff_12 inv_12 repo_12 pat_12 kc_12 clm_12 }
-  { rank=same; staff_13 inv_13 repo_13 pat_13 kc_13 clm_13 }
-  { rank=same; staff_14 inv_14 repo_14 pat_14 kc_14 clm_14 }
-  { rank=same; staff_15 inv_15 repo_15 pat_15 kc_15 clm_15 }
+  { rank=same; staff_1 api_1 repo_1 pat_1 kc_1 }
+  { rank=same; staff_2 api_2 repo_2 pat_2 kc_2 }
+  { rank=same; staff_3 api_3 repo_3 pat_3 kc_3 }
+  { rank=same; staff_4 api_4 repo_4 pat_4 kc_4 }
+  { rank=same; staff_5 api_5 repo_5 pat_5 kc_5 }
+  { rank=same; staff_6 api_6 repo_6 pat_6 kc_6 }
+  { rank=same; staff_7 api_7 repo_7 pat_7 kc_7 }
+  { rank=same; staff_8 api_8 repo_8 pat_8 kc_8 }
+  { rank=same; staff_9 api_9 repo_9 pat_9 kc_9 }
+  { rank=same; staff_10 api_10 repo_10 pat_10 kc_10 }
+  { rank=same; staff_11 api_11 repo_11 pat_11 kc_11 }
+  { rank=same; staff_12 api_12 repo_12 pat_12 kc_12 }
+  { rank=same; staff_13 api_13 repo_13 pat_13 kc_13 }
+  { rank=same; staff_14 api_14 repo_14 pat_14 kc_14 }
+  { rank=same; staff_15 api_15 repo_15 pat_15 kc_15 }
 
   // lifelines
   H_staff -> staff_1 -> staff_2 -> staff_3 -> staff_4 -> staff_5 -> staff_6 -> staff_7 -> staff_8 -> staff_9 -> staff_10 -> staff_11 -> staff_12 -> staff_13 -> staff_14 -> staff_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
-  H_inv -> inv_1 -> inv_2 -> inv_3 -> inv_4 -> inv_5 -> inv_6 -> inv_7 -> inv_8 -> inv_9 -> inv_10 -> inv_11 -> inv_12 -> inv_13 -> inv_14 -> inv_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
+  H_api -> api_1 -> api_2 -> api_3 -> api_4 -> api_5 -> api_6 -> api_7 -> api_8 -> api_9 -> api_10 -> api_11 -> api_12 -> api_13 -> api_14 -> api_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
   H_repo -> repo_1 -> repo_2 -> repo_3 -> repo_4 -> repo_5 -> repo_6 -> repo_7 -> repo_8 -> repo_9 -> repo_10 -> repo_11 -> repo_12 -> repo_13 -> repo_14 -> repo_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
   H_pat -> pat_1 -> pat_2 -> pat_3 -> pat_4 -> pat_5 -> pat_6 -> pat_7 -> pat_8 -> pat_9 -> pat_10 -> pat_11 -> pat_12 -> pat_13 -> pat_14 -> pat_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
   H_kc -> kc_1 -> kc_2 -> kc_3 -> kc_4 -> kc_5 -> kc_6 -> kc_7 -> kc_8 -> kc_9 -> kc_10 -> kc_11 -> kc_12 -> kc_13 -> kc_14 -> kc_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
-  H_clm -> clm_1 -> clm_2 -> clm_3 -> clm_4 -> clm_5 -> clm_6 -> clm_7 -> clm_8 -> clm_9 -> clm_10 -> clm_11 -> clm_12 -> clm_13 -> clm_14 -> clm_15 [style=dashed, color="#C4CDD5", arrowhead=none, weight=100];
 
   // messages
-  staff_1 -> inv_1 [xlabel="1) POST create-invite\n{org, name, birthDate}", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  inv_2 -> inv_2 [label="2) تحقّق الصلاحية + توليد رقم المريض ورمز الدعوة", constraint=false, color="#7A6BAA", fontcolor="#5B4C8A"];
-  inv_3 -> repo_3 [xlabel="3) Create Patient + Identifier(رمز الدعوة)", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  repo_4 -> inv_4 [xlabel="4) patientId", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
-  inv_5 -> staff_5 [xlabel="5) 200 { claimLink, registrationLink }", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
-  staff_6 -> pat_6 [xlabel="6) مشاركة رابط التسجيل (خارج النظام)", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
-  pat_7 -> kc_7 [xlabel="7) فتح registrationLink — تسجيل/دخول", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  kc_8 -> pat_8 [xlabel="8) إعادة توجيه: /patients/claim?code=…&auto=true", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
-  pat_9 -> clm_9 [xlabel="9) POST claim-invite\n{inviteCode, keycloakUserId}", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  clm_10 -> repo_10 [xlabel="10) بحث بالرمز + تحقّق عدم الارتباط", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  repo_11 -> clm_11 [xlabel="11) مورد Patient المطابق", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
-  clm_12 -> kc_12 [xlabel="12) AssignRealmRole(ROLE_PATIENT)", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  clm_13 -> repo_13 [xlabel="13) تحديث Patient: حذف الرمز + ربط حساب Keycloak", constraint=false, color="#1F6FB2", fontcolor="#154D7C", penwidth=1.3];
-  clm_14 -> pat_14 [xlabel="14) 200 { patientId, ROLE_PATIENT }", constraint=false, style=dashed, color="#8A97A3", fontcolor="#5C6773", arrowhead=vee];
-  pat_15 -> pat_15 [label="15) دخول بوّابة المريض (MyHealth)", constraint=false, color="#7A6BAA", fontcolor="#5B4C8A"];
+  staff_1 -> api_1 [xlabel="1) POST create-invite\n{ organizationId, name, birthDate }", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  api_2 -> api_2 [xlabel="2) تحقّق الصلاحية + توليد\nرقم المريض ورمز الدعوة", constraint=false, color="#7A6BAA", fontcolor="#4A3C78"];
+  api_3 -> repo_3 [xlabel="3) إنشاء Patient\n+ Identifier(رمز الدعوة)", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  repo_4 -> api_4 [xlabel="4) patientId", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
+  api_5 -> staff_5 [xlabel="5) 200 { inviteCode,\nclaimLink, registrationLink }", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
+  staff_6 -> pat_6 [xlabel="6) مشاركة رابط التسجيل\n(خارج النظام)", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
+  pat_7 -> kc_7 [xlabel="7) فتح registrationLink\nتسجيل / دخول", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  kc_8 -> pat_8 [xlabel="8) إعادة توجيه إلى\n/patients/claim?code=…&auto=true", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
+  pat_9 -> api_9 [xlabel="9) POST claim-invite\n{ inviteCode, keycloakUserId }", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  api_10 -> repo_10 [xlabel="10) بحث بالرمز + تحقّق\nعدم الارتباط بحساب آخر", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  repo_11 -> api_11 [xlabel="11) مورد Patient المطابق", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
+  api_12 -> kc_12 [xlabel="12) AssignRealmRole(ROLE_PATIENT)", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  api_13 -> repo_13 [xlabel="13) تحديث Patient: حذف رمز الدعوة\n+ ربط حساب Keycloak", constraint=false, color="#1F6FB2", fontcolor="#0F3E66", penwidth=1.9];
+  api_14 -> pat_14 [xlabel="14) 200 { patientId, ROLE_PATIENT }", constraint=false, style=dashed, color="#7C8996", fontcolor="#3D4750", arrowhead=vee, penwidth=1.4];
+  pat_15 -> pat_15 [xlabel="15) دخول بوّابة المريض (MyHealth)", constraint=false, color="#7A6BAA", fontcolor="#4A3C78"];
 }
