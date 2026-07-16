@@ -61,6 +61,9 @@ Created/updated resources are validated against the FHIR R5 spec; invalid bodies
 **Type-specific notes**
 - `MedicationRequest` — create/update/patch additionally warm up medicine-knowledge lookups used by CDS.
 - `Practitioner` — has a custom delete that also cleans up related links.
+- `Patient` — adds `GET /fhir/Patient/_suggest?field=&value=`, a type-ahead helper for the patient search
+  box. `field` must be one of `family`, `given`, `name`; returns a plain JSON string array (max 10),
+  scoped to the patients the caller may read. Unknown fields return an empty array.
 
 ---
 
@@ -105,9 +108,14 @@ Created/updated resources are validated against the FHIR R5 spec; invalid bodies
 | `GET /cds/risk/diabetes/{patientId}` | Diabetes risk assessment for a patient. |
 | `GET /cds/risk/cardiovascular/{patientId}` | Cardiovascular risk assessment. |
 | `GET /cds/risk/high-utilization/{patientId}` | 30-day readmission risk assessment. |
+| `GET /cds/risk/diabetes/batch?mine=` | Diabetes risk for every accessible patient in one request. |
+| `GET /cds/risk/cardiovascular/batch?mine=` | Cardiovascular risk for every accessible patient. |
+| `GET /cds/risk/high-utilization/batch?mine=` | Readmission risk for every accessible patient. |
 
-Each returns the probability, risk tier, feature values used, and a `featuresComplete` flag. Returns
-`200` with a null body when the model is unavailable.
+Each single-patient call returns the probability, risk tier, feature values used, and a
+`featuresComplete` flag, or `200` with a null body when the model is unavailable. The `batch` variants
+score every patient the caller may see (`?mine=true` narrows to their own panel) so the AI Insights
+page can show a population view without one call per patient.
 
 ### Alert feed — `/cds/alerts`
 | Method & path | Description |
@@ -119,11 +127,42 @@ Each returns the probability, risk tier, feature values used, and a `featuresCom
 ## 3. Analytics — `/analytics`
 | Method & path | Description |
 |---|---|
-| `GET /analytics/condition-prevalence` | Top 10 most common conditions across all patients. |
+| `GET /analytics/dashboard-summary?mine=` | Totals for the dashboard metric tiles (patients, encounters, conditions, service requests). |
+| `GET /analytics/condition-prevalence?mine=` | Top 10 most common conditions. |
+
+Both are scoped to the patients the caller may see: a system caller gets workspace-wide counts, while
+an org admin / practitioner / patient gets counts over their accessible set. `?mine=true` narrows a
+practitioner further to their own panel.
 
 ---
 
-## 4. Patient documents — `/api/patients/{patientId}/documents`
+## 4. External AI models
+
+A registry of "away" models — external HTTP endpoints a patient's data can be sent to for inference.
+
+### Model registry — `/external-ai/models` (admins only)
+Requires the `FhirScope` policy **and** role `ROLE_SYSTEM_ADMIN` or `ROLE_ORG_ADMIN`, because a
+registered endpoint determines where patient data is sent.
+
+| Method & path | Description |
+|---|---|
+| `GET /external-ai/models` | List all registered models. |
+| `GET /external-ai/models/{id}` | Get one model (GUID id). `404` if unknown. |
+| `POST /external-ai/models` | Register a model. Body = `ExternalAiModelInput`. Returns `201`; invalid input returns `400` with `{ "error": ... }`. |
+| `PUT /external-ai/models/{id}` | Update a model. Body = `ExternalAiModelInput`. |
+| `DELETE /external-ai/models/{id}` | Remove a model. Returns `204`, or `404` if unknown. |
+
+### Inference — `/external-ai/infer`
+| Method & path | Description |
+|---|---|
+| `GET /external-ai/infer/models` | List *active* models the caller may run, with picker-safe fields only. Open to any authorized clinical caller. |
+| `POST /external-ai/infer/{modelId}/{patientId}` | Run a model against one patient. `{patientId}` accepts a bare id or `Patient/{id}`. Returns the model's result, `403` if the caller may not view that patient, or `404` if no active model has that id. |
+
+Every send is audit-logged (caller / model / patient) **before** any data leaves the system.
+
+---
+
+## 5. Patient documents — `/api/patients/{patientId}/documents`
 | Method & path | Description |
 |---|---|
 | `GET /api/patients/{patientId}/documents` | List a patient's document records. |
@@ -133,8 +172,9 @@ Each returns the probability, risk tier, feature values used, and a `featuresCom
 
 ---
 
-## 5. Onboarding — invites & claims
+## 6. Onboarding, staff & current user
 
+### Invites & claims
 Staff create an invite (returns a one-time code); the invited user then claims it to link their
 Keycloak account to the FHIR Patient/Practitioner record and receive the right role.
 
@@ -146,9 +186,25 @@ Keycloak account to the FHIR Patient/Practitioner record and receive the right r
 | `POST /api/staff/create-invite` | Create a Practitioner record + invite. Body: `organizationId`, `givenName`, `familyName`, … |
 | `POST /api/staff/claim-invite` | Staff claims an invite. Body: `inviteCode`, `keycloakUserId`. Grants org-admin / doctor role. |
 
+### Staff directory & provisioning — `/api/staff`
+| Method & path | Description |
+|---|---|
+| `GET /api/staff/by-organization/{organizationId}` | Staff summaries for one organization (incl. login-account status) in a single response. Org-scoped for org admins. |
+| `POST /api/staff/provision-account` | Demo helper: directly create + link a Keycloak login for an existing practitioner. Body: `practitionerId`, `organizationId`. Returns the credentials; `409` if already linked. |
+
+### Current user — `/api/me`
+Authenticated user context that isn't carried in the token. Requires only an authenticated user (not
+the `FhirScope` policy).
+
+| Method & path | Description |
+|---|---|
+| `GET /api/me/organizations` | Organization ids the caller belongs to (empty if none). |
+| `GET /api/me/patient` | The caller's own linked `Patient` resource (FHIR JSON), or `404` if none. |
+| `PUT /api/me/patient` | Patient self-service edit of a safe demographics subset (name, phone, email, birth date, gender, marital status, address). Identifiers, organization, links, and GP are preserved. |
+
 ---
 
-## 6. Development & seeding — `/dev` (Development only)
+## 7. Development & seeding — `/dev` (Development only)
 | Method & path | Description |
 |---|---|
 | `GET /dev/seed/status` | Patient count, to show whether data is loaded. |
@@ -161,17 +217,10 @@ Keycloak account to the FHIR Patient/Practitioner record and receive the right r
 
 ---
 
-## 7. Medicine Info API (separate service, `:5041`)
+## 8. Medicine Info API (separate service, `:5041`)
 | Method & path | Description |
 |---|---|
 | `GET /api/medications/{value}` | Look up a medicine. If `{value}` is all digits it matches by RxCUI; otherwise by name (exact preferred, then substring, case-insensitive). Returns the medicine with dosing, safety, and ingredients, or `404`. |
 | `GET /` | Welcome/help string. |
 
 This standalone service backs the main API's `/cds/medications` knowledge provider.
-
----
-
-## Appendix: internal/debug
-
-`TestController` (`/api/test/*`) contains auth-diagnostic endpoints used during development. It is
-hidden from Swagger and is not part of the public API surface.

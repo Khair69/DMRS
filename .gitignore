@@ -72,3 +72,5 @@ settings.local.json
 
 DMRS.Api/Documents
 DMRS.Api/sampledata
+
+.claude/
