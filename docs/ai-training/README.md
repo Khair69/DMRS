@@ -1,4 +1,4 @@
-# DMRS AI Model Training
+# Nabd — AI Model Training
 
 This folder holds the training scripts for the project's ONNX risk models. They are written to run
 top-to-bottom in **Google Colab** (the same workflow used for the original high-utilization model)

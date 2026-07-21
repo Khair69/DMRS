@@ -1,9 +1,9 @@
-// System architecture — DMRS (verified vs README + architecture-and-data-model.md + code)
+// System architecture — Nabd (verified vs README + architecture-and-data-model.md + code)
 // Render: dot -Tpng architecture.dot -o architecture.png
 digraph ARCH {
   rankdir=LR;
   graph [fontname="Arial", fontsize=13, labelloc="t",
-         label="البنية العامة لنظام DMRS — System Architecture", pad=0.3, nodesep=0.4, ranksep=1.0, compound=true];
+         label="البنية العامة لنظام نبض — Nabd System Architecture", pad=0.3, nodesep=0.4, ranksep=1.0, compound=true];
   node  [fontname="Arial", fontsize=11, shape=box, style="rounded,filled", fontcolor="black"];
   edge  [fontname="Arial", fontsize=9, color="#555555"];
 

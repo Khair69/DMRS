@@ -17,7 +17,7 @@ digraph SEQ {
     H_staff [shape=box, style="rounded,filled", fillcolor="#EEF0F2", color="#777777",
           fontcolor="black", margin="0.09,0.06", label="المُنشئ\nمدير مؤسسة\nأو طبيب"];
     H_api [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#1F6FB2",
-          fontcolor="black", margin="0.09,0.06", label="DMRS API\nInvite /\nClaim"];
+          fontcolor="black", margin="0.09,0.06", label="Nabd API\nInvite /\nClaim"];
     H_repo [shape=box, style="rounded,filled", fillcolor="#E3F2E9", color="#2E8B57",
           fontcolor="black", margin="0.09,0.06", label="Fhir\nRepository\n(مورد Patient)"];
     H_pat [shape=box, style="rounded,filled", fillcolor="#E8F1F8", color="#1F6FB2",

@@ -1,6 +1,6 @@
 # Deployment
 
-> **Status:** DMRS currently runs as a **local / development** stack. This document records how to run
+> **Status:** Nabd currently runs as a **local / development** stack. This document records how to run
 > it today and the **intent** for a future production deployment. Production hardening is out of scope
 > for the graduation milestone but is documented here as planned work.
 
@@ -19,7 +19,7 @@ Trained AI models (`*.onnx`) ship in `DMRS.Api/Ai/` and are copied to the output
 
 ## What changes in production (intent)
 
-The following are **not yet implemented** but are the planned steps to take DMRS from a local demo to
+The following are **not yet implemented** but are the planned steps to take Nabd from a local demo to
 a real deployment:
 
 - **Configuration & secrets.** Move connection strings and the Keycloak admin credentials out of
@@ -39,6 +39,6 @@ a real deployment:
 
 ## Security & compliance note
 
-DMRS handles simulated patient data only. Any real-world use must address the relevant healthcare
+Nabd handles simulated patient data only. Any real-world use must address the relevant healthcare
 regulations (HIPAA, GDPR, etc.) — audit logging of PHI access, encryption at rest and in transit,
 access reviews, and a data-retention policy — before go-live.

@@ -9,7 +9,7 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(21.6 1890.85)">
 <title>ERD</title>
 <polygon fill="white" stroke="none" points="-21.6,21.6 -21.6,-1890.85 1235.22,-1890.85 1235.22,21.6 -21.6,21.6"/>
-<text xml:space="preserve" text-anchor="middle" x="606.81" y="-1853.85" font-family="Arial" font-size="12.00">مخطّط الكيانات والعلاقات (ERD) لنظام DMRS</text>
+<text xml:space="preserve" text-anchor="middle" x="606.81" y="-1853.85" font-family="Arial" font-size="12.00">مخطّط الكيانات والعلاقات (ERD) لنظام نبض</text>
 <g id="clust1" class="cluster">
 <title>cluster_dmrs</title>
 <path fill="#f7fbfd" stroke="#1f6fb2" d="M300.88,-8C300.88,-8 1193.62,-8 1193.62,-8 1199.62,-8 1205.62,-14 1205.62,-20 1205.62,-20 1205.62,-1400 1205.62,-1400 1205.62,-1406 1199.62,-1412 1193.62,-1412 1193.62,-1412 300.88,-1412 300.88,-1412 294.88,-1412 288.88,-1406 288.88,-1400 288.88,-1400 288.88,-20 288.88,-20 288.88,-14 294.88,-8 300.88,-8"/>

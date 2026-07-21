@@ -1,9 +1,9 @@
 # DMRS.StubAiModel
 
-A throwaway **stand-in for a remote AI model**, used to demonstrate the DMRS *External AI Models*
+A throwaway **stand-in for a remote AI model**, used to demonstrate the Nabd *External AI Models*
 feature without needing a real external service. It is intentionally not clinically meaningful.
 
-DMRS POSTs a patient's FHIR `Bundle` to `/predict`; this server counts the resources and returns a
+Nabd POSTs a patient's FHIR `Bundle` to `/predict`; this server counts the resources and returns a
 pretend risk decision as JSON.
 
 ## Run it
@@ -14,11 +14,11 @@ dotnet run --project DMRS.StubAiModel
 
 It listens on **https://localhost:5005** using the trusted ASP.NET Core localhost dev certificate
 (run `dotnet dev-certs https --trust` once if you've never trusted it). That trusted HTTPS is what lets
-DMRS — which only allows HTTPS endpoints — call it directly.
+Nabd — which only allows HTTPS endpoints — call it directly.
 
-Confirm it's up: open https://localhost:5005/ → "DMRS stub AI model is running."
+Confirm it's up: open https://localhost:5005/ → "Nabd stub AI model is running."
 
-## Register it in DMRS
+## Register it in Nabd
 
 In the client, go to **Intelligence → External AI Models** (`/external-ai/admin`) as a system/org admin:
 

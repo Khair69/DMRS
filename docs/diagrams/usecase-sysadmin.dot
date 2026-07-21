@@ -20,7 +20,7 @@ digraph UC {
                      label="يرث قدراته\n(generalization)", fontcolor="#333333"];
 
   subgraph cluster_sys {
-    label="نظام DMRS  (قدرات إضافية لمدير النظام)"; fontname="Arial"; fontsize=13;
+    label="نظام نبض  (قدرات إضافية لمدير النظام)"; fontname="Arial"; fontsize=13;
     style="rounded"; color="#C0392B"; bgcolor="#FDF6F5"; margin=12;
     node [shape=ellipse, style=filled, fillcolor="#F7E3E1", color="#C0392B"];
 

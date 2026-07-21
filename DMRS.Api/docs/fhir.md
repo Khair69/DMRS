@@ -1,18 +1,18 @@
-# FHIR in DMRS
+# FHIR in Nabd
 
 ## What FHIR is
 
 **FHIR** (Fast Healthcare Interoperability Resources, by HL7) is the modern standard for exchanging
 healthcare data. Clinical concepts are modeled as **resources** (Patient, Condition, Observation, …),
 each with a defined structure and a RESTful API for create/read/update/delete, search, and history.
-Using FHIR means DMRS can, in principle, exchange data with any other FHIR-compliant system.
+Using FHIR means Nabd can, in principle, exchange data with any other FHIR-compliant system.
 
-DMRS targets **FHIR R5** and uses the **Firely .NET SDK** (`Hl7.Fhir.R5`) for the resource model,
+Nabd targets **FHIR R5** and uses the **Firely .NET SDK** (`Hl7.Fhir.R5`) for the resource model,
 JSON (de)serialization, and specification validation.
 
 ## Storage model
 
-Rather than mapping every FHIR field to relational columns, DMRS stores each resource as its **raw
+Rather than mapping every FHIR field to relational columns, Nabd stores each resource as its **raw
 FHIR JSON** and maintains lightweight indexes for querying. Three tables (see
 [`architecture-and-data-model.md`](../../docs/architecture-and-data-model.md)) do the work:
 

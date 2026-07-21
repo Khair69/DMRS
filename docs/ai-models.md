@@ -1,6 +1,6 @@
 # AI Risk Models
 
-DMRS layers three machine-learning models on top of the FHIR data to give clinicians predictive,
+Nabd layers three machine-learning models on top of the FHIR data to give clinicians predictive,
 patient-specific risk scores. All three follow the same design and serving pattern.
 
 ## Models at a glance
@@ -16,7 +16,7 @@ patient-specific risk scores. All three follow the same design and serving patte
 ## Design philosophy: features the system can actually observe
 
 A model is only useful in the app if its inputs can be recovered from a real patient record. So each
-model is trained on a **reduced feature set** — only the columns DMRS can extract from a patient's
+model is trained on a **reduced feature set** — only the columns Nabd can extract from a patient's
 FHIR data — rather than the full research dataset. This keeps training honest: the model learns from
 the same kind of data it will see at inference.
 

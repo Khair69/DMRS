@@ -1,6 +1,6 @@
 # Development Guide
 
-How to run DMRS locally, what talks to what, and the errors you'll most likely hit first. For the
+How to run Nabd locally, what talks to what, and the errors you'll most likely hit first. For the
 production-deployment intent, see [`deployment.md`](deployment.md).
 
 ## Prerequisites
@@ -13,7 +13,7 @@ production-deployment intent, see [`deployment.md`](deployment.md).
 
 ## Services and ports
 
-DMRS is three .NET services plus Keycloak and PostgreSQL. Default local ports:
+Nabd is three .NET services plus Keycloak and PostgreSQL. Default local ports:
 
 | Component | URL | Notes |
 |---|---|---|

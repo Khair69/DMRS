@@ -57,7 +57,8 @@ body {
 /* ============================================================
    Brand header  (badge + wordmark + tagline)
    The wordmark text is the realm's display name -> set it to
-   "DMRS Workspace" in Realm settings -> General -> Display name.
+   "Nabd" in Realm settings -> General -> Display name. (When it is
+   blank Keycloak falls back to the realm *name*, which is DMRS.)
    ============================================================ */
 #kc-header,
 #kc-header-wrapper {

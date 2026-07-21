@@ -70,7 +70,7 @@ public sealed class CdsRuleTemplateRequestModel
     public int Priority { get; set; } = 1;
     public bool IsActive { get; set; }
     public string Indicator { get; set; } = "warning";
-    public string SourceLabel { get; set; } = "DMRS CDS";
+    public string SourceLabel { get; set; } = "Nabd CDS";
     public string? SourceUrl { get; set; }
     public string? MedicationRxCui { get; set; }
     public string? PregnancyCategory { get; set; }

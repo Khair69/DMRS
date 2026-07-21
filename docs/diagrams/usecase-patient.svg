@@ -13,7 +13,7 @@
 <g id="clust1" class="cluster">
 <title>cluster_sys</title>
 <path fill="#f6fcf8" stroke="#2e8b57" d="M20,-8C20,-8 470.22,-8 470.22,-8 476.22,-8 482.22,-14 482.22,-20 482.22,-20 482.22,-448 482.22,-448 482.22,-454 476.22,-460 470.22,-460 470.22,-460 20,-460 20,-460 14,-460 8,-454 8,-448 8,-448 8,-20 8,-20 8,-14 14,-8 20,-8"/>
-<text xml:space="preserve" text-anchor="middle" x="245.11" y="-443.65" font-family="Arial" font-size="13.00">نظام DMRS</text>
+<text xml:space="preserve" text-anchor="middle" x="245.11" y="-443.65" font-family="Arial" font-size="13.00">نظام نبض</text>
 </g>
 <!-- actor -->
 <g id="node1" class="node">

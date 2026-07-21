@@ -4,7 +4,7 @@
 digraph UC {
   rankdir=RL;
   graph [fontname="Arial", fontsize=14, labelloc="t",
-         label="مخطّط حالات الاستخدام العام لنظام DMRS", pad=0.3, nodesep=0.35, ranksep=1.6];
+         label="مخطّط حالات الاستخدام العام لنظام نبض", pad=0.3, nodesep=0.35, ranksep=1.6];
   node  [fontname="Arial", fontsize=11];
   edge  [fontname="Arial", fontsize=9, dir=none, color="#666666"];
 
@@ -23,7 +23,7 @@ digraph UC {
 
   // ---- capability groups inside the system ----
   subgraph cluster_sys {
-    label="نظام DMRS"; fontname="Arial"; fontsize=14; style="rounded"; color="#1F6FB2"; bgcolor="#F7FBFD"; margin=14;
+    label="نظام نبض"; fontname="Arial"; fontsize=14; style="rounded"; color="#1F6FB2"; bgcolor="#F7FBFD"; margin=14;
     node [shape=ellipse, style=filled, color="#1F6FB2"];
 
     g_auth   [label="المصادقة وتبديل اللغة\nLogin & Language", fillcolor="#EEEEEE", color="#777777"];

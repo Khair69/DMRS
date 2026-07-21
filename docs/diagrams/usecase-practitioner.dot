@@ -11,7 +11,7 @@ digraph UC {
          label="الطبيب / الممارس\nPractitioner", width=1.7];
 
   subgraph cluster_sys {
-    label="نظام DMRS"; fontname="Arial"; fontsize=13; style="rounded"; color="#1F6FB2"; bgcolor="#F7FBFD"; margin=12;
+    label="نظام نبض"; fontname="Arial"; fontsize=13; style="rounded"; color="#1F6FB2"; bgcolor="#F7FBFD"; margin=12;
     node [shape=ellipse, style=filled, fillcolor="#E8F1F8", color="#1F6FB2"];
 
     u_login   [label="تسجيل الدخول\nLogin"];

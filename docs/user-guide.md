@@ -1,6 +1,6 @@
-# DMRS User & Admin Guide
+# Nabd User & Admin Guide
 
-A practical walkthrough of the DMRS web app for the people who use it. For HTTP/API details see the
+A practical walkthrough of the Nabd web app for the people who use it. For HTTP/API details see the
 [API reference](api-reference.md); for setup see the [README](../README.md).
 
 ## Roles
@@ -44,7 +44,7 @@ From the relevant nav item (Conditions, Observations, Procedures, Allergies, Enc
 patient and immediately feed the dashboards and AI models.
 
 ### Orders & scheduling
-- **Medication Requests** — prescribe a drug; on save, DMRS looks up medicine knowledge and may raise
+- **Medication Requests** — prescribe a drug; on save, Nabd looks up medicine knowledge and may raise
   a CDS card (see below).
 - **Service Requests** — referrals / orders. **Appointments** — scheduling. **Locations** — facilities.
 
@@ -90,10 +90,10 @@ dashboard's recent-alerts list.
 Nav → Administration → **Organizations** to create and manage organizations and assign org admins.
 
 ### Onboarding staff & patients
-DMRS links a person's login (Keycloak) to their clinical record via a one-time **invite → claim** flow:
+Nabd links a person's login (Keycloak) to their clinical record via a one-time **invite → claim** flow:
 
 1. **Create the invite** (admin): from the staff or patient onboarding screen, fill in the
-   organization and the person's name/details. DMRS creates the FHIR record and returns an **invite
+   organization and the person's name/details. Nabd creates the FHIR record and returns an **invite
    code / link**.
 2. **Claim the invite** (the new user): the invited person signs in and submits the invite code,
    which links their Keycloak account to the record and grants the correct role (patient, doctor, or

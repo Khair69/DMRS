@@ -72,7 +72,7 @@ Run requests `3` to `6`.
 
 Expected:
 
-- `refresh` stores a normalized medicine record in DMRS
+- `refresh` stores a normalized medicine record in Nabd
 - `GET /cds/medications/161` returns Acetaminophen
 - search by `q=acetaminophen` returns Acetaminophen
 - search by ingredient `UNII-L960UP28W1` returns Acetaminophen and Percocet
@@ -220,7 +220,7 @@ This proves:
 The CDS work is behaving correctly if all of these pass:
 
 - mock medicine source resolves medicines
-- DMRS stores and searches normalized medicine knowledge
+- Nabd stores and searches normalized medicine knowledge
 - supported rule templates compile into valid persisted CDS rules
 - rule validation accepts valid JSON logic and rejects unsupported operators
 - preview renders dynamic card text

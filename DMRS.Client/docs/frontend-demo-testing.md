@@ -22,7 +22,7 @@ This guide covers:
 - Open `/`
 - Expected:
   - no `Hello, world`
-  - hero section with DMRS workspace messaging
+  - hero section with Nabd workspace messaging
   - metric cards for patients, appointments, active meds, encounters, service requests, conditions
   - predictive watchlist panel
   - CDS status panel

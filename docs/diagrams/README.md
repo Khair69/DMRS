@@ -1,4 +1,4 @@
-# DMRS — ERD & Use-Case Diagrams
+# Nabd — ERD & Use-Case Diagrams
 
 Source diagrams (Graphviz **DOT**) plus rendered **PNG** and **SVG**. Edit the `.dot` file and
 re-render; the visuals are intentionally simple — the **content is verified against the code**.
@@ -85,7 +85,7 @@ column. These are the only abstractions; every step/order below is real:
   column (steps 3/4 hit the repository, steps 9-11 the engine). The `CdsContextBuilder` steps 6/7 are
   drawn as self-calls; in code they are outbound calls to `IFhirRepository`,
   `IClinicalKnowledgeService` (MedicineInfo) and `IHighUtilizationRiskService`.
-- `seq-invite-claim` — `PatientInviteController` and `PatientClaimController` share the **"DMRS API"**
+- `seq-invite-claim` — `PatientInviteController` and `PatientClaimController` share the **"Nabd API"**
   column (steps 1-5 are the invite controller, steps 9-14 the claim controller).
 - `seq-risk-inference` — `OnnxModelPool` and `InferenceSession` share the **"نموذج ONNX"** column;
   step 2 is `SmartAuthorizationService.ResolveViewPatientIdsAsync`, drawn as a controller self-call.

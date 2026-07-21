@@ -1,6 +1,6 @@
-# Authorization in DMRS
+# Authorization in Nabd
 
-This document describes how DMRS decides **what an authenticated caller is allowed to do**. It covers
+This document describes how Nabd decides **what an authenticated caller is allowed to do**. It covers
 the role model, the SMART-on-FHIR–style scope levels, the two authorization policies, and the
 per-request enforcement pipeline as it exists in the code today.
 
@@ -10,7 +10,7 @@ has been established.
 
 ## Two layers of authorization
 
-DMRS gates access at two levels, and a request must pass both:
+Nabd gates access at two levels, and a request must pass both:
 
 1. **Role-based access (RBAC)** — coarse-grained. Realm roles from the token (`ROLE_SYSTEM_ADMIN`,
    `ROLE_ORG_ADMIN`, `ROLE_PRACTITIONER`, `ROLE_PATIENT`) decide which *areas* of the system a caller

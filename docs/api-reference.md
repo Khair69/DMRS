@@ -1,6 +1,6 @@
-# DMRS API Reference
+# Nabd API Reference
 
-Complete reference for the DMRS HTTP APIs.
+Complete reference for the Nabd HTTP APIs.
 
 ## Base URLs
 

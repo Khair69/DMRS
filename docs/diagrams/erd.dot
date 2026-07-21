@@ -1,9 +1,9 @@
-// ERD — DMRS (verified against AppDbContext + Domain entities + migrations)
+// ERD — Nabd (verified against AppDbContext + Domain entities + migrations)
 // Render:  dot -Tpng erd.dot -o erd.png      dot -Tsvg erd.dot -o erd.svg
 digraph ERD {
   rankdir=LR;
   graph [fontname="Arial", fontsize=12, labelloc="t",
-         label="مخطّط الكيانات والعلاقات (ERD) لنظام DMRS", splines=spline, nodesep=0.5, ranksep=1.0, pad=0.3];
+         label="مخطّط الكيانات والعلاقات (ERD) لنظام نبض", splines=spline, nodesep=0.5, ranksep=1.0, pad=0.3];
   node  [shape=plaintext, fontname="Consolas"];
   edge  [fontname="Arial", fontsize=10, color="#444444"];
 

@@ -74,3 +74,8 @@ DMRS.Api/Documents
 DMRS.Api/sampledata
 
 .claude/
+/docs/node_modules
+/docs/*.js
+/docs/build-presentation.js
+/docs/package-lock.json
+/docs/package.json

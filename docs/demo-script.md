@@ -1,4 +1,4 @@
-# DMRS — Live Demo Script
+# Nabd — Live Demo Script
 
 A rehearsed ~12-minute walkthrough for the defense. It tells one story: *standards-based records →
 decision support → AI risk → configurable rules.* Cues are written as **Say** (narration) and
@@ -50,7 +50,7 @@ To start from a clean, known state:
 ## The script
 
 ### 0. Framing (30s)
-**Say:** "DMRS is a FHIR-compliant medical records system. On top of standards-based clinical data it
+**Say:** "Nabd is a FHIR-compliant medical records system. On top of standards-based clinical data it
 adds clinical decision support and three AI risk models. I'll show the clinician experience, then the
 admin side."
 

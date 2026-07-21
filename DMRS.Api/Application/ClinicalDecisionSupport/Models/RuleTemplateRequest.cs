@@ -9,7 +9,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Models
         public int Priority { get; set; }
         public bool IsActive { get; set; } = true;
         public string Indicator { get; set; } = "warning";
-        public string SourceLabel { get; set; } = "DMRS CDS";
+        public string SourceLabel { get; set; } = "Nabd CDS";
         public string? SourceUrl { get; set; }
         public string? MedicationRxCui { get; set; }
         public string? PregnancyCategory { get; set; }

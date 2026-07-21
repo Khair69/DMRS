@@ -3,13 +3,13 @@ using System.Text.Json;
 // ---------------------------------------------------------------------------------------------------
 // DMRS.StubAiModel — a stand-in "remote AI model" for demonstrating the External AI Models feature.
 //
-// It plays the role of an external model registered in DMRS (Intelligence -> External AI Models):
-// DMRS POSTs a patient's FHIR Bundle to /predict, this server inspects the bundle and returns a
+// It plays the role of an external model registered in Nabd (Intelligence -> External AI Models):
+// Nabd POSTs a patient's FHIR Bundle to /predict, this server inspects the bundle and returns a
 // pretend risk decision as JSON. It is NOT a real model — the score is a trivial function of how many
 // conditions/medications the patient has, purely so the end-to-end flow can be shown.
 //
 // Runs on https://localhost:5005 using the trusted ASP.NET Core localhost dev certificate, which is
-// why DMRS's HTTPS-only rule is satisfied with no extra setup. Register it in DMRS as:
+// why Nabd's HTTPS-only rule is satisfied with no extra setup. Register it in Nabd as:
 //     Endpoint URL : https://localhost:5005/predict
 //     Auth type    : None
 //     Decision path: (blank for full response, or "decision" for just the label)
@@ -78,7 +78,7 @@ app.MapPost("/predict", async (HttpRequest request) =>
 });
 
 // Liveness probe — handy to confirm the stub is up before registering it.
-app.MapGet("/", () => "DMRS stub AI model is running. POST a FHIR bundle to /predict.");
+app.MapGet("/", () => "Nabd stub AI model is running. POST a FHIR bundle to /predict.");
 
-// Fixed port so the URL registered in DMRS (https://localhost:5005/predict) is stable across runs.
+// Fixed port so the URL registered in Nabd (https://localhost:5005/predict) is stable across runs.
 app.Run("https://localhost:5005");

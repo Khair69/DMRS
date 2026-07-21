@@ -1,4 +1,4 @@
-# DMRS — Architecture & Data Model
+# Nabd — Architecture & Data Model
 
 Diagrams for the report and defense. They render automatically on GitHub (Mermaid).
 
@@ -75,7 +75,7 @@ flowchart LR
     AIDIR -->|"loaded by InferenceSession"| SVC
 ```
 
-Models are trained on a **reduced feature set** — only the columns DMRS can recover from a patient's
+Models are trained on a **reduced feature set** — only the columns Nabd can recover from a patient's
 FHIR record — so inference uses real patient data. Missing features are median-imputed and flagged.
 
 ---

@@ -40,7 +40,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 "CDS advisory",
                 null,
                 "info",
-                new CdsCardSource("DMRS CDS", null));
+                new CdsCardSource("Nabd CDS", null));
         }
 
         private static string? GetString(JsonElement element, string name)
@@ -61,10 +61,10 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 || !root.TryGetProperty("source", out var sourceElement)
                 || sourceElement.ValueKind != JsonValueKind.Object)
             {
-                return new CdsCardSource("DMRS CDS", null);
+                return new CdsCardSource("Nabd CDS", null);
             }
 
-            var label = Interpolate(GetString(sourceElement, "label") ?? "DMRS CDS", context) ?? "DMRS CDS";
+            var label = Interpolate(GetString(sourceElement, "label") ?? "Nabd CDS", context) ?? "Nabd CDS";
             var url = Interpolate(GetString(sourceElement, "url"), context);
 
             return new CdsCardSource(label, url);

@@ -1,7 +1,7 @@
 {
-  "app.title": "DMRS",
+  "app.title": "Nabd",
   "app.subtitle": "Clinical workspace, CDS, and predictive insights",
-  "app.brand": "DMRS Workspace",
+  "app.brand": "Nabd Workspace",
 
   "language.switcher.label": "Language",
   "language.english": "English",
@@ -12,7 +12,7 @@
   "auth.login": "Log in",
 
   "welcome.title": "Smarter, safer medical records",
-  "welcome.subtitle": "DMRS is a FHIR-based platform that unifies patient records, real-time clinical decision support, and predictive AI insights in one secure workspace for care teams and patients.",
+  "welcome.subtitle": "Nabd is a FHIR-based platform that unifies patient records, real-time clinical decision support, and predictive AI insights in one secure workspace for care teams and patients.",
   "welcome.cta": "Log in to continue",
   "welcome.explore": "Explore features",
   "welcome.footer": "Already have an account?",
@@ -701,14 +701,14 @@
 
   "common.field.description": "Description",
 
-  "errors.accessDenied.pageTitle": "Access denied · DMRS",
+  "errors.accessDenied.pageTitle": "Access denied · Nabd",
   "errors.accessDenied.title": "You don't have access to this",
   "errors.accessDenied.subtitle": "Your account doesn't have permission to view this resource. If you believe this is a mistake, contact your administrator.",
-  "errors.notFound.pageTitle": "Page not found · DMRS",
+  "errors.notFound.pageTitle": "Page not found · Nabd",
   "errors.notFound.title": "We couldn't find that page",
   "errors.notFound.subtitle": "The page you're looking for may have been moved, renamed, or never existed. Let's get you back on track.",
   "auth.signedOut.title": "You've been signed out",
-  "auth.signedOut.subtitle": "Your session has ended securely. Thanks for using the DMRS clinical workspace.",
+  "auth.signedOut.subtitle": "Your session has ended securely. Thanks for using the Nabd clinical workspace.",
   "auth.signedOut.redirect": "Taking you back automatically in {0} seconds…",
 
   "documents.title": "Documents",
@@ -776,7 +776,7 @@
 
   "ai.title": "AI Insights",
   "ai.eyebrow": "Predictive Layer",
-  "ai.intro": "Three machine-learning models score every patient straight from their FHIR record — type-2 diabetes, cardiovascular (heart disease), and 30-day hospital readmission risk. Each ONNX classifier is trained on a public clinical dataset and reads only the features DMRS can actually observe (age, vitals, labs, conditions, medications and visits), imputing the training median when a value is missing. Scores are decision support — illustrative, not clinically validated.",
+  "ai.intro": "Three machine-learning models score every patient straight from their FHIR record — type-2 diabetes, cardiovascular (heart disease), and 30-day hospital readmission risk. Each ONNX classifier is trained on a public clinical dataset and reads only the features Nabd can actually observe (age, vitals, labs, conditions, medications and visits), imputing the training median when a value is missing. Scores are decision support — illustrative, not clinically validated.",
   "ai.loadFailed": "Unable to load AI insights: {0}",
   "ai.scoredHelper": "patients scored · acc {0} · AUC {1}",
   "ai.trainedOn": "Trained on {0}",
@@ -802,7 +802,7 @@
   "ai.how.offlineTitle": "Trained offline, served online",
   "ai.how.offlineBody": "Each model is a scikit-learn RandomForest trained in Google Colab, exported to ONNX, and run inside the API. The model output is the score directly — there are no hand-tuned rules.",
   "ai.how.featuresTitle": "Features the system can observe",
-  "ai.how.featuresBody": "Models are trained on only the columns DMRS can recover from a real FHIR record, so training matches inference. A missing value is filled with the training-set median and the patient is flagged as estimated (shown with ≈).",
+  "ai.how.featuresBody": "Models are trained on only the columns Nabd can recover from a real FHIR record, so training matches inference. A missing value is filled with the training-set median and the patient is flagged as estimated (shown with ≈).",
   "ai.how.tiersTitle": "Risk tiers",
   "ai.how.tierHigh": "— probability ≥ 65%",
   "ai.how.tierMedium": "— 35% to <65%",

@@ -1,13 +1,13 @@
-# Authentication in DMRS
+# Authentication in Nabd
 
-This document describes how DMRS establishes **who a caller is**. Authentication produces a validated
+This document describes how Nabd establishes **who a caller is**. Authentication produces a validated
 identity (a JWT); deciding what that identity may *do* is covered separately in
 [`authorization.md`](authorization.md).
 
 ## Overview
 
-DMRS delegates all credential handling to **Keycloak**, an OAuth2 / OpenID Connect (OIDC) identity
-provider. No passwords are ever stored or verified by DMRS itself. The flow is:
+Nabd delegates all credential handling to **Keycloak**, an OAuth2 / OpenID Connect (OIDC) identity
+provider. No passwords are ever stored or verified by Nabd itself. The flow is:
 
 ```
 Browser (Blazor WASM)  ──login──▶  Keycloak (realm "DMRS")  ──issues──▶  JWT access token
@@ -25,7 +25,7 @@ These values live in `appsettings.json` under `Keycloak` (API) and `wwwroot/apps
 
 ## OAuth2 / OpenID Connect
 
-OpenID Connect is the identity layer on top of OAuth2. DMRS uses two of its components:
+OpenID Connect is the identity layer on top of OAuth2. Nabd uses two of its components:
 
 - **Access token** — a signed JWT the client attaches to every API call. It carries the caller's
   identity, realm `roles`, and SMART `scope`s. This is the only token the API inspects.
@@ -65,7 +65,7 @@ Configured in [`DMRS.Api/Program.cs`](../Program.cs) via `AddJwtBearer`:
 A request with a missing, expired, or improperly-signed token is rejected with **401 Unauthorized**
 before any controller runs.
 
-## Token claims DMRS relies on
+## Token claims Nabd relies on
 
 | Claim | Used for |
 |---|---|
@@ -77,7 +77,7 @@ before any controller runs.
 
 ## Login modes: why Direct Grant is DEV-only
 
-Keycloak can issue tokens two ways, and DMRS uses different ones per environment:
+Keycloak can issue tokens two ways, and Nabd uses different ones per environment:
 
 - **Authorization Code + PKCE (the real flow).** The browser is redirected to Keycloak's login page;
   the user authenticates *there* and is redirected back with an authorization code that's exchanged for

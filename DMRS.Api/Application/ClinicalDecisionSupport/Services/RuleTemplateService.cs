@@ -358,7 +358,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
                 ["indicator"] = string.IsNullOrWhiteSpace(request.Indicator) ? "warning" : request.Indicator.Trim(),
                 ["source"] = new Dictionary<string, object?>
                 {
-                    ["label"] = string.IsNullOrWhiteSpace(request.SourceLabel) ? "DMRS CDS" : request.SourceLabel.Trim(),
+                    ["label"] = string.IsNullOrWhiteSpace(request.SourceLabel) ? "Nabd CDS" : request.SourceLabel.Trim(),
                     ["url"] = request.SourceUrl?.Trim()
                 }
             };

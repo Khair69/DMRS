@@ -1,11 +1,11 @@
-# Security in DMRS
+# Security in Nabd
 
-This document records the security posture of DMRS: the threats it defends against, the mechanisms that
+This document records the security posture of Nabd: the threats it defends against, the mechanisms that
 do the defending, and the honest line between what is implemented today and what is deferred to
 production hardening. It complements [`authentication.md`](authentication.md) (who you are) and
 [`authorization.md`](authorization.md) (what you may do).
 
-> **Scope note.** DMRS is a graduation project that handles **simulated patient data only** (Synthea
+> **Scope note.** Nabd is a graduation project that handles **simulated patient data only** (Synthea
 > bundles). It is engineered to the right *shape* for a clinical system, but production-grade compliance
 > (HIPAA/GDPR) is explicitly out of scope — see "Deferred to production" below and
 > [`deployment.md`](deployment.md).
@@ -13,7 +13,7 @@ production hardening. It complements [`authentication.md`](authentication.md) (w
 ## Threat model
 
 The main assets are **patient health information (PHI)** and the **integrity of clinical records**. The
-threats DMRS is designed to resist:
+threats Nabd is designed to resist:
 
 | Threat | Defense |
 |---|---|
@@ -104,7 +104,7 @@ stack is local and the data is synthetic.
 
 ## Summary
 
-DMRS is built with the right security primitives — central identity, validated JWTs, layered
+Nabd is built with the right security primitives — central identity, validated JWTs, layered
 role-and-compartment authorization, encrypted endpoint secrets, and a full data-change history. The
 remaining gaps (TLS, externalized secrets, PHI-access auditing, DoS protection) are deliberate,
 documented deferrals appropriate to a synthetic-data academic project, not oversights.

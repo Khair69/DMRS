@@ -11,7 +11,7 @@ digraph UC {
          label="الزائر\nVisitor", width=1.5];
 
   subgraph cluster_sys {
-    label="نظام DMRS"; fontname="Arial"; fontsize=13; style="rounded"; color="#777777"; bgcolor="#FAFAFA"; margin=12;
+    label="نظام نبض"; fontname="Arial"; fontsize=13; style="rounded"; color="#777777"; bgcolor="#FAFAFA"; margin=12;
     node [shape=ellipse, style=filled, fillcolor="#EEEEEE", color="#777777"];
 
     u_welcome [label="تصفّح صفحة الترحيب\nBrowse Welcome Page"];

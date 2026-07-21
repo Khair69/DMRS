@@ -9,7 +9,7 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(21.6 375.85)">
 <title>ARCH</title>
 <polygon fill="white" stroke="none" points="-21.6,21.6 -21.6,-375.85 1014.1,-375.85 1014.1,21.6 -21.6,21.6"/>
-<text xml:space="preserve" text-anchor="middle" x="496.25" y="-337.9" font-family="Arial" font-size="13.00">البنية العامة لنظام DMRS — System Architecture</text>
+<text xml:space="preserve" text-anchor="middle" x="496.25" y="-337.9" font-family="Arial" font-size="13.00">البنية العامة لنظام نبض — Nabd System Architecture</text>
 <g id="clust1" class="cluster">
 <title>cluster_api</title>
 <path fill="#f7fbfd" stroke="#1f6fb2" d="M247.75,-8C247.75,-8 454.25,-8 454.25,-8 460.25,-8 466.25,-14 466.25,-20 466.25,-20 466.25,-273 466.25,-273 466.25,-279 460.25,-285 454.25,-285 454.25,-285 247.75,-285 247.75,-285 241.75,-285 235.75,-279 235.75,-273 235.75,-273 235.75,-20 235.75,-20 235.75,-14 241.75,-8 247.75,-8"/>

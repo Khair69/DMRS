@@ -9,11 +9,11 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(21.6 754.35)">
 <title>UC</title>
 <polygon fill="white" stroke="none" points="-21.6,21.6 -21.6,-754.35 418.96,-754.35 418.96,21.6 -21.6,21.6"/>
-<text xml:space="preserve" text-anchor="middle" x="198.68" y="-715.45" font-family="Arial" font-size="14.00">مخطّط حالات الاستخدام العام لنظام DMRS</text>
+<text xml:space="preserve" text-anchor="middle" x="198.68" y="-715.45" font-family="Arial" font-size="14.00">مخطّط حالات الاستخدام العام لنظام نبض</text>
 <g id="clust2" class="cluster">
 <title>cluster_sys</title>
 <path fill="#f7fbfd" stroke="#1f6fb2" d="M20,-8C20,-8 199.36,-8 199.36,-8 205.36,-8 211.36,-14 211.36,-20 211.36,-20 211.36,-689 211.36,-689 211.36,-695 205.36,-701 199.36,-701 199.36,-701 20,-701 20,-701 14,-701 8,-695 8,-689 8,-689 8,-20 8,-20 8,-14 14,-8 20,-8"/>
-<text xml:space="preserve" text-anchor="middle" x="109.68" y="-683.7" font-family="Arial" font-size="14.00">نظام DMRS</text>
+<text xml:space="preserve" text-anchor="middle" x="109.68" y="-683.7" font-family="Arial" font-size="14.00">نظام نبض</text>
 </g>
 <!-- sysadmin -->
 <g id="node1" class="node">

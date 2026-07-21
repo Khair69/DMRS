@@ -14,7 +14,7 @@ The CDS implementation is currently an admin-first, rule-driven clinical decisio
 Its job is to:
 
 - expose a CDS Hooks-style endpoint for medication decisions
-- store rules in the DMRS database instead of hardcoding them
+- store rules in the Nabd database instead of hardcoding them
 - pull medicine facts from a current source, which is now the local mock medicine API
 - normalize those medicine facts inside `DMRS.Api`
 - enrich the rule context with medication, dose, and allergy-derived values
@@ -96,7 +96,7 @@ Main pieces:
 - [MedicineKnowledgeService.cs](/D:/Code/ASP/DMRS/DMRS.Api/Application/ClinicalDecisionSupport/Services/MedicineKnowledgeService.cs)
 - migration: [20260428095620_AddMedicineKnowledgeRecords.cs](/D:/Code/ASP/DMRS/DMRS.Api/Migrations/20260428095620_AddMedicineKnowledgeRecords.cs)
 
-This gives DMRS a local store for:
+This gives Nabd a local store for:
 
 - `RxCui`
 - `Name`
@@ -225,7 +225,7 @@ The medicine knowledge path now works like this:
 7. the result is normalized and stored in `DMRS.Api`
 8. later lookups use the local normalized record until expiry
 
-This is important because it means the mock medicine API is an upstream source, while DMRS keeps its own CDS-friendly medicine table locally.
+This is important because it means the mock medicine API is an upstream source, while Nabd keeps its own CDS-friendly medicine table locally.
 
 ## 7. The warmup behavior on MedicationRequest writes
 
