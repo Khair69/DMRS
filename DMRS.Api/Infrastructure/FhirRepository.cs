@@ -37,6 +37,44 @@ namespace DMRS.Api.Infrastructure
                 : query.Where(x => x.SearchParamCode == key && x.Value == value);
         }
 
+        // Resolves the ids of resources matching EVERY non-control search param.
+        //
+        // Each ResourceIndex row carries exactly one SearchParamCode, so the per-param predicates must
+        // NOT be chained onto a single row query: that asks one row to match two different param codes
+        // at once, which no row can satisfy, and every multi-param search silently returns nothing.
+        // Instead each param resolves its own id set and the sets are intersected — the correct
+        // "resource matches all params" semantics. Shared by SearchAsync and SearchCountAsync so both agree.
+        private async Task<List<string>> ResolveMatchingIdsAsync(string typeName, Dictionary<string, string> queryParams)
+        {
+            List<string>? matchedIds = null;
+
+            foreach (var param in queryParams)
+            {
+                var key = param.Key.ToLower();
+                var value = param.Value.ToLower();
+
+                // Ignore control params (_count, _sort, …) — they aren't index filters.
+                if (key.StartsWith("_"))
+                    continue;
+
+                var paramIds = await ApplyParamFilter(
+                        _context.ResourceIndices.Where(x => x.ResourceType == typeName), key, value)
+                    .Select(x => x.ResourceId)
+                    .Distinct()
+                    .ToListAsync();
+
+                matchedIds = matchedIds is null
+                    ? paramIds
+                    : matchedIds.Intersect(paramIds, StringComparer.Ordinal).ToList();
+
+                // Nothing can match the remaining params either — skip the extra round-trips.
+                if (matchedIds.Count == 0)
+                    break;
+            }
+
+            return matchedIds ?? [];
+        }
+
         public FhirRepository(AppDbContext context, FhirJsonSerializer serializer, FhirJsonDeserializer deserializer, ILogger<FhirRepository> logger)
         {
             _context = context;
@@ -161,26 +199,7 @@ namespace DMRS.Api.Infrastructure
             // materialization of every index row for the type.
             if (hasFilters)
             {
-                var indexQuery = _context.ResourceIndices
-                    .Where(x => x.ResourceType == typeName);
-
-                foreach (var param in queryParams)
-                {
-                    var key = param.Key.ToLower();
-                    var value = param.Value.ToLower();
-
-                    // Ignore control params (_count, _sort, …) — they aren't index filters.
-                    if (key.StartsWith("_"))
-                        continue;
-
-                    indexQuery = ApplyParamFilter(indexQuery, key, value);
-                }
-
-                var matchedIds = await indexQuery
-                    .Select(x => x.ResourceId)
-                    .Distinct()
-                    .ToListAsync();
-
+                var matchedIds = await ResolveMatchingIdsAsync(typeName, queryParams);
                 resourceQuery = resourceQuery.Where(r => matchedIds.Contains(r.Id));
             }
 
@@ -363,31 +382,20 @@ namespace DMRS.Api.Infrastructure
         public async Task<int> SearchCountAsync<T>(Dictionary<string, string> queryParams) where T : Resource
         {
             var typeName = typeof(T).Name;
+            var hasFilters = queryParams.Any(p => !p.Key.StartsWith("_", StringComparison.Ordinal));
 
-            var query = _context.ResourceIndices
-                .Where(x => x.ResourceType == typeName);
+            var query = _context.FhirResources
+                .Where(r => r.ResourceType == typeName && !r.IsDeleted);
 
-            foreach (var param in queryParams)
+            // Mirrors SearchAsync: with no filters the count covers every live resource of the type,
+            // rather than only those that happen to have index rows.
+            if (hasFilters)
             {
-                var key = param.Key.ToLower();
-                var value = param.Value.ToLower();
-
-                if (key.StartsWith("_"))
-                    continue;
-
-                query = ApplyParamFilter(query, key, value);
+                var matchedIds = await ResolveMatchingIdsAsync(typeName, queryParams);
+                query = query.Where(r => matchedIds.Contains(r.Id));
             }
 
-            var matchedIds = await query
-                .Select(x => x.ResourceId)
-                .Distinct()
-                .ToListAsync();
-
-            return await _context.FhirResources
-                .CountAsync(r =>
-                    r.ResourceType == typeName &&
-                    !r.IsDeleted &&
-                    matchedIds.Contains(r.Id));
+            return await query.CountAsync();
         }
 
         public async Task<List<T>> GetHistoryAsync<T>(string id) where T : Resource
