@@ -120,6 +120,16 @@ namespace DMRS.Api.Infrastructure
             _context.ResourceIndices.AddRange(indices);
 
             await _context.SaveChangesAsync();
+
+            // Surface the server-assigned version and timestamp on the returned resource, mirroring
+            // what GetAsync does on read. Without this the create response's ETag header renders as
+            // W/"" and the returned body carries no meta. Deliberately set AFTER serialization above,
+            // so the stored RawContent stays free of server-managed metadata (it is re-applied from
+            // the entity columns on every read).
+            resource.Meta ??= new Meta();
+            resource.Meta.VersionId = dbEntity.VersionId.ToString();
+            resource.Meta.LastUpdated = dbEntity.LastUpdated;
+
             return resource.Id;
         }
 

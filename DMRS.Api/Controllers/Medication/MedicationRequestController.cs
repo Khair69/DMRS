@@ -50,7 +50,7 @@ namespace DMRS.Api.Controllers.Medication
             var outcome = await _validator.ValidateAsync(resource);
             if (!outcome.Success)
             {
-                return BadRequest(outcome);
+                return ValidationFailed(outcome);
             }
 
             try
@@ -102,7 +102,7 @@ namespace DMRS.Api.Controllers.Medication
             var outcome = await _validator.ValidateAsync(resource);
             if (!outcome.Success)
             {
-                return BadRequest(outcome);
+                return ValidationFailed(outcome);
             }
 
             try
@@ -163,7 +163,7 @@ namespace DMRS.Api.Controllers.Medication
             var outcome = await _validator.ValidateAsync(resource);
             if (!outcome.Success)
             {
-                return BadRequest(outcome);
+                return ValidationFailed(outcome);
             }
 
             try

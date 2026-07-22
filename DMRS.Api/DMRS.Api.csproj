@@ -15,7 +15,9 @@
     <PackageReference Include="Hl7.Fhir.Specification.R5" Version="6.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.2">
+    <!-- Kept at 10.0.0 to match the EF Core version Npgsql 10.0.0 resolves; a newer Tools package
+         drags in EF Core 10.0.2 and produces assembly-version conflicts in referencing projects. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

@@ -1,4 +1,4 @@
-﻿using DMRS.Api.Application.Interfaces;
+using DMRS.Api.Application.Interfaces;
 using DMRS.Api.Domain.Interfaces;
 using DMRS.Api.Infrastructure.Security;
 using Hl7.Fhir.Model;
@@ -43,6 +43,23 @@ namespace DMRS.Api.Controllers
             _validator = validator;
             _searchIndexer = searchIndexer;
             _authorizationService = authorizationService;
+        }
+
+        /// <summary>
+        /// Returns a FHIR-conformant 400 for a resource that failed validation: the OperationOutcome
+        /// serialized as <c>application/fhir+json</c>, matching the media type used by the success
+        /// paths. Returning it via <c>BadRequest(outcome)</c> instead would hand the object to
+        /// System.Text.Json, which serializes the .NET object graph (severityElement, typeName,
+        /// objectValue, …) rather than the FHIR wire format — output no FHIR client can parse.
+        /// </summary>
+        protected ContentResult ValidationFailed(OperationOutcome outcome)
+        {
+            return new ContentResult
+            {
+                Content = _serializer.SerializeToString(outcome),
+                ContentType = "application/fhir+json",
+                StatusCode = StatusCodes.Status400BadRequest
+            };
         }
 
         [HttpGet("{id}")]
@@ -147,7 +164,7 @@ namespace DMRS.Api.Controllers
 
             if (!outcome.Success)
             {
-                return BadRequest(outcome);
+                return ValidationFailed(outcome);
             }
 
             try
@@ -198,7 +215,7 @@ namespace DMRS.Api.Controllers
             var outcome = await _validator.ValidateAsync(resource);
             if (!outcome.Success)
             {
-                return BadRequest(outcome);
+                return ValidationFailed(outcome);
             }
 
             try
@@ -265,7 +282,7 @@ namespace DMRS.Api.Controllers
             var outcome = await _validator.ValidateAsync(resource);
             if (!outcome.Success)
             {
-                return BadRequest(outcome);
+                return ValidationFailed(outcome);
             }
 
             try

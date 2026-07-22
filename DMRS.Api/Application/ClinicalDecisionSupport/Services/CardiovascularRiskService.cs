@@ -23,7 +23,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
     /// value as normal ("absence of a documented abnormality => assume normal") yields a sensible
     /// demographic-only estimate instead.
     /// </summary>
-    public sealed class CardiovascularRiskService : ICardiovascularRiskService, IDisposable
+    public sealed class CardiovascularRiskService : ICardiovascularRiskService
     {
         // Fallback for the rare patient with no usable birth date.
         private const float MedianAge = 56f;
@@ -51,6 +51,7 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             ObservationFeatureExtractor extractor,
             IOptions<CardiovascularRiskPredictorOptions> options,
             IWebHostEnvironment environment,
+            OnnxModelPool modelPool,
             ILogger<CardiovascularRiskService> logger)
         {
             _fhirRepository = fhirRepository;
@@ -65,9 +66,12 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
 
             // Degrade gracefully when the model file has not been trained/placed yet: the service
             // simply returns null assessments rather than failing requests (and the patient chart).
+            // The session comes from the singleton pool (see OnnxModelPool): this service is scoped,
+            // so constructing an InferenceSession here would re-read the model from disk on EVERY
+            // request. InferenceSession.Run is thread-safe, so one shared session serves all callers.
             if (File.Exists(modelPath))
             {
-                _session = new InferenceSession(modelPath);
+                _session = modelPool.GetOrLoad(modelPath);
                 // Use the model's actual input name rather than assuming "float_input" — different
                 // skl2onnx versions name it "X". Falls back to the configured name if unavailable.
                 _inputName = _session.InputMetadata.Keys.FirstOrDefault() ?? _options.InputName;
@@ -218,8 +222,11 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             }
 
             var score = probability ?? (label == true ? 1f : 0f);
+            // Both derive from the same configured cut-points, so the flag and the reported level can
+            // never disagree (a score once read as IsHighRisk=true while displaying "Medium").
+            var riskLevel = score >= _options.HighRiskThreshold ? "High"
+                : score >= _options.MediumRiskThreshold ? "Medium" : "Low";
             var isHighRisk = score >= _options.HighRiskThreshold;
-            var riskLevel = score >= 0.65f ? "High" : score >= 0.35f ? "Medium" : "Low";
 
             return new CardiovascularRiskAssessment(
                 patientId,
@@ -285,11 +292,6 @@ namespace DMRS.Api.Application.ClinicalDecisionSupport.Services
             }
 
             return age < 0 ? null : age;
-        }
-
-        public void Dispose()
-        {
-            _session?.Dispose();
         }
     }
 }

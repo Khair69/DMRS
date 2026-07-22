@@ -75,6 +75,24 @@ endpoint returns **404 outside Development** and requires a valid token with sys
 > Earlier builds drove these endpoints from an in-app "Test Bench" page; that debug page was removed
 > during pre-handoff cleanup, so seeding is now done directly against the API.
 
+## Running the tests
+
+From the solution root:
+
+```
+dotnet test                       # everything
+dotnet test DMRS.UnitTests        # unit tests only — no external dependencies
+dotnet test DMRS.IntegrationTests # integration tests — needs Docker running
+```
+
+- **`DMRS.UnitTests`** covers pure logic in isolation: SMART scope classification and the authorization
+  handler, the three AI risk services (run against the real `Ai/*.onnx` files), feature extraction, and
+  the CDS rule engine (`SimpleJsonLogicEvaluator`, `RuleDefinitionValidator`). Fast, no I/O.
+- **`DMRS.IntegrationTests`** hosts the real API with `WebApplicationFactory<Program>` and runs it
+  against a throwaway **PostgreSQL** container started by **Testcontainers** — so **Docker Desktop must
+  be running**. Keycloak is replaced by a header-driven test authentication scheme, so no identity
+  server is needed. EF migrations are applied to the fresh container at start-up.
+
 ## Common errors
 
 | Symptom | Likely cause | Fix |
@@ -86,6 +104,7 @@ endpoint returns **404 outside Development** and requires a valid token with sys
 | **404 on `/dev/seed/...`** | API not running in Development | Run with `ASPNETCORE_ENVIRONMENT=Development`. |
 | **CDS cards empty / medicine lookups fail** | `DMRS.MedicineInfo.Api` not running | Start it on `:5041` (the CDS knowledge provider points there). |
 | **DB / migration errors at startup** | Postgres down or connection string mismatch | Verify Postgres is up and the `DMRS` database exists and is migrated. |
+| **Integration tests fail to start / "cannot connect to Docker"** | Docker not running | Start Docker Desktop — `DMRS.IntegrationTests` uses Testcontainers to spin up PostgreSQL. |
 
 ## Project layout
 
@@ -96,5 +115,7 @@ endpoint returns **404 outside Development** and requires a valid token with sys
 | `DMRS.MedicineInfo.Api` | Standalone medicine-knowledge API for the CDS engine. |
 | `DMRS.Shared` | Shared DTOs/constants. |
 | `DMRS.StubAiModel` | Stub external-AI model service for exercising the external-AI integration. |
+| `DMRS.UnitTests` | xUnit unit tests (authorization, AI risk models, CDS rule engine). |
+| `DMRS.IntegrationTests` | xUnit integration tests against a throwaway PostgreSQL container. |
 
 See also: [`authentication.md`](authentication.md) · [`authorization.md`](authorization.md) · [`fhir.md`](fhir.md) · [`cds-system.md`](cds-system.md)

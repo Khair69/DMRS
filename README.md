@@ -54,6 +54,8 @@ patient's FHIR data.
 | `DMRS.Client` | Blazor WebAssembly front-end (clinical workspace, CDS Admin, AI Insights). |
 | `DMRS.MedicineInfo.Api` | Standalone API serving medicine knowledge (RxCUI lookup) to the CDS engine. |
 | `DMRS.Shared` | Shared DTOs/constants. |
+| `DMRS.UnitTests` | xUnit unit tests — authorization logic, the AI risk models (against the real ONNX files), and the CDS rule engine. |
+| `DMRS.IntegrationTests` | xUnit integration tests — the API hosted end-to-end against a throwaway PostgreSQL container (Testcontainers). |
 
 ## Tech Stack
 
@@ -63,6 +65,7 @@ patient's FHIR data.
 - **Auth:** Keycloak (OAuth2 / OpenID Connect)
 - **AI/ML:** Microsoft.ML.OnnxRuntime (scikit-learn models exported to ONNX)
 - **Logging / API docs:** Serilog, Swagger / OpenAPI
+- **Testing:** xUnit, Shouldly, NSubstitute; integration tests via `WebApplicationFactory` + Testcontainers (PostgreSQL)
 
 ## Prerequisites
 
@@ -140,6 +143,23 @@ cd DMRS.Client && dotnet run
 With the stack running, load sample FHIR data (Synthea bundles) through the app's dev seeding flow
 (`SeedDataController` / the in-app seeding tools). This populates patients, conditions, observations,
 medications, encounters, and procedures so the dashboards, CDS, and AI risk cards have data to show.
+
+## Testing
+
+Automated tests live in two projects and run with `dotnet test`:
+
+| Project | Scope | Requires |
+|---|---|---|
+| `DMRS.UnitTests` | Authorization logic, the three AI risk models (run against the real `.onnx` files), and the CDS rule engine — no I/O. | Nothing. |
+| `DMRS.IntegrationTests` | The API hosted end-to-end (real controllers, repository, EF Core, authorization) against a throwaway PostgreSQL container. | **Docker running** — Testcontainers starts PostgreSQL automatically. |
+
+```bash
+# all tests
+dotnet test
+
+# unit tests only (no Docker needed)
+dotnet test DMRS.UnitTests
+```
 
 ## AI Models
 

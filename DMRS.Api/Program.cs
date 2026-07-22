@@ -203,3 +203,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Exposed so the integration test project (DMRS.IntegrationTests) can host the real application
+// via WebApplicationFactory<Program>. Top-level statements otherwise compile Program as internal.
+public partial class Program { }

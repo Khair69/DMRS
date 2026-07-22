@@ -4,4 +4,6 @@
   <Project Path="DMRS.MedicineInfo.Api/DMRS.MedicineInfo.Api.csproj" Id="4bcf8fa5-242e-4342-9143-287480baf1d8" />
   <Project Path="DMRS.Shared/DMRS.Shared.csproj" Id="edb76a96-ddf6-4a6e-9694-92cb84cf4c6f" />
   <Project Path="DMRS.StubAiModel/DMRS.StubAiModel.csproj" />
+  <Project Path="DMRS.UnitTests/DMRS.UnitTests.csproj" />
+  <Project Path="DMRS.IntegrationTests/DMRS.IntegrationTests.csproj" />
 </Solution>
