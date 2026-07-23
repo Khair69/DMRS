@@ -6,7 +6,7 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
 {
     [ApiController]
     [Route("cds/medications")]
-    [Authorize(Policy = "CdsAdmin")]
+    [Authorize(Policy = "CdsKnowledgeRead")]
     public sealed class CdsMedicineKnowledgeController : ControllerBase
     {
         private readonly IMedicineKnowledgeService _medicineKnowledgeService;
@@ -36,6 +36,7 @@ namespace DMRS.Api.Controllers.ClinicalDecisionSupport
         }
 
         [HttpPost("{value}/refresh")]
+        [Authorize(Policy = "CdsAdmin")]
         public async Task<IActionResult> Refresh(string value, CancellationToken cancellationToken)
         {
             var result = await _medicineKnowledgeService.RefreshAsync(value, cancellationToken);

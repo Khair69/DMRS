@@ -24,6 +24,14 @@ namespace DMRS.Api.Infrastructure.Security
                 // which 403s legitimate admins on instance operations. Gate it on admin roles instead.
                 options.AddPolicy("CdsAdmin", policy =>
                     policy.RequireRole("ROLE_SYSTEM_ADMIN", "ROLE_ORG_ADMIN"));
+
+                // Reading medicine knowledge is a bedside activity, not an administrative one: the
+                // prescribing UI looks a medicine up on every MedicationRequest it composes. Gating
+                // the lookups on CdsAdmin 403s every practitioner and silently blanks the medicine
+                // panel, so reads get their own policy that includes the clinical role. Mutating
+                // knowledge (refresh) stays on CdsAdmin.
+                options.AddPolicy("CdsKnowledgeRead", policy =>
+                    policy.RequireRole("ROLE_SYSTEM_ADMIN", "ROLE_ORG_ADMIN", "ROLE_PRACTITIONER"));
             });
 
             return services;

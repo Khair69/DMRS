@@ -243,4 +243,66 @@ public class SimpleJsonLogicEvaluatorTests
         // Missing HbA1c must not fire the alert on incomplete data.
         Evaluate(rule, ("conditionText", "Type 2 diabetes mellitus"), ("age", 61)).ShouldBeFalse();
     }
+
+    /// <summary>
+    /// The max-dose expression the "Max Dose Exceeded" workshop template compiles, evaluated against
+    /// the context <see cref="CdsContextBuilder"/> builds for a real over-max prescription (Augmentin
+    /// 4500 mg three times daily against a 4000 mg/day ceiling). Pinning the unrestricted form guards
+    /// the case that matters most: an authored rule that carries an extra RxCUI equality silently
+    /// covers exactly one medicine, which looks identical at runtime to a broken engine.
+    /// </summary>
+    [Fact]
+    public void The_max_dose_template_expression_fires_for_any_medicine_when_unrestricted()
+    {
+        const string maxDoseRule = """
+            {"and": [
+                {">": [{"var": "dose.requestedDailyMg"}, {"var": "dose.maxDailyMg"}]}
+            ]}
+            """;
+
+        static (string, object?) Dose(decimal? requestedDailyMg, decimal? maxDailyMg)
+            => ("dose", new Dictionary<string, object?>
+            {
+                ["requestedDailyMg"] = requestedDailyMg,
+                ["maxDailyMg"] = maxDailyMg
+            });
+
+        // Augmentin: 4500 mg x3/day = 13500 mg/day against a 4000 mg/day maximum.
+        Evaluate(maxDoseRule, Dose(13500m, 4000m)).ShouldBeTrue();
+        Evaluate(maxDoseRule, Dose(3000m, 4000m)).ShouldBeFalse();
+        // At the ceiling exactly is not over it.
+        Evaluate(maxDoseRule, Dose(4000m, 4000m)).ShouldBeFalse();
+        // An uncoded medicine has no known ceiling — never alert on unknown data.
+        Evaluate(maxDoseRule, Dose(13500m, null)).ShouldBeFalse();
+        Evaluate(maxDoseRule, Dose(null, 4000m)).ShouldBeFalse();
+    }
+
+    /// <summary>
+    /// The same template with its optional RxCUI restriction applied: it must fire only for the one
+    /// medicine it names, however far over the ceiling every other medicine is.
+    /// </summary>
+    [Fact]
+    public void The_max_dose_template_expression_is_scoped_when_an_rxcui_is_supplied()
+    {
+        const string acetaminophenOnly = """
+            {"and": [
+                {">": [{"var": "dose.requestedDailyMg"}, {"var": "dose.maxDailyMg"}]},
+                {"==": [{"var": "medication.rxCui"}, "161"]}
+            ]}
+            """;
+
+        static (string, object?)[] Prescription(string rxCui)
+            => [
+                ("dose", new Dictionary<string, object?>
+                {
+                    ["requestedDailyMg"] = 13500m,
+                    ["maxDailyMg"] = 4000m
+                }),
+                ("medication", new Dictionary<string, object?> { ["rxCui"] = rxCui })
+            ];
+
+        Evaluate(acetaminophenOnly, Prescription("161")).ShouldBeTrue();
+        // Augmentin, five times over its ceiling, is invisible to an acetaminophen-scoped rule.
+        Evaluate(acetaminophenOnly, Prescription("211516")).ShouldBeFalse();
+    }
 }
