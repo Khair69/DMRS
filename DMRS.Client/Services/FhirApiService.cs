@@ -72,7 +72,7 @@ public class FhirApiService
         var content = new StringContent(json, Encoding.UTF8, "application/fhir+json");
         var response = await _httpClient.PostAsync($"fhir/{resourceType}", content);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureFhirSuccessAsync(response);
 
         var responseJson = await response.Content.ReadAsStringAsync();
         return _deserializer.Deserialize<T>(responseJson);
@@ -86,7 +86,7 @@ public class FhirApiService
         var content = new StringContent(json, Encoding.UTF8, "application/fhir+json");
         var response = await _httpClient.PutAsync($"fhir/{resourceType}/{id}", content);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureFhirSuccessAsync(response);
 
         var responseJson = await response.Content.ReadAsStringAsync();
         return _deserializer.Deserialize<T>(responseJson);
@@ -289,6 +289,69 @@ public class FhirApiService
     }
 
     public string GetDownloadUrl(string path) => $"{_httpClient.BaseAddress}{path}";
+
+    // A rejected write comes back as a FHIR OperationOutcome describing exactly what was wrong
+    // (e.g. "No code found in CodeableConcept with a required binding to valueset …").
+    // EnsureSuccessStatusCode() throws before anyone reads it, leaving the UI to show the useless
+    // "net_http_message_not_success_statuscode_reason, 400, Bad Request". Surface the outcome text
+    // instead, falling back to the status line when the body isn't an OperationOutcome.
+    private async System.Threading.Tasks.Task EnsureFhirSuccessAsync(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var detail = await ReadOutcomeDetailAsync(response);
+        var status = $"{(int)response.StatusCode} {response.ReasonPhrase}";
+
+        throw new HttpRequestException(
+            string.IsNullOrWhiteSpace(detail) ? status : $"{status} — {detail}",
+            null,
+            response.StatusCode);
+    }
+
+    private async Task<string?> ReadOutcomeDetailAsync(HttpResponseMessage response)
+    {
+        string body;
+        try
+        {
+            body = await response.Content.ReadAsStringAsync();
+        }
+        catch
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return null;
+        }
+
+        try
+        {
+            var outcome = _deserializer.Deserialize<OperationOutcome>(body);
+            var messages = outcome.Issue
+                .Where(i => i.Severity is OperationOutcome.IssueSeverity.Error or OperationOutcome.IssueSeverity.Fatal)
+                .Select(i => i.Details?.Text ?? i.Diagnostics)
+                .Where(text => !string.IsNullOrWhiteSpace(text))
+                .Distinct()
+                .ToList();
+
+            if (messages.Count > 0)
+            {
+                return string.Join(" ", messages);
+            }
+        }
+        catch
+        {
+            // Not an OperationOutcome (plain-text BadRequest from the controller, a proxy error page,
+            // …). Fall through and use the raw body, trimmed to something a toast can show.
+        }
+
+        var trimmed = body.Trim();
+        return trimmed.Length > 500 ? trimmed[..500] + "…" : trimmed;
+    }
 
     // Reference search params (e.g. patient, organization) expect a typed reference
     // like "Patient/123". Let users enter just the bare id and prepend the type here.

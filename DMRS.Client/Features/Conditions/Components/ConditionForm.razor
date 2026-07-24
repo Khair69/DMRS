@@ -17,7 +17,15 @@
         </div>
         <div class="col-md-6">
             <label class="form-label">@Loc["common.field.clinicalStatus"]</label>
-            <InputText @bind-Value="Model.ClinicalStatus" class="form-control" />
+            <InputSelect @bind-Value="Model.ClinicalStatus" class="form-select">
+                <option value="">@Loc["common.status.notSpecified"]</option>
+                <option value="active">@Loc["common.status.active"]</option>
+                <option value="recurrence">@Loc["common.status.recurrence"]</option>
+                <option value="relapse">@Loc["common.status.relapse"]</option>
+                <option value="inactive">@Loc["common.status.inactive"]</option>
+                <option value="remission">@Loc["common.status.remission"]</option>
+                <option value="resolved">@Loc["common.status.resolved"]</option>
+            </InputSelect>
             <div class="form-text">@Loc["common.field.clinicalStatusHint"]</div>
         </div>
     </div>

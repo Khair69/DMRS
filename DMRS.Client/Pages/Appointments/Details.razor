@@ -1,45 +1,74 @@
 @page "/appointments/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Appointments.Models
 @inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Appointments.Services.AppointmentFeatureService AppointmentService
 
 <PageTitle>@Loc["appointments.details.title"]</PageTitle>
 
-<h1>@Loc["appointments.details.title"]</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<div class="mb-3">
-    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/appointments/{Id}/edit")">@Loc["common.edit"]</NavLink>
-    <NavLink class="btn btn-sm btn-outline-info" href="@($"/appointments/{Id}/history")">@Loc["common.history"]</NavLink>
-</div>
-
-<FhirJsonView Resource="appointment" />
+<ResourceDetailsPage Eyebrow="@Loc["appointments.workflow.eyebrow"]"
+                     Title="@DisplayName"
+                     Subtitle="@Loc["appointments.details.subline", PatientId]"
+                     SummaryTitle="@Loc["appointments.summary.title"]"
+                     SummarySubtitle="@Loc["appointments.summary.subtitle"]"
+                     EditHref="@($"/appointments/{Id}/edit")"
+                     HistoryHref="@($"/appointments/{Id}/history")"
+                     IsLoading="isLoading"
+                     ErrorMessage="@errorMessage"
+                     Resource="appointment">
+    <DetailRow Label="@Loc["common.field.patient"]" Value="@PatientId">
+        <a href="@($"/patients/{PatientId}")">@PatientId</a>
+    </DetailRow>
+    <DetailRow Label="@Loc["common.field.status"]">
+        <StatusPill Status="@summary?.Status" />
+    </DetailRow>
+    <DetailRow Label="@Loc["common.field.start"]" Value="@Format(summary?.Start)" />
+    <DetailRow Label="@Loc["common.field.end"]" Value="@Format(summary?.End)" />
+</ResourceDetailsPage>
 
 @code {
     [Parameter]
     public string Id { get; set; } = string.Empty;
 
     private Hl7.Fhir.Model.Appointment? appointment;
+    private AppointmentEditModel? summary;
+    private bool isLoading = true;
     private string? errorMessage;
+
+    // An appointment has no code of its own, so the slot itself is the headline.
+    private string DisplayName => summary?.Start is null
+        ? Loc["appointments.details.title"]
+        : Format(summary.Start)!;
+
+    private string PatientId => summary?.PatientId ?? string.Empty;
+
+    private static string? Format(DateTime? value)
+        => value?.ToLocalTime().ToString("dd MMM yyyy HH:mm");
 
     protected override async Task OnParametersSetAsync()
     {
+        isLoading = true;
         errorMessage = null;
+        appointment = null;
+        summary = null;
         try
         {
             appointment = await AppointmentService.GetAsync(Id);
             if (appointment is null)
             {
                 errorMessage = Loc["appointments.notFound", Id];
+                return;
             }
+
+            summary = AppointmentEditModel.FromAppointment(appointment);
         }
         catch (Exception ex)
         {
             errorMessage = Loc["appointments.loadFailed", ex.Message];
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }

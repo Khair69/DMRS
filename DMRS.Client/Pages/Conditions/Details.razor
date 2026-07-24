@@ -1,45 +1,76 @@
 @page "/conditions/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Conditions.Models
 @inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Conditions.Services.ConditionFeatureService ConditionService
 
 <PageTitle>@Loc["conditions.details.title"]</PageTitle>
 
-<h1>@Loc["conditions.details.title"]</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<div class="mb-3">
-    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/conditions/{Id}/edit")">@Loc["common.edit"]</NavLink>
-    <NavLink class="btn btn-sm btn-outline-info" href="@($"/conditions/{Id}/history")">@Loc["common.history"]</NavLink>
-</div>
-
-<FhirJsonView Resource="condition" />
+<ResourceDetailsPage Eyebrow="@Loc["conditions.workflow.eyebrow"]"
+                     Title="@DisplayName"
+                     Subtitle="@Loc["conditions.details.subline", PatientId]"
+                     SummaryTitle="@Loc["conditions.summary.title"]"
+                     SummarySubtitle="@Loc["conditions.summary.subtitle"]"
+                     EditHref="@($"/conditions/{Id}/edit")"
+                     HistoryHref="@($"/conditions/{Id}/history")"
+                     IsLoading="isLoading"
+                     ErrorMessage="@errorMessage"
+                     Resource="condition">
+    <DetailRow Label="@Loc["common.field.code"]" Value="@DisplayName" />
+    <DetailRow Label="@Loc["common.field.patient"]" Value="@PatientId">
+        <a href="@($"/patients/{PatientId}")">@PatientId</a>
+    </DetailRow>
+    <DetailRow Label="@Loc["common.field.clinicalStatus"]">
+        @if (!string.IsNullOrWhiteSpace(summary?.ClinicalStatus))
+        {
+            <StatusPill Status="@summary!.ClinicalStatus" />
+        }
+        else
+        {
+            <span class="text-muted">@Loc["common.status.notSpecified"]</span>
+        }
+    </DetailRow>
+</ResourceDetailsPage>
 
 @code {
     [Parameter]
     public string Id { get; set; } = string.Empty;
 
     private Hl7.Fhir.Model.Condition? condition;
+    private ConditionEditModel? summary;
+    private bool isLoading = true;
     private string? errorMessage;
+
+    private string DisplayName => string.IsNullOrWhiteSpace(summary?.CodeText)
+        ? Loc["conditions.details.title"]
+        : summary!.CodeText;
+
+    private string PatientId => summary?.PatientId ?? string.Empty;
 
     protected override async Task OnParametersSetAsync()
     {
+        isLoading = true;
         errorMessage = null;
+        condition = null;
+        summary = null;
         try
         {
             condition = await ConditionService.GetAsync(Id);
             if (condition is null)
             {
                 errorMessage = Loc["conditions.notFound", Id];
+                return;
             }
+
+            summary = ConditionEditModel.FromCondition(condition);
         }
         catch (Exception ex)
         {
             errorMessage = Loc["conditions.loadFailed", ex.Message];
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }

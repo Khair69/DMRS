@@ -1,0 +1,38 @@
+@* One label/value row inside a <dl class="dmrs-detail-list">. Rows with nothing to show are dropped
+   rather than rendered blank, so a sparse resource yields a short list instead of a column of
+   em-dashes. Pass Value for plain text, or ChildContent for markup (links, pills, …). *@
+
+@if (HasContent)
+{
+    <div class="dmrs-detail-list__row">
+        <dt>@Label</dt>
+        <dd>
+            @if (ChildContent is not null)
+            {
+                @ChildContent
+            }
+            else
+            {
+                @Value
+            }
+        </dd>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public string? Value { get; set; }
+
+    // Markup value — takes precedence over Value when supplied. Pass Value alongside it (e.g. the id
+    // behind a link) so the row still disappears when there is nothing to link to.
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // Set false to render the row even when Value is blank (rare: when the absence itself matters).
+    [Parameter] public bool HideWhenEmpty { get; set; } = true;
+
+    private bool HasContent
+        => !HideWhenEmpty
+            || !string.IsNullOrWhiteSpace(Value)
+            || (Value is null && ChildContent is not null);
+}

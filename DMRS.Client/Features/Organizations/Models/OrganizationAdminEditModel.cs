@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DMRS.Shared.Constants;
 using Hl7.Fhir.Model;
 
 namespace DMRS.Client.Features.Organizations.Models;
@@ -22,7 +23,7 @@ public sealed class OrganizationAdminEditModel
     public string? Phone { get; set; }
 
     [MaxLength(200)]
-    public string? IdentifierSystem { get; set; }
+    public string? IdentifierSystem { get; set; } = PractitionerIdentifierSystems.NationalId;
 
     [MaxLength(200)]
     public string? IdentifierValue { get; set; }

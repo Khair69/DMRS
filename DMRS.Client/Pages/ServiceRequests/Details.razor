@@ -1,45 +1,73 @@
 @page "/service-requests/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.ServiceRequests.Models
 @inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.ServiceRequests.Services.ServiceRequestFeatureService ServiceRequestService
 
 <PageTitle>@Loc["serviceRequests.details.title"]</PageTitle>
 
-<h1>@Loc["serviceRequests.details.title"]</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<div class="mb-3">
-    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/service-requests/{Id}/edit")">@Loc["common.edit"]</NavLink>
-    <NavLink class="btn btn-sm btn-outline-info" href="@($"/service-requests/{Id}/history")">@Loc["common.history"]</NavLink>
-</div>
-
-<FhirJsonView Resource="request" />
+<ResourceDetailsPage Eyebrow="@Loc["serviceRequests.workflow.eyebrow"]"
+                     Title="@DisplayName"
+                     Subtitle="@Loc["serviceRequests.details.subline", PatientId]"
+                     SummaryTitle="@Loc["serviceRequests.summary.title"]"
+                     SummarySubtitle="@Loc["serviceRequests.summary.subtitle"]"
+                     EditHref="@($"/service-requests/{Id}/edit")"
+                     HistoryHref="@($"/service-requests/{Id}/history")"
+                     IsLoading="isLoading"
+                     ErrorMessage="@errorMessage"
+                     Resource="request">
+    <DetailRow Label="@Loc["common.field.code"]" Value="@DisplayName" />
+    <DetailRow Label="@Loc["common.field.patient"]" Value="@PatientId">
+        <a href="@($"/patients/{PatientId}")">@PatientId</a>
+    </DetailRow>
+    <DetailRow Label="@Loc["common.field.status"]">
+        <StatusPill Status="@summary?.Status" />
+    </DetailRow>
+    <DetailRow Label="@Loc["common.field.intent"]" Value="@summary?.Intent" />
+    <DetailRow Label="@Loc["common.field.occurrenceDate"]" Value="@OccurrenceDisplay" />
+</ResourceDetailsPage>
 
 @code {
     [Parameter]
     public string Id { get; set; } = string.Empty;
 
     private Hl7.Fhir.Model.ServiceRequest? request;
+    private ServiceRequestEditModel? summary;
+    private bool isLoading = true;
     private string? errorMessage;
+
+    private string DisplayName => string.IsNullOrWhiteSpace(summary?.CodeText)
+        ? Loc["serviceRequests.details.title"]
+        : summary!.CodeText;
+
+    private string PatientId => summary?.PatientId ?? string.Empty;
+
+    private string? OccurrenceDisplay => summary?.OccurrenceDateTime?.ToString("dd MMM yyyy HH:mm");
 
     protected override async Task OnParametersSetAsync()
     {
+        isLoading = true;
         errorMessage = null;
+        request = null;
+        summary = null;
         try
         {
             request = await ServiceRequestService.GetAsync(Id);
             if (request is null)
             {
                 errorMessage = Loc["serviceRequests.notFound", Id];
+                return;
             }
+
+            summary = ServiceRequestEditModel.FromServiceRequest(request);
         }
         catch (Exception ex)
         {
             errorMessage = Loc["serviceRequests.loadFailed", ex.Message];
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }

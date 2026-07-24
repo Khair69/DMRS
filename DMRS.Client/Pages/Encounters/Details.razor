@@ -1,45 +1,74 @@
 @page "/encounters/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Encounters.Models
 @inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Encounters.Services.EncounterFeatureService EncounterService
 
 <PageTitle>@Loc["encounters.details.title"]</PageTitle>
 
-<h1>@Loc["encounters.details.title"]</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<div class="mb-3">
-    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/encounters/{Id}/edit")">@Loc["common.edit"]</NavLink>
-    <NavLink class="btn btn-sm btn-outline-info" href="@($"/encounters/{Id}/history")">@Loc["common.history"]</NavLink>
-</div>
-
-<FhirJsonView Resource="encounter" />
+<ResourceDetailsPage Eyebrow="@Loc["encounters.workflow.eyebrow"]"
+                     Title="@DisplayName"
+                     Subtitle="@Loc["encounters.details.subline", PatientId]"
+                     SummaryTitle="@Loc["encounters.summary.title"]"
+                     SummarySubtitle="@Loc["encounters.summary.subtitle"]"
+                     EditHref="@($"/encounters/{Id}/edit")"
+                     HistoryHref="@($"/encounters/{Id}/history")"
+                     IsLoading="isLoading"
+                     ErrorMessage="@errorMessage"
+                     Resource="encounter">
+    <DetailRow Label="@Loc["common.field.patient"]" Value="@PatientId">
+        <a href="@($"/patients/{PatientId}")">@PatientId</a>
+    </DetailRow>
+    <DetailRow Label="@Loc["common.field.status"]">
+        <StatusPill Status="@summary?.Status" />
+    </DetailRow>
+    <DetailRow Label="@Loc["common.field.classCode"]" Value="@summary?.ClassCode" />
+    <DetailRow Label="@Loc["common.field.start"]" Value="@Format(summary?.Start)" />
+    <DetailRow Label="@Loc["common.field.end"]" Value="@Format(summary?.End)" />
+</ResourceDetailsPage>
 
 @code {
     [Parameter]
     public string Id { get; set; } = string.Empty;
 
     private Hl7.Fhir.Model.Encounter? encounter;
+    private EncounterEditModel? summary;
+    private bool isLoading = true;
     private string? errorMessage;
+
+    // An encounter carries no code, so its class (AMB, IMP, EMER …) is the most useful headline.
+    private string DisplayName => string.IsNullOrWhiteSpace(summary?.ClassCode)
+        ? Loc["encounters.details.title"]
+        : summary!.ClassCode;
+
+    private string PatientId => summary?.PatientId ?? string.Empty;
+
+    private static string? Format(DateTime? value) => value?.ToString("dd MMM yyyy HH:mm");
 
     protected override async Task OnParametersSetAsync()
     {
+        isLoading = true;
         errorMessage = null;
+        encounter = null;
+        summary = null;
         try
         {
             encounter = await EncounterService.GetAsync(Id);
             if (encounter is null)
             {
                 errorMessage = Loc["encounters.notFound", Id];
+                return;
             }
+
+            summary = EncounterEditModel.FromEncounter(encounter);
         }
         catch (Exception ex)
         {
             errorMessage = Loc["encounters.loadFailed", ex.Message];
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }

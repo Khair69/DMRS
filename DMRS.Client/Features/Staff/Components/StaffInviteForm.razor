@@ -1,4 +1,5 @@
 @using DMRS.Client.Features.Staff.Models
+@using DMRS.Shared.Constants
 @inherits DMRS.Client.Components.LocalizedComponentBase
 
 <EditForm Model="Model" OnValidSubmit="OnSubmit">
@@ -26,7 +27,11 @@
         </div>
         <div class="col-md-6">
             <label class="form-label">@Loc["common.field.identifierSystem"]</label>
-            <InputText @bind-Value="Model.IdentifierSystem" class="form-control" />
+            <InputSelect @bind-Value="Model.IdentifierSystem" class="form-select">
+                <option value="@PractitionerIdentifierSystems.NationalId">@Loc["staff.form.identifierSystem.nationalId"]</option>
+                <option value="@PractitionerIdentifierSystems.Passport">@Loc["staff.form.identifierSystem.passport"]</option>
+                <option value="@PractitionerIdentifierSystems.MedicalLicense">@Loc["staff.form.identifierSystem.medicalLicense"]</option>
+            </InputSelect>
         </div>
         <div class="col-md-6">
             <label class="form-label">@Loc["common.field.identifierValue"]</label>

@@ -1,45 +1,67 @@
 @page "/locations/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Locations.Models
 @inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Locations.Services.LocationFeatureService LocationService
 
 <PageTitle>@Loc["locations.details.title"]</PageTitle>
 
-<h1>@Loc["locations.details.title"]</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<div class="mb-3">
-    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/locations/{Id}/edit")">@Loc["common.edit"]</NavLink>
-    <NavLink class="btn btn-sm btn-outline-info" href="@($"/locations/{Id}/history")">@Loc["common.history"]</NavLink>
-</div>
-
-<FhirJsonView Resource="location" />
+<ResourceDetailsPage Eyebrow="@Loc["locations.workflow.eyebrow"]"
+                     Title="@DisplayName"
+                     Subtitle="@Loc["locations.details.subline"]"
+                     SummaryTitle="@Loc["locations.summary.title"]"
+                     SummarySubtitle="@Loc["locations.summary.subtitle"]"
+                     EditHref="@($"/locations/{Id}/edit")"
+                     HistoryHref="@($"/locations/{Id}/history")"
+                     IsLoading="isLoading"
+                     ErrorMessage="@errorMessage"
+                     Resource="location">
+    <DetailRow Label="@Loc["common.field.name"]" Value="@summary?.Name" />
+    <DetailRow Label="@Loc["common.field.status"]">
+        <StatusPill Status="@summary?.Status" />
+    </DetailRow>
+    <DetailRow Label="@Loc["common.field.organization"]" Value="@summary?.ManagingOrganizationId">
+        <a href="@($"/organizations/{summary?.ManagingOrganizationId}")">@summary?.ManagingOrganizationId</a>
+    </DetailRow>
+</ResourceDetailsPage>
 
 @code {
     [Parameter]
     public string Id { get; set; } = string.Empty;
 
     private Hl7.Fhir.Model.Location? location;
+    private LocationEditModel? summary;
+    private bool isLoading = true;
     private string? errorMessage;
+
+    private string DisplayName => string.IsNullOrWhiteSpace(summary?.Name)
+        ? Loc["locations.details.title"]
+        : summary!.Name;
 
     protected override async Task OnParametersSetAsync()
     {
+        isLoading = true;
         errorMessage = null;
+        location = null;
+        summary = null;
         try
         {
             location = await LocationService.GetAsync(Id);
             if (location is null)
             {
                 errorMessage = Loc["locations.notFound", Id];
+                return;
             }
+
+            summary = LocationEditModel.FromLocation(location);
         }
         catch (Exception ex)
         {
             errorMessage = Loc["locations.loadFailed", ex.Message];
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }

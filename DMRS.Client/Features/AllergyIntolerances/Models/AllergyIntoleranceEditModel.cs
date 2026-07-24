@@ -6,6 +6,14 @@ namespace DMRS.Client.Features.AllergyIntolerances.Models;
 
 public sealed class AllergyIntoleranceEditModel
 {
+    // AllergyIntolerance.clinicalStatus is bound REQUIRED to the allergyintolerance-clinical value
+    // set, so a text-only CodeableConcept is rejected by the server-side validator ("No code found
+    // in CodeableConcept with a required binding …") and the create fails with a 400. The status
+    // must always be written as a real coding drawn from this system.
+    public const string ClinicalStatusSystem = "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical";
+
+    public static readonly IReadOnlyList<string> ClinicalStatusCodes = ["active", "inactive", "resolved"];
+
     public string? Id { get; set; }
 
     [Required]
@@ -50,7 +58,7 @@ public sealed class AllergyIntoleranceEditModel
 
         if (!string.IsNullOrWhiteSpace(ClinicalStatus))
         {
-            allergy.ClinicalStatus = new CodeableConcept { Text = ClinicalStatus };
+            allergy.ClinicalStatus = new CodeableConcept(ClinicalStatusSystem, ClinicalStatus.Trim().ToLowerInvariant());
         }
 
         return allergy;

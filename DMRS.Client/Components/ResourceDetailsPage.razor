@@ -1,0 +1,112 @@
+@inherits DMRS.Client.Components.LocalizedComponentBase
+
+@* Shared scaffold for every resource details page: a workspace hero carrying the record's own
+   headline (the substance, the diagnosis, the procedure — not a generic "X Details"), edit/history
+   actions, a readable key/value summary panel, and the raw FHIR JSON demoted to a collapsible at the
+   bottom. Pages supply the hero text and the <DetailRow>s; loading, error and not-found states live
+   here. Mirrors the design of the Medication Request details page. *@
+
+@if (IsLoading)
+{
+    <div class="dmrs-loading-shell">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">@Loc["common.loading"]</span>
+        </div>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+else if (Resource is not null)
+{
+    <div class="workspace-hero workspace-hero--patient">
+        <div>
+            <span class="workspace-eyebrow">@Eyebrow</span>
+            <h1>@Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Subtitle))
+            {
+                <p>@Subtitle</p>
+            }
+        </div>
+        <div class="workspace-hero__actions">
+            @if (!string.IsNullOrWhiteSpace(EditHref))
+            {
+                <NavLink class="btn btn-light" href="@EditHref">@Loc["common.edit"]</NavLink>
+            }
+            @if (!string.IsNullOrWhiteSpace(HistoryHref))
+            {
+                <NavLink class="btn btn-outline-light" href="@HistoryHref">@Loc["common.history"]</NavLink>
+            }
+            @HeroActions
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="@(Aside is null ? "col-12" : "col-12 col-xl-7")">
+            <div class="dmrs-panel">
+                <div class="dmrs-panel__header">
+                    <div>
+                        <div class="dmrs-panel__title">@SummaryTitle</div>
+                        @if (!string.IsNullOrWhiteSpace(SummarySubtitle))
+                        {
+                            <div class="dmrs-panel__subtitle">@SummarySubtitle</div>
+                        }
+                    </div>
+                </div>
+
+                <dl class="dmrs-detail-list">
+                    @ChildContent
+                    <DetailRow Label="@Loc["common.field.id"]" Value="@Resource.Id" />
+                    <DetailRow Label="@Loc["common.field.lastUpdated"]" Value="@LastUpdatedDisplay" />
+                </dl>
+
+                <details class="dmrs-raw-json">
+                    <summary>@Loc["common.rawFhir"]</summary>
+                    <div class="dmrs-raw-json__scroll">
+                        <FhirJsonView Resource="Resource" />
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        @if (Aside is not null)
+        {
+            <div class="col-12 col-xl-5">
+                @Aside
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Eyebrow { get; set; } = string.Empty;
+
+    // The record's own headline — e.g. the allergy substance or the condition name. Fall back to the
+    // generic page title only when the resource carries no display text of its own.
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+
+    [Parameter, EditorRequired] public string SummaryTitle { get; set; } = string.Empty;
+    [Parameter] public string? SummarySubtitle { get; set; }
+
+    [Parameter] public string? EditHref { get; set; }
+    [Parameter] public string? HistoryHref { get; set; }
+    [Parameter] public RenderFragment? HeroActions { get; set; }
+
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    // The loaded resource. Null with no error means nothing renders — pages set ErrorMessage to their
+    // localized "not found" text when the fetch comes back empty.
+    [Parameter] public Hl7.Fhir.Model.Resource? Resource { get; set; }
+
+    // The <DetailRow> elements making up the summary list.
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = default!;
+
+    // Optional right-hand column (e.g. a decision-support panel).
+    [Parameter] public RenderFragment? Aside { get; set; }
+
+    private string? LastUpdatedDisplay
+        => Resource?.Meta?.LastUpdated?.ToLocalTime().ToString("dd MMM yyyy HH:mm");
+}

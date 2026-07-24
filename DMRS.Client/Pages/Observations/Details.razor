@@ -1,45 +1,73 @@
 @page "/observations/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.Observations.Models
 @inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.Observations.Services.ObservationFeatureService ObservationService
 
 <PageTitle>@Loc["observations.details.title"]</PageTitle>
 
-<h1>@Loc["observations.details.title"]</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<div class="mb-3">
-    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/observations/{Id}/edit")">@Loc["common.edit"]</NavLink>
-    <NavLink class="btn btn-sm btn-outline-info" href="@($"/observations/{Id}/history")">@Loc["common.history"]</NavLink>
-</div>
-
-<FhirJsonView Resource="observation" />
+<ResourceDetailsPage Eyebrow="@Loc["observations.workflow.eyebrow"]"
+                     Title="@DisplayName"
+                     Subtitle="@Loc["observations.details.subline", PatientId]"
+                     SummaryTitle="@Loc["observations.summary.title"]"
+                     SummarySubtitle="@Loc["observations.summary.subtitle"]"
+                     EditHref="@($"/observations/{Id}/edit")"
+                     HistoryHref="@($"/observations/{Id}/history")"
+                     IsLoading="isLoading"
+                     ErrorMessage="@errorMessage"
+                     Resource="observation">
+    <DetailRow Label="@Loc["common.field.code"]" Value="@DisplayName" />
+    <DetailRow Label="@Loc["common.field.patient"]" Value="@PatientId">
+        <a href="@($"/patients/{PatientId}")">@PatientId</a>
+    </DetailRow>
+    <DetailRow Label="@Loc["common.field.value"]" Value="@summary?.ValueText" />
+    <DetailRow Label="@Loc["common.field.status"]">
+        <StatusPill Status="@summary?.Status" />
+    </DetailRow>
+    <DetailRow Label="@Loc["common.field.effectiveDate"]" Value="@EffectiveDisplay" />
+</ResourceDetailsPage>
 
 @code {
     [Parameter]
     public string Id { get; set; } = string.Empty;
 
     private Hl7.Fhir.Model.Observation? observation;
+    private ObservationEditModel? summary;
+    private bool isLoading = true;
     private string? errorMessage;
+
+    private string DisplayName => string.IsNullOrWhiteSpace(summary?.CodeText)
+        ? Loc["observations.details.title"]
+        : summary!.CodeText;
+
+    private string PatientId => summary?.PatientId ?? string.Empty;
+
+    private string? EffectiveDisplay => summary?.EffectiveDateTime?.ToString("dd MMM yyyy HH:mm");
 
     protected override async Task OnParametersSetAsync()
     {
+        isLoading = true;
         errorMessage = null;
+        observation = null;
+        summary = null;
         try
         {
             observation = await ObservationService.GetAsync(Id);
             if (observation is null)
             {
                 errorMessage = Loc["observations.notFound", Id];
+                return;
             }
+
+            summary = ObservationEditModel.FromObservation(observation);
         }
         catch (Exception ex)
         {
             errorMessage = Loc["observations.loadFailed", ex.Message];
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }

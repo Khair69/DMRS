@@ -1,0 +1,26 @@
+@inherits DMRS.Client.Components.LocalizedComponentBase
+
+@* A FHIR status code rendered as a coloured pill, translated when the workspace has a label for it
+   and shown as the raw code otherwise (Synthea data carries codes our value sets never list). *@
+
+@if (!string.IsNullOrWhiteSpace(Status))
+{
+    <span class="dmrs-pill @StatusStyles.PillClass(Status)">@Label</span>
+}
+
+@code {
+    [Parameter, EditorRequired] public string? Status { get; set; }
+
+    private string Label
+    {
+        get
+        {
+            var code = Status!.Trim();
+            var key = StatusStyles.LabelKey(code);
+            var translated = Loc[key];
+
+            // LocalizationService returns the key itself when it has no entry for it.
+            return translated == key ? code : translated;
+        }
+    }
+}

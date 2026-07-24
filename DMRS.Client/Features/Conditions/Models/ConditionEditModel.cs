@@ -6,6 +6,15 @@ namespace DMRS.Client.Features.Conditions.Models;
 
 public sealed class ConditionEditModel
 {
+    // Condition.clinicalStatus is bound REQUIRED to the condition-clinical value set, so a text-only
+    // CodeableConcept is rejected by the server-side validator ("No code found in CodeableConcept
+    // with a required binding …") and the create fails with a 400. The status must always be written
+    // as a real coding drawn from this system.
+    public const string ClinicalStatusSystem = "http://terminology.hl7.org/CodeSystem/condition-clinical";
+
+    public static readonly IReadOnlyList<string> ClinicalStatusCodes =
+        ["active", "recurrence", "relapse", "inactive", "remission", "resolved"];
+
     public string? Id { get; set; }
 
     [Required]
@@ -50,7 +59,7 @@ public sealed class ConditionEditModel
 
         if (!string.IsNullOrWhiteSpace(ClinicalStatus))
         {
-            condition.ClinicalStatus = new CodeableConcept { Text = ClinicalStatus };
+            condition.ClinicalStatus = new CodeableConcept(ClinicalStatusSystem, ClinicalStatus.Trim().ToLowerInvariant());
         }
 
         return condition;

@@ -1,45 +1,80 @@
 @page "/allergy-intolerances/{Id}"
 @attribute [Authorize(Roles = "ROLE_SYSTEM_ADMIN,ROLE_ORG_ADMIN,ROLE_PRACTITIONER")]
+@using DMRS.Client.Features.AllergyIntolerances.Models
 @inherits DMRS.Client.Components.LocalizedComponentBase
 @inject DMRS.Client.Features.AllergyIntolerances.Services.AllergyIntoleranceFeatureService AllergyService
 
 <PageTitle>@Loc["allergies.details.title"]</PageTitle>
 
-<h1>@Loc["allergies.details.title"]</h1>
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-<div class="mb-3">
-    <NavLink class="btn btn-sm btn-outline-secondary me-1" href="@($"/allergy-intolerances/{Id}/edit")">@Loc["common.edit"]</NavLink>
-    <NavLink class="btn btn-sm btn-outline-info" href="@($"/allergy-intolerances/{Id}/history")">@Loc["common.history"]</NavLink>
-</div>
-
-<FhirJsonView Resource="allergy" />
+<ResourceDetailsPage Eyebrow="@Loc["allergies.workflow.eyebrow"]"
+                     Title="@DisplayName"
+                     Subtitle="@Loc["allergies.details.subline", PatientId]"
+                     SummaryTitle="@Loc["allergies.summary.title"]"
+                     SummarySubtitle="@Loc["allergies.summary.subtitle"]"
+                     EditHref="@($"/allergy-intolerances/{Id}/edit")"
+                     HistoryHref="@($"/allergy-intolerances/{Id}/history")"
+                     IsLoading="isLoading"
+                     ErrorMessage="@errorMessage"
+                     Resource="allergy">
+    <DetailRow Label="@Loc["common.field.code"]" Value="@DisplayName" />
+    <DetailRow Label="@Loc["common.field.patient"]" Value="@PatientId">
+        <a href="@($"/patients/{PatientId}")">@PatientId</a>
+    </DetailRow>
+    <DetailRow Label="@Loc["common.field.clinicalStatus"]">
+        @if (!string.IsNullOrWhiteSpace(ClinicalStatus))
+        {
+            <StatusPill Status="@ClinicalStatus" />
+        }
+        else
+        {
+            <span class="text-muted">@Loc["common.status.notSpecified"]</span>
+        }
+    </DetailRow>
+    <DetailRow Label="@Loc["allergies.field.criticality"]" Value="@Criticality" />
+</ResourceDetailsPage>
 
 @code {
     [Parameter]
     public string Id { get; set; } = string.Empty;
 
     private Hl7.Fhir.Model.AllergyIntolerance? allergy;
+    private bool isLoading = true;
     private string? errorMessage;
+
+    private AllergyIntoleranceEditModel? summary;
+
+    private string DisplayName => string.IsNullOrWhiteSpace(summary?.CodeText)
+        ? Loc["allergies.details.title"]
+        : summary!.CodeText;
+
+    private string PatientId => summary?.PatientId ?? string.Empty;
+    private string? ClinicalStatus => summary?.ClinicalStatus;
+    private string Criticality => allergy?.SafeCriticality() ?? string.Empty;
 
     protected override async Task OnParametersSetAsync()
     {
+        isLoading = true;
         errorMessage = null;
+        allergy = null;
+        summary = null;
         try
         {
             allergy = await AllergyService.GetAsync(Id);
             if (allergy is null)
             {
                 errorMessage = Loc["allergies.notFound", Id];
+                return;
             }
+
+            summary = AllergyIntoleranceEditModel.FromAllergy(allergy);
         }
         catch (Exception ex)
         {
             errorMessage = Loc["allergies.loadFailed", ex.Message];
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }
